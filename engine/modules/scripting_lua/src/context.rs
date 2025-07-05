@@ -15,9 +15,9 @@ pub(crate) struct ManagedLuaState {
     pub(crate) handle_map: RefCell<HandleMap>,
 }
 
-impl Into<*mut lua_State> for &ManagedLuaState {
-    fn into(self) -> *mut lua_State {
-        self.state
+impl From<&ManagedLuaState> for *mut lua_State {
+    fn from(managed: &ManagedLuaState) -> Self {
+        managed.state
     }
 }
 

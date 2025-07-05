@@ -45,7 +45,7 @@ impl HandleMap {
 
     pub fn deref_sv_handle(&self, handle: ScriptBindableHandle, expected_type_id: impl AsRef<str>)
         -> Option<*mut ()> {
-        let Some((ty, ptr)) = self.handle_to_ptr_map.get(&handle) else { return None; };
+        let (ty, ptr) = self.handle_to_ptr_map.get(&handle)?;
 
         if ty != expected_type_id.as_ref() {
             // either memory corruption or someone is doing something nasty

@@ -17,7 +17,7 @@ pub(crate) fn fill_buckets(
 ) {
     scene_state.render_buckets.retain(|_, bucket| !bucket.objects.is_empty());
 
-    for (_, bucket) in &mut scene_state.render_buckets {
+    for bucket in scene_state.render_buckets.values_mut() {
         if bucket.ubo_buffer.is_none() {
             bucket.ubo_buffer = Some(VulkanBuffer::new(
                 instance,
@@ -172,7 +172,7 @@ pub(crate) fn fill_buckets(
 
                 bucket.staging_vertex_buffer.as_mut().unwrap().copy_from(
                     device,
-                    &staging_buffer,
+                    staging_buffer,
                     0, // src offset
                     copy_cmd_buf,
                     offset, // dst offset

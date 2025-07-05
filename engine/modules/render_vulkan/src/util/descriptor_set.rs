@@ -131,7 +131,7 @@ pub(crate) fn destroy_descriptor_sets(
     sets: &Vec<vk::DescriptorSet>
 ) -> Result<(), String> {
     unsafe {
-        device.logical_device.free_descriptor_sets(pool, &sets)
+        device.logical_device.free_descriptor_sets(pool, sets)
             .map_err(|err| err.to_string())
     }
 }

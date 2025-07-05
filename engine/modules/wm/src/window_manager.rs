@@ -22,7 +22,7 @@ use sdl3::sys::video::SDL_WINDOW_INPUT_FOCUS;
 use sdl3::video::{FullscreenType, Window as SdlWindow, WindowBuilder};
 use argus_logging::warn;
 
-static INSTANCE: LazyLock<WindowManager> = LazyLock::new(|| WindowManager::new());
+static INSTANCE: LazyLock<WindowManager> = LazyLock::new(WindowManager::new);
 
 /// @brief A callback which constructs a Canvas associated with a given
 ///        Window.
@@ -91,7 +91,7 @@ impl WindowManager {
             GlManager::new(self.sdl_video_ss.get().unwrap().get().clone())
         ))
             .unwrap_or_else(|_| panic!("OpenGL manager was already initialized"));
-        Ok(&self.sdl.get().unwrap().get())
+        Ok(self.sdl.get().unwrap().get())
     }
 
     pub fn get_sdl(&self) -> Result<&Sdl, String> {

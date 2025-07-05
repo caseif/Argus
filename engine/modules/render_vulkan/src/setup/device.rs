@@ -123,29 +123,27 @@ fn get_queue_family_indices(
     let mut transfer_family: Option<u32> = None;
     let mut present_family: Option<u32> = None;
 
-    let mut i: u32 = 0;
-    for queue_family in queue_families {
+    for i in 0..queue_families.len() {
+        let queue_family = &(*queue_families)[i];
         if transfer_family.is_none() &&
             queue_family.queue_flags.contains(vk::QueueFlags::TRANSFER) &&
             !queue_family.queue_flags.contains(vk::QueueFlags::GRAPHICS) {
-            transfer_family = Some(i);
+            transfer_family = Some(i as u32);
         }
 
         // check if queue family is suitable for graphics
         if graphics_family.is_none() &&
             queue_family.queue_flags.contains(vk::QueueFlags::GRAPHICS) {
-            graphics_family = Some(i);
+            graphics_family = Some(i as u32);
         }
 
         let device_has_present_support = unsafe {
-            surface_instance.get_physical_device_surface_support(device, i, surface)
+            surface_instance.get_physical_device_surface_support(device, i as u32, surface)
                 .map_err(|err| err.to_string())?
         };
         if device_has_present_support {
-            present_family = Some(i);
+            present_family = Some(i as u32);
         }
-
-        i += 1;
     }
 
     let Some(graphics_family) = graphics_family else {
@@ -192,7 +190,7 @@ fn is_device_suitable(
                         "Encountered invalid (corrupted?) Vulkan extension name: {:?}",
                         ext.extension_name,
                     );
-                    return None;
+                    None
                 }
             }
         })
@@ -246,7 +244,7 @@ fn is_device_suitable(
 fn rate_physical_device(
     instance: &VulkanInstance,
     device: vk::PhysicalDevice,
-    _queue_families: &Vec<vk::QueueFamilyProperties>,
+    _queue_families: &[vk::QueueFamilyProperties],
 ) -> Option<u64> {
     let mut score: u64 = 0;
 

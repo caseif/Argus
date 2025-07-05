@@ -24,12 +24,10 @@ pub(crate) fn create_command_pool(device: &VulkanDevice, queue_index: u32) -> vk
         .flags(vk::CommandPoolCreateFlags::RESET_COMMAND_BUFFER)
         .queue_family_index(queue_index);
 
-    let command_pool = unsafe {
+    unsafe {
         device.logical_device.create_command_pool(&pool_info, None)
             .expect("Failed to create command pool")
-    };
-
-    command_pool
+    }
 }
 
 pub(crate) fn destroy_command_pool(device: &VulkanDevice, command_pool: vk::CommandPool) {
@@ -51,13 +49,12 @@ pub(crate) fn alloc_command_buffers(
             .expect("Failed to allocate command buffers")
     };
 
-    let buffers = handles.into_iter()
+    handles.into_iter()
         .map(|handle| CommandBufferInfo {
             handle,
             pool,
         })
-        .collect();
-    buffers
+        .collect()
 }
 
 pub(crate) fn free_command_buffers(device: &VulkanDevice, buffers: Vec<CommandBufferInfo>) {

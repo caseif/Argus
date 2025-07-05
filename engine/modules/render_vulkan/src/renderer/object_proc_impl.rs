@@ -43,8 +43,8 @@ pub(crate) fn process_object(
     } else {
         let new_proc_obj =
             create_processed_object_2d(instance, device, state, &mut object, transform);
-        state.scene_states_2d.get_mut(&scene_id.to_string()).unwrap().processed_objs.insert(
-            object_handle.clone(),
+        state.scene_states_2d.get_mut(scene_id).unwrap().processed_objs.insert(
+            object_handle,
             new_proc_obj,
         );
     }

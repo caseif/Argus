@@ -25,7 +25,7 @@ pub(crate) struct MappedBuffer<'a> {
     pub(crate) map: &'a mut [u8],
 }
 
-impl<'a> Drop for MappedBuffer<'a> {
+impl Drop for MappedBuffer<'_> {
     fn drop(&mut self) {
         *self.buffer.is_map_in_use.borrow_mut() = false;
         // a persistent map should only be unmapped when the buffer is destroyed
@@ -35,7 +35,7 @@ impl<'a> Drop for MappedBuffer<'a> {
     }
 }
 
-impl<'a> MappedBuffer<'a> {
+impl MappedBuffer<'_> {
     #[allow(unused)]
     pub(crate) fn as_slice<T>(&self) -> &[T] {
         assert_eq!(

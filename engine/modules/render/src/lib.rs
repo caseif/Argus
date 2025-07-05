@@ -35,7 +35,7 @@ pub fn update_lifecycle_render(stage: LifecycleStage) {
             );
 
             EngineManager::instance().add_render_init_callback(
-                || activate_backend(),
+                activate_backend,
                 Ordering::Early,
             );
 

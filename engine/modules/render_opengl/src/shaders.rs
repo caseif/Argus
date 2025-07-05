@@ -407,20 +407,20 @@ pub(crate) fn deinit_program(program: GlProgramHandle) {
 }
 
 pub(crate) fn get_std_program(storage: &mut Option<LinkedProgram>) -> &LinkedProgram {
-    storage.get_or_insert_with(|| link_program(&[SHADER_STD_VERT, SHADER_STD_FRAG]))
+    storage.get_or_insert_with(|| link_program([SHADER_STD_VERT, SHADER_STD_FRAG]))
 }
 
 pub(crate) fn get_shadowmap_program(storage: &mut Option<LinkedProgram>) -> &LinkedProgram {
-    storage.get_or_insert_with(|| link_program(&[SHADER_SHADOWMAP_VERT, SHADER_SHADOWMAP_FRAG]))
+    storage.get_or_insert_with(|| link_program([SHADER_SHADOWMAP_VERT, SHADER_SHADOWMAP_FRAG]))
 }
 
 pub(crate) fn get_lighting_program(storage: &mut Option<LinkedProgram>) -> &LinkedProgram {
-    storage.get_or_insert_with(|| link_program(&[SHADER_LIGHTING_VERT, SHADER_LIGHTING_FRAG]))
+    storage.get_or_insert_with(|| link_program([SHADER_LIGHTING_VERT, SHADER_LIGHTING_FRAG]))
 }
 
 pub(crate) fn get_lightmap_composite_program(storage: &mut Option<LinkedProgram>) -> &LinkedProgram {
     storage.get_or_insert_with(|| {
-        link_program(&[SHADER_LIGHTMAP_COMPOSITE_VERT, SHADER_LIGHTMAP_COMPOSITE_FRAG])
+        link_program([SHADER_LIGHTMAP_COMPOSITE_VERT, SHADER_LIGHTMAP_COMPOSITE_FRAG])
     })
 }
 

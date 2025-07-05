@@ -20,7 +20,7 @@ struct ShaderCompilationResult {
     reflection: ShaderReflectionInfo,
 }
 
-fn compile_glsl_shaders(shaders: &Vec<Shader>)
+fn compile_glsl_shaders(shaders: &[Shader])
     -> Result<ShaderCompilationResult, GlslCompileError> {
     if shaders.is_empty() {
         return Ok(ShaderCompilationResult {

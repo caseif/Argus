@@ -148,7 +148,7 @@ pub(crate) fn create_swapchain(
 
     // need to create the render pass before we create the framebuffers
     let composite_render_pass = create_render_pass(
-        &device,
+        device,
         format.format,
         vk::ImageLayout::PRESENT_SRC_KHR,
         false,
@@ -229,13 +229,13 @@ pub(crate) unsafe fn recreate_swapchain(
     _gfx_lock: MutexGuard<()>,
     _present_lock: Option<MutexGuard<()>>,
 ) -> Result<VulkanSwapchain, String> {
-    let surface = *&swapchain.surface;
+    let surface = swapchain.surface;
 
     device.logical_device.device_wait_idle()
         .map_err(|err| format!("vkDeviceWaitIdle failed: {}", err))?;
 
 
-    destroy_swapchain(&device, swapchain)
+    destroy_swapchain(device, swapchain)
         .map_err(|err| format!("Failed to destroy swapchain: {}", err))?;
 
     create_swapchain(instance, device, surface, new_resolution)

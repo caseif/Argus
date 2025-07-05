@@ -16,7 +16,7 @@ use dashmap::mapref::one::{Ref, RefMut};
 use argus_core::{get_current_lifecycle_stage, LifecycleStage};
 use argus_resman::{Resource, ResourceErrorReason, ResourceManager};
 
-static INSTANCE: LazyLock<ScriptManager> = LazyLock::new(|| ScriptManager::new());
+static INSTANCE: LazyLock<ScriptManager> = LazyLock::new(ScriptManager::new);
 
 pub struct ScriptManager {
     lang_plugins: DashMap<String, Box<dyn ScriptLanguagePlugin>>,
@@ -59,14 +59,14 @@ impl ScriptManager {
         &self,
         lang_name: impl AsRef<str>,
     ) -> Option<Ref<String, Box<dyn ScriptLanguagePlugin>>> {
-        Some(self.lang_plugins.get(lang_name.as_ref())?)
+        self.lang_plugins.get(lang_name.as_ref())
     }
 
     pub fn get_language_plugin_mut(
         &self,
         lang_name: impl AsRef<str>,
     ) -> Option<RefMut<String, Box<dyn ScriptLanguagePlugin>>> {
-        Some(self.lang_plugins.get_mut(lang_name.as_ref())?)
+        self.lang_plugins.get_mut(lang_name.as_ref())
     }
     
     pub fn get_media_type_language(
@@ -655,7 +655,7 @@ impl ScriptBindings {
 
         let type_name: &str;
         if field_def.ty == IntegralType::Enum {
-            type_name = &self.get_enum_by_type_id(&type_id)
+            type_name = &self.get_enum_by_type_id(type_id)
                 .map_err(|err| {
                     BindingError::new(
                         BindingErrorType::UnknownParent,
@@ -664,7 +664,7 @@ impl ScriptBindings {
                     )
                 })?.name;
         } else {
-            let bound_type_res = self.get_type_by_type_id(&type_id);
+            let bound_type_res = self.get_type_by_type_id(type_id);
             if let Ok(bound_type) = bound_type_res {
                 field_def.is_refable = Some(bound_type.is_refable);
 

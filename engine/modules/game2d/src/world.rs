@@ -87,7 +87,7 @@ impl World2d {
 
         let b2_world = unsafe { b2CreateWorld(&b2DefaultWorldDef()) };
         B2_WORLDS.lock().unwrap()
-            .insert(format!("{}|{}", id.clone(), PRIM_LAYER_ID.to_string()), Fragile::new(b2_world));
+            .insert(format!("{}|{}", id.clone(), PRIM_LAYER_ID), Fragile::new(b2_world));
 
         g_worlds.write().unwrap().insert(id.clone(), Arc::new(RwLock::new(world)));
         g_worlds.read().unwrap().get(&id).unwrap().clone()
@@ -138,8 +138,7 @@ impl World2d {
 
     #[script_bind]
     pub fn get_camera_transform(&self) -> Transform2d {
-        let val = self.abstract_camera.peek().value;
-        val
+        self.abstract_camera.peek().value
     }
 
     #[script_bind]
@@ -185,7 +184,7 @@ impl World2d {
 
         let sec_index = self.sec_layers_count;
 
-        let layer_id = format!("{}{}", SEC_LAYER_ID_PREFIX, sec_index);
+        let _layer_id = format!("{}{}", SEC_LAYER_ID_PREFIX, sec_index);
 
         let mut window = WindowManager::instance().get_window_mut(&self.window_id).unwrap();
         let canvas = window.get_canvas_mut().expect("Window does not have associated canvas");
@@ -217,7 +216,7 @@ impl World2d {
 
     fn simulate(&mut self, delta: Duration) {
         let mut b2_world_map = B2_WORLDS.lock().unwrap();
-        let b2_world = b2_world_map.get_mut(&format!("{}|{}", self.id, PRIM_LAYER_ID.to_string()))
+        let b2_world = b2_world_map.get_mut(&format!("{}|{}", self.id, PRIM_LAYER_ID))
             .unwrap().get();
         Self::simulate_layer(&mut self.prim_layer, *b2_world, delta);
     }
@@ -490,6 +489,6 @@ impl World2d {
     }
 
     pub fn delete_point_light(&mut self, id: &Uuid) -> Result<(), &'static str> {
-        self.prim_layer.delete_point_light(&id)
+        self.prim_layer.delete_point_light(id)
     }
 }

@@ -34,7 +34,7 @@ impl ScriptContext {
         if mgr.get_media_type_language(&resource.get_prototype().media_type).as_ref() !=
             Some(&self.language) {
             return Err(ScriptLoadError::new(
-                &resource.get_prototype().uid.to_string(),
+                resource.get_prototype().uid.to_string(),
                 format!(
                     "Resource with media type '{}' cannot be loaded by plugin '{}'",
                     resource.get_prototype().media_type,

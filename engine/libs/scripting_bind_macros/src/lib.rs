@@ -287,7 +287,11 @@ fn handle_struct(item: &ItemStruct, args: Vec<&Meta>) -> Result<TokenStream2, Co
                         name: #field_name,
                         type_serial: #field_type_serial,
                         size: size_of::<#field_type>(),
-                        #[allow(clippy::clone_on_copy, clippy::needless_borrow)]
+                        #[allow(
+                            clippy::clone_on_copy,
+                            clippy::needless_borrow,
+                            clippy::needless_borrows_for_generic_args
+                        )]
                         accessor: #field_accessor_tokens,
                         #[allow(clippy::clone_on_copy, clippy::needless_borrow)]
                         mutator: #field_mutator_tokens,
@@ -418,10 +422,10 @@ fn handle_enum(item: &ItemEnum, args: Vec<&Meta>) -> Result<TokenStream2, Compil
                     (#var_name, (|| { (#cur_discrim) as i64 }) as fn() -> i64)
                 })
             } else {
-                return Err(CompileError::new(
+                Err(CompileError::new(
                     enum_var.span(),
                     "Enums containing non-unit variants may not be bound",
-                ));
+                ))
             }
         })
         .collect::<Result<_, _>>()?;
@@ -1434,7 +1438,7 @@ fn parse_type_internal(
             Err(CompileError::new(tuple.span(), "Tuple types are not supported"))
         }
     } else {
-        Err(CompileError::new(ty.span(), format!("Unsupported type for script binding: {:?}", ty)))
+        Err(CompileError::new(ty.span(), "Unsupported type for script binding".to_string()))
     }
 }
 
@@ -1448,8 +1452,7 @@ fn match_path(subject: &Path, needle: Vec<&'static str>) -> bool {
         needle[needle.len() - subject.segments.len()..]
             .iter()
             .enumerate()
-            .map(|(i, seg)| subject.segments[i].ident == seg)
-            .all(|b| b)
+            .all(|(i, seg)| subject.segments[i].ident == seg)
     }
 }
 

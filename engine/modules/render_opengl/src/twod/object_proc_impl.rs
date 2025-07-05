@@ -30,7 +30,7 @@ use argus_util::pool::Handle;
 
 fn count_vertices(obj: &RenderObject2d) -> usize {
     obj.get_primitives()
-        .into_iter()
+        .iter()
         .map(|p| p.vertices.len())
         .sum()
 }
@@ -63,8 +63,8 @@ pub(crate) fn process_object(
         update_processed_object_2d(&mut object, proc_obj, transform, is_transform_dirty, program);
     } else {
         let new_proc_obj = create_processed_object_2d(state, &mut object, transform);
-        state.scene_states_2d.get_mut(&scene_id.to_string()).unwrap().processed_objs.insert(
-            object_handle.clone(),
+        state.scene_states_2d.get_mut(scene_id).unwrap().processed_objs.insert(
+            object_handle,
             new_proc_obj,
         );
     }
@@ -151,7 +151,8 @@ fn create_processed_object_2d(
             let major_off: usize = cur_vertex_index * vertex_len as usize;
             let mut minor_off: usize = 0;
 
-            if let Some(_) = attr_position_loc {
+            #[allow(clippy::identity_op)]
+            if attr_position_loc.is_some() {
                 let pos_vec = Vector4f {
                     x: vertex.position.x,
                     y: vertex.position.y,
@@ -163,19 +164,22 @@ fn create_processed_object_2d(
                 mapped_buffer[major_off + minor_off + 1] = transformed_pos.y;
                 minor_off += 2;
             }
-            if let Some(_) = attr_normal_loc {
+            #[allow(clippy::identity_op)]
+            if attr_normal_loc.is_some() {
                 mapped_buffer[major_off + minor_off + 0] = vertex.normal.x;
                 mapped_buffer[major_off + minor_off + 1] = vertex.normal.y;
                 minor_off += 2;
             }
-            if let Some(_) = attr_color_loc {
+            #[allow(clippy::identity_op)]
+            if attr_color_loc.is_some() {
                 mapped_buffer[major_off + minor_off + 0] = vertex.color.x;
                 mapped_buffer[major_off + minor_off + 1] = vertex.color.y;
                 mapped_buffer[major_off + minor_off + 2] = vertex.color.z;
                 mapped_buffer[major_off + minor_off + 3] = vertex.color.w;
                 minor_off += 4;
             }
-            if let Some(_) = attr_texcoord_loc {
+            #[allow(clippy::identity_op)]
+            if attr_texcoord_loc.is_some() {
                 mapped_buffer[major_off + minor_off + 0] = vertex.tex_coord.x;
                 mapped_buffer[major_off + minor_off + 1] = vertex.tex_coord.y;
                 minor_off += 2;
@@ -268,7 +272,7 @@ fn update_processed_object_2d(
 
     let mut cur_vertex_index: usize = 0;
     for prim in object.get_primitives() {
-        #[allow(unused_assignments)]
+        #[allow(unused_assignments, clippy::identity_op)]
         for vertex in &prim.vertices {
             let major_off: usize = cur_vertex_index * vertex_len as usize;
             let mut minor_off: usize = 0;

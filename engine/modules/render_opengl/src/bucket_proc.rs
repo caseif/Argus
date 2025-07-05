@@ -44,7 +44,7 @@ pub(crate) fn fill_buckets_2d(renderer_state: &mut RendererState, scene_id: impl
             return false;
         }
 
-        return true;
+        true
     });
 
     for bucket in scene_state.render_buckets.values_mut() {

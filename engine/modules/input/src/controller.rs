@@ -172,7 +172,7 @@ impl Controller {
     #[script_bind]
     pub fn get_axis_deadzone_radius(&self, axis: GamepadAxis) -> f64 {
         self.deadzones.axis_radii.get(&axis).cloned()
-            .or_else(|| self.deadzones.radius)
+            .or(self.deadzones.radius)
             .unwrap_or_else(|| InputManager::instance().get_global_axis_deadzone_radius(&axis))
     }
 
@@ -189,7 +189,7 @@ impl Controller {
     #[script_bind]
     pub fn get_axis_deadzone_shape(&self, axis: GamepadAxis) -> DeadzoneShape {
         self.deadzones.axis_shapes.get(&axis).cloned()
-            .or_else(|| self.deadzones.shape)
+            .or(self.deadzones.shape)
             .unwrap_or_else(|| InputManager::instance().get_global_axis_deadzone_shape(&axis))
     }
 
@@ -208,7 +208,7 @@ impl Controller {
 
         // remove action from binding list of keys it's bound to
         for key in bound_keys {
-            self.bindings.key_to_actions.remove(&key);
+            self.bindings.key_to_actions.remove(key);
         }
 
         // remove binding list of action
@@ -250,7 +250,7 @@ impl Controller {
             &mut self.bindings.key_to_actions,
             &mut self.bindings.action_to_keys,
             key,
-            Some(action.as_ref()),
+            Some(action),
         );
     }
 
@@ -310,7 +310,7 @@ impl Controller {
             &mut self.bindings.mouse_axis_to_actions,
             &mut self.bindings.action_to_mouse_axes,
             axis,
-            Some(action.as_ref()),
+            Some(action),
         );
     }
 
@@ -344,7 +344,7 @@ impl Controller {
             &mut self.bindings.gamepad_button_to_actions,
             &mut self.bindings.action_to_gamepad_buttons,
             button,
-            Some(action.as_ref()),
+            Some(action),
         );
     }
 
@@ -374,7 +374,7 @@ impl Controller {
             &mut self.bindings.gamepad_axis_to_actions,
             &mut self.bindings.action_to_gamepad_axes,
             axis,
-            Some(action.as_ref()),
+            Some(action),
         );
     }
 
@@ -457,7 +457,7 @@ impl Controller {
             max_value = max_abs(
                 max_value,
                 mouse_bindings.iter()
-                    .map(|axis| get_mouse_axis(axis))
+                    .map(get_mouse_axis)
                     .reduce(max_abs)
                     .unwrap_or(0.0),
             );
@@ -528,7 +528,7 @@ impl Controller {
                 }
             }
             None => {
-                for (_, bindings) in from_map {
+                for bindings in from_map.values_mut() {
                     bindings.remove(&thing);
                 }
                 to_map.remove(&thing);

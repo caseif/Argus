@@ -38,7 +38,7 @@ pub(crate) fn deinit_material(state: &mut RendererState, material: ResourceIdent
                 return false;
             }
 
-            return true;
+            true
         });
     }
 

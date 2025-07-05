@@ -7,7 +7,6 @@ lazy_static! {
 }
 
 #[derive(Clone, Copy, Debug)]
-#[must_use]
 pub struct Viewport {
     pub top: f32,
     pub bottom: f32,
@@ -58,10 +57,8 @@ pub trait AttachedViewport {
     #[must_use]
     fn get_postprocessing_shaders(&self) -> &Vec<String>;
 
-    #[must_use]
     fn add_postprocessing_shader(&mut self, shader_uid: String);
 
-    #[must_use]
     fn remove_postprocessing_shader(&mut self, shader_uid: String);
 }
 

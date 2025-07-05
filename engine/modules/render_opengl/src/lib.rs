@@ -53,7 +53,7 @@ crate_logger!(LOGGER, "argus/render_opengl");
 crate_logger!(GL_LOGGER, "opengl");
 
 thread_local! {
-    static IS_BACKEND_ACTIVE: RefCell<bool> = RefCell::new(false);
+    static IS_BACKEND_ACTIVE: RefCell<bool> = const { RefCell::new(false) };
     static RENDERERS: RefCell<HashMap<String, GlRenderer>>
         = RefCell::new(HashMap::new());
 }
@@ -72,7 +72,7 @@ fn test_opengl_support() -> Result<(), ()> {
     window.update(Duration::from_secs(0));
     let gl_mgr = WindowManager::instance().get_gl_manager().expect("Failed to get OpenGL manager");
     let gl_context =
-        match gl_mgr.create_context(&window, 3, 3, GlContextFlags::ProfileCore.into()) {
+        match gl_mgr.create_context(&window, 3, 3, GlContextFlags::ProfileCore) {
             Ok(ctx) => ctx,
             Err(e) => {
                 warn!(LOGGER, "Failed to create GL context: {e}");
@@ -141,7 +141,7 @@ fn window_event_handler(event: &WindowEvent) {
         WindowEventType::Create => {
             // don't create a context if the window was immediately closed
             if !window.is_close_request_pending() {
-                let renderer = GlRenderer::new(&mut *window);
+                let renderer = GlRenderer::new(&mut window);
                 RENDERERS.with_borrow_mut(|renderers| {
                     renderers.insert(window_id.clone(), renderer)
                 });

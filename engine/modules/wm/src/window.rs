@@ -298,8 +298,7 @@ impl Window {
                 handle.set_fullscreen(true).unwrap();
                 let new_mode = match display_mode.value {
                     Some(mode) => {
-                        let cur_mode = mode.try_into().unwrap();
-                        target_display.get_closest_display_mode(&cur_mode)
+                        target_display.get_closest_display_mode(&mode)
                             .expect("Failed to get closest display mode for display")
                     }
                     None => {

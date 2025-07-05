@@ -186,7 +186,7 @@ pub fn is_gamepad_button_pressed(gamepad: u32, button: GamepadButton) -> bool {
         return false;
     };
 
-    let sdl_button_ordinal: i32 = sdl_button.to_ll().0 as i32;
+    let sdl_button_ordinal: i32 = sdl_button.to_ll().0;
     assert!(sdl_button_ordinal < 64);
     (gamepad_state.button_state & (1 << sdl_button_ordinal as u8)) != 0
 }
@@ -261,12 +261,10 @@ fn poll_gamepad(devices_state: &GamepadDevicesState, id: HidDeviceInstanceId) {
         .map(|(_, name)| InputManager::instance().get_controller(name));
 
     let mut new_button_state: GamepadButtonState = 0;
-    let mut i = 0;
-    for button in GamepadButton::values() {
-        let sdl_button = BUTTON_MAP_ARGUS_TO_SDL.get(&button).unwrap();
+    for (i, button) in GamepadButton::values().iter().enumerate() {
+        let sdl_button = BUTTON_MAP_ARGUS_TO_SDL.get(button).unwrap();
         let bit = if gamepad.button(*sdl_button) { 1 } else { 0 };
         new_button_state |= bit << i;
-        i += 1;
     }
 
     let mut new_axis_state = HashMap::new();
@@ -550,11 +548,11 @@ pub(crate) fn update_gamepads() {
 
     handle_gamepad_events(&mut devices_state);
 
-    for gamepad_id in devices_state.available_gamepads.clone() {
-        poll_gamepad(&mut devices_state, gamepad_id);
+    for &gamepad_id in &devices_state.available_gamepads {
+        poll_gamepad(&devices_state, gamepad_id);
     }
 
-    for (&gamepad_id, _) in &devices_state.mapped_gamepads {
+    for &gamepad_id in devices_state.mapped_gamepads.keys() {
         poll_gamepad(&devices_state, gamepad_id);
     }
 }

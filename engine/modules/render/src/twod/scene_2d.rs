@@ -103,7 +103,7 @@ impl Scene2d {
         handle
     }
 
-    pub fn get_light<'a>(
+    pub fn get_light(
         &mut self,
         handle: Handle
     ) -> Option<ContextObjectReadGuard<RenderLight2d>> {
@@ -114,7 +114,7 @@ impl Scene2d {
         context.get_light(handle)
     }
 
-    pub fn get_light_mut<'a>(
+    pub fn get_light_mut(
         &mut self,
         handle: Handle
     ) -> Option<ContextObjectWriteGuard<RenderLight2d>> {
@@ -130,7 +130,7 @@ impl Scene2d {
         context.remove_light(handle, self.id.as_str())
     }
 
-    pub fn get_group<'a>(&self, handle: Handle)
+    pub fn get_group(&self, handle: Handle)
         -> Option<ContextObjectReadGuard<RenderGroup2d>> {
         let context = get_render_context_2d();
         let group = context.get_group(handle)?;
@@ -140,7 +140,7 @@ impl Scene2d {
         Some(group)
     }
 
-    pub fn get_group_mut<'a>(&mut self, handle: Handle)
+    pub fn get_group_mut(&mut self, handle: Handle)
                      -> Option<ContextObjectWriteGuard<RenderGroup2d>> {
         let context = get_render_context_2d();
         let group = context.get_group_mut(handle)?;
@@ -150,7 +150,7 @@ impl Scene2d {
         Some(group)
     }
 
-    pub fn get_object<'a>(&self, handle: Handle)
+    pub fn get_object(&self, handle: Handle)
         -> Option<ContextObjectReadGuard<RenderObject2d>> {
         let context = get_render_context_2d();
         let object = context.get_object(handle)?;
@@ -160,7 +160,7 @@ impl Scene2d {
         Some(object)
     }
 
-    pub fn get_object_mut<'a>(&mut self, handle: Handle)
+    pub fn get_object_mut(&mut self, handle: Handle)
         -> Option<ContextObjectWriteGuard<RenderObject2d>> {
         let context = get_render_context_2d();
         let object = context.get_object_mut(handle)?;

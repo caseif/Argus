@@ -110,8 +110,8 @@ impl<T: Clone> Clone for ValueAndDirtyFlag<T> {
 
 impl<T: Copy> Copy for ValueAndDirtyFlag<T> {}
 
-impl<T> Into<(T, bool)> for ValueAndDirtyFlag<T> {
-    fn into(self) -> (T, bool) {
-        (self.value, self.dirty)
+impl<T> From<ValueAndDirtyFlag<T>> for (T, bool) {
+    fn from(vd: ValueAndDirtyFlag<T>) -> Self {
+        (vd.value, vd.dirty)
     }
 }

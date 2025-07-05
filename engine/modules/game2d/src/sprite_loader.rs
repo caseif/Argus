@@ -163,28 +163,27 @@ struct SpriteResourceAnimationFrameModel {
     duration: f32,
 }
 
-impl Into<SpriteDefinition> for SpriteResourceModel {
-    fn into(self) -> SpriteDefinition {
+impl From<SpriteResourceModel> for SpriteDefinition {
+    fn from(model: SpriteResourceModel) -> Self {
         SpriteDefinition {
-            def_anim: self.default_animation,
-            def_speed: self.anim_speed,
-            atlas: self.atlas,
-            tile_size: Vector2u::new(self.tile_width, self.tile_height),
-            animations: self.animations.into_iter()
+            def_anim: model.default_animation,
+            def_speed: model.anim_speed,
+            atlas: model.atlas,
+            tile_size: Vector2u::new(model.tile_width, model.tile_height),
+            animations: model.animations.into_iter()
                 .map(|(id, anim)| (id.clone(), Into::<SpriteAnimation>::into((id, anim))))
                 .collect(),
         }
     }
 }
 
-impl Into<SpriteAnimation> for (String, SpriteResourceAnimationModel) {
-    fn into(self) -> SpriteAnimation {
-        let (id, anim) = self;
+impl From<(String, SpriteResourceAnimationModel)> for SpriteAnimation {
+    fn from((id, anim): (String, SpriteResourceAnimationModel)) -> Self {
         let mut real_anim = SpriteAnimation {
             id,
             does_loop: anim.does_loop,
             padding: anim.padding.into(),
-            def_duration: anim.frame_duration.into(),
+            def_duration: anim.frame_duration,
             frames: anim.frames.into_iter().map(|frame| frame.into()).collect(),
         };
 
@@ -198,22 +197,22 @@ impl Into<SpriteAnimation> for (String, SpriteResourceAnimationModel) {
     }
 }
 
-impl Into<Padding> for SpriteResourceAnimationPaddingModel {
-    fn into(self) -> Padding {
+impl From<SpriteResourceAnimationPaddingModel> for Padding {
+    fn from(model: SpriteResourceAnimationPaddingModel) -> Self {
         Padding {
-            top: self.top,
-            bottom: self.bottom,
-            left: self.left,
-            right: self.right,
+            top: model.top,
+            bottom: model.bottom,
+            left: model.left,
+            right: model.right,
         }
     }
 }
 
-impl Into<SpriteAnimationFrame> for SpriteResourceAnimationFrameModel {
-    fn into(self) -> SpriteAnimationFrame {
+impl From<SpriteResourceAnimationFrameModel> for SpriteAnimationFrame {
+    fn from(model: SpriteResourceAnimationFrameModel) -> Self {
         SpriteAnimationFrame {
-            offset: Vector2u::new(self.x, self.y),
-            duration: self.duration,
+            offset: Vector2u::new(model.x, model.y),
+            duration: model.duration,
         }
     }
 }

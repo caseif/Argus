@@ -54,7 +54,7 @@ impl GlContext {
     }
 
     pub fn make_current(&self, window: &Window) -> Result<(), String> {
-        window.handle.as_ref().ok_or_else(|| "SDL window handle is not present")?
+        window.handle.as_ref().ok_or("SDL window handle is not present")?
             .try_get().map_err(|_| "GL context may only be accessed from render thread")?
             .gl_make_current(self.underlying.get())
             .map_err(|err| format!("Failed to make GL context current: {:?}", err))?;
@@ -131,7 +131,7 @@ impl GlManager {
         // type of `proc` at this point is not correct in the first place for
         // any non-nullary and/or returning functions, so transmutation by the
         // caller would be necessary in any case.
-        let fn_addr = unsafe { mem::transmute(proc) };
+        let fn_addr = unsafe { mem::transmute::<_, *mut ffi::c_void>(proc) };
         Some(GlProc { handle: fn_addr })
     }
 
@@ -149,7 +149,7 @@ impl GlManager {
 
     pub fn swap_buffers(&self, window: &Window) -> Result<(), String> {
         let sdl_window = window.handle.as_ref()
-            .ok_or_else(|| "SDL window handle is not present")?
+            .ok_or("SDL window handle is not present")?
             .try_get().map_err(|_| "Window may not be swapped outside of the render thread")?;
         sdl_window.gl_swap_window();
         Ok(())

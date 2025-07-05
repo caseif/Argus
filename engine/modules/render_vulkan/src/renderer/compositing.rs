@@ -328,7 +328,7 @@ pub(crate) fn draw_scene_to_framebuffer(
     let swapchain = &state.swapchain.as_ref().unwrap();
 
     let viewport = canvas.get_viewport(viewport_id).unwrap();
-    let viewport_px = transform_viewport_to_pixels(&viewport.get_viewport(), &resolution.value);
+    let viewport_px = transform_viewport_to_pixels(viewport.get_viewport(), &resolution.value);
 
     //uint32_t fb_width = uint32_t(std::abs(viewport_px.right - viewport_px.left));
     //uint32_t fb_height = uint32_t(std::abs(viewport_px.bottom - viewport_px.top));
@@ -455,15 +455,14 @@ pub(crate) fn draw_scene_to_framebuffer(
     clear_rect.rect.extent.width =
     vkCmdClearAttachments(vk_cmd_buf, 1, &clear_att, 1, &clear_rect);*/
 
-    for (_, bucket) in &scene_state.render_buckets {
-        assert!(bucket.vertex_count <= u32::MAX, "Too many vertices in bucket");
+    for bucket in scene_state.render_buckets.values() {
         let vertex_count = bucket.vertex_count;
 
         let mat = bucket.material_res.clone();
         let pipeline_info = state.material_pipelines.get(&mat.get_prototype().uid).unwrap();
 
         let texture_uid = state.material_textures.get(&mat.get_prototype().uid).unwrap();
-        let texture = state.prepared_textures.get(&texture_uid).unwrap();
+        let texture = state.prepared_textures.get(texture_uid).unwrap();
 
         let shader_refl = &pipeline_info.reflection;
 
@@ -473,7 +472,7 @@ pub(crate) fn draw_scene_to_framebuffer(
         let desc_sets = cur_frame_state.material_desc_sets
             .entry(mat.get_prototype().uid.clone())
             .or_insert_with(|| {
-                let sets = create_descriptor_sets(device, state.desc_pool.unwrap(), &shader_refl)
+                let sets = create_descriptor_sets(device, state.desc_pool.unwrap(), shader_refl)
                     .unwrap();
 
                 let mut ds_writes = Vec::new();

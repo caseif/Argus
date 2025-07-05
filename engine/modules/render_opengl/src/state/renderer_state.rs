@@ -74,6 +74,6 @@ impl<'a> RendererState {
 
     pub fn get_or_create_viewport_2d_state(&'a mut self, viewport_id: u32) -> &'a mut ViewportState {
         self.viewport_states_2d.entry(viewport_id)
-            .or_insert_with(|| ViewportState::new())
+            .or_insert_with(ViewportState::new)
     }
 }

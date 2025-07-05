@@ -71,7 +71,7 @@ impl StackGuard {
     }
 }
 
-impl<'a> Drop for StackGuard {
+impl Drop for StackGuard {
     fn drop(&mut self) {
         let cur = unsafe { lua_gettop(self.state) };
         assert_eq!(self.expected, cur);
@@ -212,19 +212,19 @@ impl ScriptLanguagePlugin for LuaLanguagePlugin {
             create_type_metatable(state, type_def, true);
 
             for field_def in type_def.fields.values() {
-                bind_type_field(state, &type_def.name, &field_def);
+                bind_type_field(state, &type_def.name, field_def);
             }
 
             for fn_def in type_def.static_functions.values() {
-                bind_type_function(state, &type_def.name, &fn_def);
+                bind_type_function(state, &type_def.name, fn_def);
             }
 
             for fn_def in type_def.instance_functions.values() {
-                bind_type_function(state, &type_def.name, &fn_def);
+                bind_type_function(state, &type_def.name, fn_def);
             }
 
             for fn_def in type_def.extension_functions.values() {
-                bind_type_function(state, &type_def.name, &fn_def);
+                bind_type_function(state, &type_def.name, fn_def);
             }
         }
     }
@@ -340,7 +340,7 @@ unsafe fn wrap_instance_ref(
             param_index,
             qual_fn_name,
             type_def.name,
-            cur_mt_name.as_ref().map(|s| s.as_str()).unwrap_or(LUA_CUSTOM_EMPTY_REPL),
+            cur_mt_name.as_deref().unwrap_or(LUA_CUSTOM_EMPTY_REPL),
         ));
     }
 
@@ -500,7 +500,7 @@ unsafe fn wrap_param(
                         qual_fn_name,
                         if param_def.is_const { LUA_CUSTOM_CONST_PREFIX } else { "" },
                         underlying_type.type_name.as_ref().unwrap(),
-                        cur_mt_name.as_ref().map(|s| s.as_str()).unwrap_or(LUA_CUSTOM_EMPTY_REPL),
+                        cur_mt_name.as_deref().unwrap_or(LUA_CUSTOM_EMPTY_REPL),
                     ));
                 }
 
@@ -703,7 +703,7 @@ unsafe fn push_value(state: &ManagedLuaState, mut wrapper: WrappedObject) {
                 todo!();
             }
             _ => {
-                assert!(false);
+                panic!("Unsupported type for push");
             }
         }
     }
@@ -914,11 +914,7 @@ unsafe fn lookup_fn_in_dispatch_table(context: &ManagedLuaState, mt_index: i32, 
 unsafe fn get_native_field_val(context: &ManagedLuaState, type_name: &str, field_name: &str) -> bool {
     stack_guard!(context);
 
-    let real_type_name = if type_name.starts_with(LUA_CUSTOM_CONST_PREFIX) {
-        &type_name[LUA_CUSTOM_CONST_PREFIX.len()..]
-    } else {
-        type_name
-    };
+    let real_type_name = type_name.strip_prefix(LUA_CUSTOM_CONST_PREFIX).unwrap_or(type_name);
 
     let mgr = ScriptManager::instance();
     let bindings = mgr.get_bindings();
@@ -983,12 +979,9 @@ unsafe extern "C" fn lua_type_index_handler(raw_state: *mut lua_State) -> i32 {
 unsafe fn set_native_field(state: &ManagedLuaState, type_name: &str, field_name: &str) -> i32 {
     stack_guard!(state);
 
-    // only necessary for the error message when the object is const since that's the only time it has the prefix
-    let real_type_name = if type_name.starts_with(LUA_CUSTOM_CONST_PREFIX) {
-        &type_name[LUA_CUSTOM_CONST_PREFIX.len()..]
-    } else {
-        type_name
-    };
+    // only necessary for the error message when the object is const since
+    // that's the only time it has the prefix
+    let real_type_name = type_name.strip_prefix(LUA_CUSTOM_CONST_PREFIX).unwrap_or(type_name);
 
     let qual_field_name = get_qualified_field_name(real_type_name, field_name);
 
@@ -1042,7 +1035,7 @@ unsafe extern "C" fn lua_type_newindex_handler(raw_state: *mut lua_State) -> i32
     let type_name = get_metatable_name(raw_state, 1).unwrap();
     let key = lua_tostring(raw_state, -2).unwrap();
 
-    assert!(type_name.len() > 0);
+    assert!(!type_name.is_empty());
 
     let res = set_native_field(state.deref(), &type_name, &key);
 
@@ -1069,11 +1062,7 @@ unsafe extern "C" fn lua_clone_object(raw_state: *mut lua_State) -> i32 {
     }
 
     let full_type_name = get_metatable_name(raw_state, 1).unwrap();
-    let type_name = if full_type_name.starts_with(LUA_CUSTOM_CONST_PREFIX) {
-        &full_type_name[LUA_CUSTOM_CONST_PREFIX.len()..]
-    } else {
-        &full_type_name
-    };
+    let type_name = full_type_name.strip_prefix(LUA_CUSTOM_CONST_PREFIX).unwrap_or(&full_type_name);
 
     if lua_isuserdata(raw_state, -1) == 0 {
         return lua_error!(raw_state, "clone() called on non-userdata object");

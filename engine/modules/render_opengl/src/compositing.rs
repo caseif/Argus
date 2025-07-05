@@ -253,7 +253,7 @@ pub(crate) fn draw_scene_2d_to_framebuffer(
     resolution: &ValueAndDirtyFlag<Vector2u>,
 ) {
     let viewport = att_viewport.get_viewport();
-    let viewport_px = transform_viewport_to_pixels(&viewport, &resolution.value);
+    let viewport_px = transform_viewport_to_pixels(viewport, &resolution.value);
 
     let fb_width = (viewport_px.right - viewport_px.left).abs();
     let fb_height = (viewport_px.bottom - viewport_px.top).abs();
@@ -382,7 +382,7 @@ pub(crate) fn draw_scene_2d_to_framebuffer(
             viewport_state,
             shadowmap_program,
             renderer_state.frame_vao.unwrap(),
-            &resolution,
+            resolution,
         );
 
         // generate lightmap
@@ -392,7 +392,7 @@ pub(crate) fn draw_scene_2d_to_framebuffer(
             viewport_state,
             lighting_program,
             renderer_state.frame_vao.unwrap(),
-            &resolution,
+            resolution,
         );
 
         // lightmaps are composited in a later step after this function is called
@@ -420,7 +420,7 @@ pub(crate) fn draw_scene_2d_to_framebuffer(
 
         let postfx_program = postfx_programs
             .entry(postfx.clone())
-            .or_insert_with_key(|postfx| link_program(&[FB_SHADER_VERT_PATH, postfx.as_str()]));
+            .or_insert_with_key(|postfx| link_program([FB_SHADER_VERT_PATH, postfx.as_str()]));
 
         swap(&mut fb_front, &mut fb_back);
         swap(&mut color_buf_front, &mut color_buf_back);
@@ -555,7 +555,7 @@ pub(crate) fn draw_lightmap_to_framebuffer(
     fb_viewport: &Viewport,
     resolution: &Vector2u,
 ) {
-    let viewport_px = transform_viewport_to_pixels(&fb_viewport, &resolution);
+    let viewport_px = transform_viewport_to_pixels(fb_viewport, resolution);
     let fb_width = (viewport_px.right - viewport_px.left).abs();
     let fb_height = (viewport_px.bottom - viewport_px.top).abs();
 
@@ -994,7 +994,7 @@ pub(crate) fn draw_framebuffer_to_screen(
     resolution: &ValueAndDirtyFlag<Vector2u>,
 ) {
     let viewport_px =
-        transform_viewport_to_pixels(&viewport, &resolution.value);
+        transform_viewport_to_pixels(viewport, &resolution.value);
     let viewport_width_px = (viewport_px.right - viewport_px.left).abs();
     let viewport_height_px = (viewport_px.bottom - viewport_px.top).abs();
 
@@ -1020,7 +1020,7 @@ pub(crate) fn draw_framebuffer_to_screen(
 }
 
 pub(crate) fn setup_framebuffer(state: &mut RendererState) {
-    let frame_program = link_program(&[FB_SHADER_VERT_PATH, FB_SHADER_FRAG_PATH]);
+    let frame_program = link_program([FB_SHADER_VERT_PATH, FB_SHADER_FRAG_PATH]);
 
     if !frame_program
         .reflection

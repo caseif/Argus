@@ -4,6 +4,7 @@ use crate::{ClientConfig, CoreConfig, EngineManager, LifecycleStage};
 const CONFIG_KEY_CLIENT: &str = "client";
 const CONFIG_KEY_CORE: &str = "core";
 
+//noinspection RsUnnecessaryQualifications
 #[register_module(crate = crate, id = "core")]
 pub fn update_lifecycle_core(stage: LifecycleStage) {
     match stage {

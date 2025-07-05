@@ -44,7 +44,7 @@ fn compute_abs_group_transform(context: &RenderContext2d, group: Handle)
     while let Some(cur_handle) = cur_handle_opt {
         let cur_group = context.get_group_mut(cur_handle).unwrap();
         cur_handle_opt = cur_group.get_parent();
-        mat = mat * cur_group.peek_transform().as_matrix(Vector2f::new(0.0, 0.0));
+        mat *= cur_group.peek_transform().as_matrix(Vector2f::new(0.0, 0.0));
     }
 
     mat
@@ -125,7 +125,7 @@ fn process_render_group_2d<S>(
         let dirty_transform = recompute_child_transform || is_obj_dirty;
 
         update_fn(
-            scene_id.as_ref(),
+            scene_id,
             child_obj_handle,
             &final_obj_transform,
             dirty_transform,

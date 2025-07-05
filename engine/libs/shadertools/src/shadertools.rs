@@ -520,7 +520,7 @@ fn process_glsl(
         .collect();
     let mut avail_uniform_locs = get_free_loc_ranges(occupied_uniform_locs);
 
-    for (_, uni_decl) in &mut uniforms {
+    for uni_decl in uniforms.values_mut() {
         // skip uniforms that already have assigned locations or are opaque
         if uni_decl.location.is_some() || uni_decl.size.unwrap_or(0) == 0 {
             continue;
@@ -548,7 +548,7 @@ fn process_glsl(
         // which still need to be assigned locations
 
         let mut mutate_visitor = MutatingDeclarationVisitor::new(
-            &struct_sizes[&stage],
+            &struct_sizes[stage],
             &all_assigned_inputs[stage],
             &all_assigned_outputs[stage],
             &uniforms,
@@ -729,9 +729,9 @@ impl Visitor for StructDefVisitor {
         for sf in &struct_spec.fields {
             let ts = &sf.ty;
             let base_size = if let TypeSpecifierNonArray::TypeName(tn) = &ts.ty {
-                let size = self.struct_sizes.get(&tn.0);
-                if size.is_some() {
-                    size.unwrap().unwrap_or(0)
+                let size_opt = self.struct_sizes.get(&tn.0);
+                if let Some(size) = size_opt {
+                    size.unwrap_or(0)
                 } else {
                     self.fail_condition = true;
                     self.fail_message =
@@ -910,23 +910,23 @@ fn get_decl_info(
         .array_specifier
         .as_ref()
         .map(|arr_spec| {
-            arr_spec.dimensions.0.iter().fold(Ok(1), |a, dim| {
-                Ok(a.unwrap()
-                    * match dim {
-                        ArraySpecifierDimension::ExplicitlySized(size_expr) => {
-                            match size_expr.as_ref() {
-                                Expr::IntConst(n) => Ok(*n as u32),
-                                _ => Err(GlslCompileError::new(
-                                    "Non-literal array dimension specifiers are \
-                                    not supported at this time",
-                                )),
-                            }
+            arr_spec.dimensions.0.iter().try_fold(1, |a, dim| {
+                let mult = match dim {
+                    ArraySpecifierDimension::ExplicitlySized(size_expr) => {
+                        match size_expr.as_ref() {
+                            Expr::IntConst(n) => Ok(*n as u32),
+                            _ => Err(GlslCompileError::new(
+                                "Non-literal array dimension specifiers are \
+                                not supported at this time",
+                            )),
                         }
-                        ArraySpecifierDimension::Unsized => Err(GlslCompileError::new(
-                            "Array specifier dimension for declaration \
-                            cannot be unsized",
-                        )),
-                    }?)
+                    }
+                    ArraySpecifierDimension::Unsized => Err(GlslCompileError::new(
+                        "Array specifier dimension for declaration \
+                        cannot be unsized",
+                    )),
+                }?;
+                Ok(a * mult)
             })
         })
         .unwrap_or(Ok(1))?;

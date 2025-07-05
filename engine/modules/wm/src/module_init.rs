@@ -20,7 +20,7 @@ crate_logger!(LOGGER, "argus/wm");
 static g_is_wm_module_initialized: OnceLock<bool> = OnceLock::new();
 thread_local! {
     #[allow(non_upper_case_globals)]
-    static g_did_request_stop: RefCell<bool> = RefCell::new(false);
+    static g_did_request_stop: RefCell<bool> = const { RefCell::new(false) };
 }
 
 fn clean_up() {

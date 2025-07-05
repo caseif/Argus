@@ -1,6 +1,6 @@
 use crate::*;
 use argus_logging::debug;
-use argus_scripting_bind::{FunctionType, IntegralType, ObjectType, BOUND_ENUM_DEFS, BOUND_FIELD_DEFS, BOUND_FUNCTION_DEFS, BOUND_STRUCT_DEFS};
+use argus_scripting_bind::{FfiCopyCtor, FfiDtor, FunctionType, IntegralType, ObjectType, BOUND_ENUM_DEFS, BOUND_FIELD_DEFS, BOUND_FUNCTION_DEFS, BOUND_STRUCT_DEFS};
 use std::any::TypeId;
 use std::collections::HashMap;
 use std::mem;
@@ -24,8 +24,12 @@ pub fn register_script_bindings() {
             struct_info.size,
             type_id.as_str(),
             false,
-            unsafe { mem::transmute(struct_info.copy_ctor) },
-            unsafe { mem::transmute(struct_info.dtor) },
+            unsafe {
+                mem::transmute::<Option<FfiCopyCtor>, Option<CloneProxy>>(struct_info.copy_ctor)
+            },
+            unsafe {
+                mem::transmute::<Option<FfiDtor>, Option<DropProxy>>(struct_info.dtor)
+            },
         );
 
         type_defs.insert(type_id, type_def);
@@ -108,7 +112,7 @@ pub fn register_script_bindings() {
                     false,
                     param_parsed_types,
                     ret_parsed_type,
-                    fn_info.proxy.clone(),
+                    fn_info.proxy,
                 );
                 type_def.add_static_function(fn_def)
                     .expect("Failed to bind static member function");

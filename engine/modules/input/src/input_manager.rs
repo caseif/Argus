@@ -96,7 +96,7 @@ pub fn get_input_manager() -> &'static InputManager {
 #[script_bind]
 impl InputManager {
     pub fn instance() -> &'static Self {
-        &*INPUT_MANAGER_INSTANCE
+        &INPUT_MANAGER_INSTANCE
     }
     
     pub(crate) fn init_sdl(&self) {
@@ -184,7 +184,7 @@ impl InputManager {
 
     pub fn get_global_axis_deadzone_radius(&self, axis: &GamepadAxis) -> f64 {
         let deadzone_config = self.deadzone_config.read();
-        deadzone_config.axis_radii.get(&axis)
+        deadzone_config.axis_radii.get(axis)
             .cloned()
             .unwrap_or(deadzone_config.radius.unwrap())
     }
@@ -194,12 +194,12 @@ impl InputManager {
     }
 
     pub fn clear_global_axis_deadzone_radius(&mut self, axis: &GamepadAxis) {
-        self.deadzone_config.write().axis_radii.remove(&axis);
+        self.deadzone_config.write().axis_radii.remove(axis);
     }
 
     pub fn get_global_axis_deadzone_shape(&self, axis: &GamepadAxis) -> DeadzoneShape {
         let deadzone_config = self.deadzone_config.read();
-        deadzone_config.axis_shapes.get(&axis)
+        deadzone_config.axis_shapes.get(axis)
             .cloned()
             .unwrap_or(deadzone_config.shape.unwrap())
     }
@@ -209,6 +209,6 @@ impl InputManager {
     }
 
     pub fn clear_global_axis_deadzone_shape(&mut self, axis: &GamepadAxis) {
-        self.deadzone_config.write().axis_shapes.remove(&axis);
+        self.deadzone_config.write().axis_shapes.remove(axis);
     }
 }

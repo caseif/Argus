@@ -147,7 +147,7 @@ fn check_required_extensions(entry: &ash::Entry, exts: &HashSet<&CStr>) -> bool 
                         "Encountered invalid (corrupted?) Vulkan extension name: {:?}",
                         ext.extension_name,
                     );
-                    return None;
+                    None
                 }
             }
         })
@@ -186,11 +186,11 @@ fn check_required_layers(entry: &ash::Entry, layers: &Vec<&str>) -> bool {
                     Ok(name) => Some(name),
                     Err(_) => {
                         warn!(
-                        LOGGER,
-                        "Encountered invalid (corrupted?) Vulkan extension name: {:?}",
-                        ext.layer_name,
-                    );
-                        return None;
+                            LOGGER,
+                            "Encountered invalid (corrupted?) Vulkan extension name: {:?}",
+                            ext.layer_name,
+                        );
+                        None
                     }
                 }
             })

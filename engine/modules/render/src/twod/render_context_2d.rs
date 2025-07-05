@@ -64,7 +64,7 @@ pub struct ContextObjectRef<'a, T> {
     guard: Ref<'a, String, T>,
 }
 
-impl<'a, T> Deref for ContextObjectRef<'a, T> {
+impl<T> Deref for ContextObjectRef<'_, T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -82,7 +82,7 @@ pub struct ContextObjectRefMut<'a, T> {
     guard: RefMut<'a, String, T>,
 }
 
-impl<'a, T> Deref for ContextObjectRefMut<'a, T> {
+impl<T> Deref for ContextObjectRefMut<'_, T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -90,7 +90,7 @@ impl<'a, T> Deref for ContextObjectRefMut<'a, T> {
     }
 }
 
-impl<'a, T> DerefMut for ContextObjectRefMut<'a, T> {
+impl<T> DerefMut for ContextObjectRefMut<'_, T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.guard.deref_mut()
     }

@@ -31,9 +31,9 @@ pub struct PointLight {
 impl Clone for PointLight {
     fn clone(&self) -> Self {
         Self {
-            properties: Dirtiable::new(self.properties.peek().value.clone()),
+            properties: Dirtiable::new(self.properties.peek().value),
             transform: Dirtiable::new(self.transform.peek().value.clone()),
-            render_light: self.render_light.clone(),
+            render_light: self.render_light,
         }
     }
 }

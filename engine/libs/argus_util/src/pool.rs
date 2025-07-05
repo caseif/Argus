@@ -194,7 +194,7 @@ impl<V> ValuePool<V> {
         //         and the block of memory is only ever addressed with offsets
         //         that are multiples of slot_interval.
         unsafe {
-            Some(&*chunk.as_ptr().offset(offset_in_chunk as isize).cast())
+            Some(&*chunk.as_ptr().add(offset_in_chunk).cast())
         }
     }
 

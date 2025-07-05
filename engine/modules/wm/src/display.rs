@@ -62,7 +62,7 @@ impl Display {
     }
 
     pub(crate) fn get_desktop_display_mode(&self) -> SdlDisplayMode {
-        self.handle.get_mode().unwrap().try_into().unwrap()
+        self.handle.get_mode().unwrap()
     }
 
     pub(crate) fn get_closest_display_mode(&self, mode: &DisplayMode)
@@ -83,7 +83,7 @@ impl Display {
             ptr::null_mut::<>(),
         );
         self.handle.get_closest_display_mode(&sdl_mode, false)
-            .map_err(|err| format!("Unable to get closest SDL display mode: {}", err.to_string()))
+            .map_err(|err| format!("Unable to get closest SDL display mode: {}", err))
     }
 }
 
@@ -134,12 +134,12 @@ impl TryInto<Display> for SdlDisplay {
     fn try_into(self) -> Result<Display, Self::Error> {
         let display_name = self.get_name()
             .map_err(|err| {
-                format!("Failed to query name of display: {}", err.to_string())
+                format!("Failed to query name of display: {}", err)
             })?;
 
         let bounds = self.get_bounds()
             .map_err(|err| {
-                format!("Failed to query bounds of display {}: {}", display_name, err.to_string())
+                format!("Failed to query bounds of display {}: {}", display_name, err)
             })?;
 
         let modes: Vec<DisplayMode> = self.get_fullscreen_modes()
@@ -147,7 +147,7 @@ impl TryInto<Display> for SdlDisplay {
                 format!(
                     "Failed to query display modes for display {}: {}",
                     display_name,
-                    err.to_string(),
+                    err,
                 )
             })?
             .into_iter()
@@ -179,7 +179,7 @@ fn enumerate_displays(video: &VideoSubsystem) -> Vec<Display> {
 fn update_displays() {
     let video = WindowManager::instance().get_sdl_video_ss().unwrap();
 
-    let new_displays: Vec<Display> = enumerate_displays(&video);
+    let new_displays: Vec<Display> = enumerate_displays(video);
 
     WindowManager::instance().reset_window_displays();
 

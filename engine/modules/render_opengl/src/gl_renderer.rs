@@ -52,7 +52,7 @@ impl GlRenderer {
 
     fn init(&mut self, window: &mut Window) {
         #[cfg(debug_assertions)]
-        let context_flags = GlContextFlags::ProfileCore.into();
+        let context_flags = GlContextFlags::ProfileCore;
         #[cfg(not(debug_assertions))]
         let context_flags = GlContextFlags::ProfileCore | GlContextFlags::DebugContext;
 
@@ -123,7 +123,7 @@ impl GlRenderer {
         let vsync = window.is_vsync_enabled();
         if vsync.dirty {
             WindowManager::instance().get_gl_manager().unwrap()
-                .set_swap_interval(vsync.value.then_some(1).unwrap_or(0));
+                .set_swap_interval(if vsync.value { 1 } else { 0 });
         }
 
         self.update_global_ubo();
@@ -159,7 +159,7 @@ impl GlRenderer {
         // initial render pass
         for viewport in &viewports {
             let scene_id = viewport.get_scene_id();
-            draw_scene_2d_to_framebuffer(&mut self.state, &scene_id, viewport, &resolution);
+            draw_scene_2d_to_framebuffer(&mut self.state, scene_id, viewport, &resolution);
         }
 
         // Lighting pass
@@ -183,12 +183,12 @@ impl GlRenderer {
             for src_idx in target_idx..viewports.len() {
                 let source_viewport = viewports[src_idx];
                 let source_scene_id = source_viewport.get_scene_id();
-                let source_scene = get_render_context_2d().get_scene(&source_scene_id).unwrap();
+                let source_scene = get_render_context_2d().get_scene(source_scene_id).unwrap();
                 if !source_scene.is_lighting_enabled() {
                     continue;
                 }
                 draw_lightmap_to_framebuffer(
-                    &mut self.state,
+                    &self.state,
                     source_viewport.get_id(),
                     target_viewport.get_id(),
                     target_viewport.get_viewport(),
@@ -219,7 +219,7 @@ impl GlRenderer {
             );
         }
 
-        WindowManager::instance().get_gl_manager().unwrap().swap_buffers(&window)
+        WindowManager::instance().get_gl_manager().unwrap().swap_buffers(window)
             .expect("Failed to swap buffers");
     }
 
@@ -250,7 +250,7 @@ impl GlRenderer {
             };
             let viewport_state = self.state.get_or_create_viewport_2d_state(viewport.get_id());
             recompute_2d_viewport_view_matrix(
-                &viewport.get_viewport(),
+                viewport.get_viewport(),
                 &camera_transform.inverse(),
                 resolution,
                 &mut viewport_state.view_matrix,
@@ -277,7 +277,7 @@ impl GlRenderer {
 
             if camera_transform.dirty {
                 recompute_2d_viewport_view_matrix(
-                    &viewport.get_viewport(),
+                    viewport.get_viewport(),
                     &camera_transform.value.inverse(),
                     &window.peek_resolution(),
                     &mut viewport_state.view_matrix,
@@ -289,9 +289,9 @@ impl GlRenderer {
             .map(|vp| vp.get_scene_id())
             .collect::<Vec<_>>();
         for scene_id in scene_ids {
-            compile_scene_2d(&mut self.state, &scene_id);
+            compile_scene_2d(&mut self.state, scene_id);
 
-            fill_buckets_2d(&mut self.state, &scene_id);
+            fill_buckets_2d(&mut self.state, scene_id);
 
             let mats: Vec<Resource> = self
                 .state

@@ -111,6 +111,7 @@ pub(crate) fn compile_scene_2d(renderer_state: &mut RendererState, scene_id: imp
         }
 
         obj.visited = false;
-        return true;
+
+        true
     });
 }

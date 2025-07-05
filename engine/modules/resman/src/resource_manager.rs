@@ -12,7 +12,7 @@ use dashmap::DashMap;
 use crate::*;
 use crate::mappings::USER_MAPPINGS_CSV_CONTENT;
 
-static MANAGER: LazyLock<ResourceManager> = LazyLock::new(|| ResourceManager::default());
+static MANAGER: LazyLock<ResourceManager> = LazyLock::new(ResourceManager::default);
 
 const FILE_EXTENSION_ARP: &str = "arp";
 const RESOURCES_DIR_NAME: &str = "resources";
@@ -237,7 +237,7 @@ impl ResourceManager {
         let builtin_media_types = load_arp_builtin_media_types();
         let user_media_types = load_media_types_from_csv(USER_MAPPINGS_CSV_CONTENT);
         let all_media_types: HashMap<&'static str, &'static str> = builtin_media_types.into_iter()
-            .chain(user_media_types.into_iter())
+            .chain(user_media_types)
             .collect();
 
         let mut dir_queue: Vec<(PathBuf, ResourceIdentifier)> = Vec::new();

@@ -28,7 +28,7 @@ pub(crate) struct Scene2dState {
     pub(crate) processed_objs: HashMap<Handle, ProcessedObject>,
 }
 
-impl<'a> Scene2dState {
+impl Scene2dState {
     pub(crate) fn new(scene_id: impl Into<String>) -> Self {
         Self {
             scene_id: scene_id.into(),

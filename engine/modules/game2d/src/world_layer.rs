@@ -139,14 +139,14 @@ impl World2dLayer {
     }
 
     pub fn get_static_object(&self, id: &Uuid) -> Result<&StaticObject2d, &'static str> {
-        match self.static_objects.get(&id) {
+        match self.static_objects.get(id) {
             Some(obj) => Ok(obj),
             None => Err("No such object exists for world layer (in get_static_object)"),
         }
     }
 
     pub fn get_static_object_mut(&mut self, id: &Uuid) -> Result<&mut StaticObject2d, &'static str> {
-        match self.static_objects.get_mut(&id) {
+        match self.static_objects.get_mut(id) {
             Some(obj) => Ok(obj),
             None => Err("No such object exists for world layer (in get_static_object)"),
         }
@@ -215,7 +215,7 @@ impl World2dLayer {
     }
 
     pub fn delete_static_object(&mut self, id: &Uuid) -> Result<(), &'static str> {
-        match self.static_objects.remove(&id) {
+        match self.static_objects.remove(id) {
             Some(obj) => {
                 if let Some(render_obj) = obj.common.render_obj {
                     let context = get_render_context_2d();
@@ -395,7 +395,7 @@ impl World2dLayer {
         prims.push(RenderPrimitive2d::new(vec![v1, v3, v4]));
 
         //TODO: make this reusable
-        let mat_uid = format!("internal:game2d/material/sprite_mat_{}", Uuid::new_v4().to_string());
+        let mat_uid = format!("internal:game2d/material/sprite_mat_{}", Uuid::new_v4());
         let mat = Material::new(sprite_def.atlas.clone(), vec![]);
         let mat_resource = ResourceManager::instance()
             .create_resource(
@@ -458,7 +458,7 @@ impl World2dLayer {
 
                 let mut new_obj = scene.get_object_mut(new_obj_handle)
                     .expect("Render object was missing for static object");
-                new_obj.set_transform(render_transform.into());
+                new_obj.set_transform(render_transform);
 
                 new_obj
             }
@@ -500,7 +500,7 @@ impl World2dLayer {
 
                 let mut new_obj = scene.get_object_mut(new_obj_handle)
                     .expect("Render object was missing for static object");
-                new_obj.set_transform(render_transform.into());
+                new_obj.set_transform(render_transform);
 
                 new_obj
             }
@@ -526,7 +526,7 @@ impl World2dLayer {
                 &size,
                 scale_factor,
                 1.0,
-            ).into());
+            ));
         }
 
         // upgrade reference
@@ -557,7 +557,7 @@ impl World2dLayer {
 
                 let mut new_render_light = scene.get_light_mut(new_handle)
                     .expect("Render light was missing for point light");
-                new_render_light.set_transform(render_transform.into());
+                new_render_light.set_transform(render_transform);
 
                 new_render_light
             }
@@ -584,7 +584,7 @@ impl World2dLayer {
                     &Vector2f::default(),
                     scale_factor,
                     1.0,
-                ).into()
+                )
             );
         }
     }

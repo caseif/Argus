@@ -69,6 +69,7 @@ pub enum ScreenSpaceScaleMode {
     None,
 }
 
+#[allow(clippy::derivable_impls)]
 impl Default for ScreenSpaceScaleMode {
     fn default() -> Self {
         ScreenSpaceScaleMode::NormalizeMinDimension

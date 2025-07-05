@@ -84,6 +84,7 @@ impl VulkanRenderer {
             *gfx_command_pool,
             MAX_FRAMES_IN_FLIGHT as u32,
         );
+        #[allow(clippy::needless_range_loop)]
         for i in 0..MAX_FRAMES_IN_FLIGHT {
             self.state.copy_cmd_buf[i] = Some(copy_cmd_bufs[i].clone());
         }
@@ -216,10 +217,8 @@ impl VulkanRenderer {
             destroy_scene(&self.vk_device, scene_state);
         }
 
-        for cb in self.state.copy_cmd_buf {
-            if let Some(cb) = cb {
-                destroy_command_buffer(device, cb);
-            }
+        for cb in self.state.copy_cmd_buf.into_iter().flatten() {
+            destroy_command_buffer(device, cb);
         }
 
         for (_, (comp_cmd_buf, _)) in self.state.composite_cmd_bufs {
@@ -368,7 +367,7 @@ impl VulkanRenderer {
         //timer_start = std::chrono::high_resolution_clock::now();
 
         if self.state.dirty_viewports || resolution.dirty {
-            for (_, (_, flag)) in &mut self.state.composite_cmd_bufs {
+            for (_, flag) in self.state.composite_cmd_bufs.values_mut() {
                 *flag = true;
             }
             self.state.dirty_viewports = false;
@@ -677,7 +676,7 @@ fn add_remove_state_objects(
         destroy_scene(device, scene_state);
     }
     // clear visited flag for all remaining states
-    for (_, scene_state) in &mut state.scene_states_2d {
+    for scene_state in state.scene_states_2d.values_mut() {
         scene_state.visited = false;
     }
 
@@ -690,7 +689,7 @@ fn add_remove_state_objects(
         state.dirty_viewports = true;
     }
     // clear visited flag for all remaining states
-    for (_, viewport_state) in &mut state.viewport_states_2d {
+    for viewport_state in state.viewport_states_2d.values_mut() {
         viewport_state.visited = false;
     }
 }
@@ -769,7 +768,7 @@ fn check_scene_ubo_dirty(state: &mut RendererState, scene_id: &str) {
                 write_val_to_buffer(staging_ubo, al_level.value, SHADER_UNIFORM_SCENE_AL_LEVEL_OFF);
             }*/
 
-            for (_, viewport_state) in &mut state.viewport_states_2d {
+            for viewport_state in state.viewport_states_2d.values_mut() {
                 for per_frame in &mut viewport_state.per_frame {
                     per_frame.scene_ubo_dirty = true;
                 }
@@ -802,17 +801,17 @@ fn record_scene_rebuild(
             &state.material_pipelines,
         );
 
-        for (_, bucket) in &mut scene_state.render_buckets {
+        for bucket in scene_state.render_buckets.values_mut() {
             let material_res = bucket.material_res.clone();
 
             let copy_cmd_buf = state.copy_cmd_buf[cur_frame].as_ref()
                 .expect("Copy command buffer is not initialized");
 
             let texture_uid = ResourceIdentifier::parse(
-                material_res.get::<Material>().unwrap().get_texture_uid().to_string()
+                material_res.get::<Material>().unwrap().get_texture_uid()
             ).unwrap();
 
-            if let Some(_) = state.prepared_textures.get(&texture_uid) {
+            if state.prepared_textures.get(&texture_uid).is_some() {
                 state.material_textures.insert(
                     material_res.get_prototype().uid.clone(),
                     texture_uid.clone(),
@@ -820,7 +819,7 @@ fn record_scene_rebuild(
                 continue;
             }
 
-            let texture_res = ResourceManager::instance().get_resource(&texture_uid.to_string())
+            let texture_res = ResourceManager::instance().get_resource(texture_uid.to_string())
                 .expect("Failed to load texture"); //TODO
 
             let prepared = prepare_texture(
@@ -843,8 +842,8 @@ fn record_scene_rebuild(
 }
 
 fn submit_scene_rebuild(device: &VulkanDevice, state: &mut RendererState, cur_frame: usize) {
-    let rebuild_sems = state.viewport_states_2d.iter()
-        .map(|(_, vp_state)| vp_state.per_frame[cur_frame].rebuild_semaphore)
+    let rebuild_sems = state.viewport_states_2d.values()
+        .map(|vp_state| vp_state.per_frame[cur_frame].rebuild_semaphore)
         .collect();
     queue_command_buffer_submit(
         state.submit_sender.as_ref().unwrap(),
@@ -983,7 +982,7 @@ fn composite_framebuffers(
         draw_framebuffer_to_swapchain(
             device,
             &mut viewport_state.per_frame[cur_frame],
-            &viewport.get_viewport(),
+            viewport.get_viewport(),
             state.swapchain.as_ref().unwrap(),
             state.composite_pipeline.as_ref().unwrap(),
             state.composite_cmd_bufs.get(&sc_image_index).unwrap().0.clone(),
@@ -1011,7 +1010,7 @@ fn submit_composite(
     let mut wait_stages = Vec::with_capacity(state.viewport_states_2d.len() + 1);
     wait_sems.push(swapchain.image_avail_sem[cur_frame]);
     wait_stages.push(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT);
-    for (_, viewport_state) in &state.viewport_states_2d {
+    for viewport_state in state.viewport_states_2d.values() {
         wait_sems.push(viewport_state.per_frame[cur_frame].draw_semaphore);
         wait_stages.push(vk::PipelineStageFlags::ALL_COMMANDS);
     }
@@ -1036,7 +1035,7 @@ fn present_image(state: &mut RendererState, image_index: u32, cur_frame: usize) 
     state.submit_sender.as_ref().unwrap().send(SubmitMessage::PresentImage(PresentImageParams {
         swapchain: unsafe { swapchain.get_handle() },
         wait_sems: vec![
-            swapchain.render_done_sem[cur_frame].clone(),
+            swapchain.render_done_sem[cur_frame],
         ],
         present_image_index: image_index,
         present_sem: state.present_submitted_sem[cur_frame].clone(),
@@ -1065,15 +1064,12 @@ fn start_submit_queues_thread(
             while let Ok(message) = receiver.recv() {
                 let _submit_lock = submit_mutex.lock().unwrap();
                 let _gfx_queue_lock = graphics_queue_mutex.lock().unwrap();
-                let _present_queue_lock = if let Some(present_queue_mutex) = present_queue_mutex.as_ref() {
-                    Some(present_queue_mutex.lock().unwrap())
-                } else {
-                    None
-                };
+                let _present_queue_lock = present_queue_mutex.as_ref()
+                    .map(|present_queue_mutex| present_queue_mutex.lock().unwrap());
 
                 match message {
                     SubmitMessage::PresentImage(present_params) => {
-                        if !cur_swapchain.is_some_and(|sc| sc == present_params.swapchain) {
+                        if cur_swapchain.is_none_or(|sc| sc != present_params.swapchain) {
                             continue;
                         }
 
@@ -1094,7 +1090,7 @@ fn start_submit_queues_thread(
                         present_params.present_sem.notify();
                     }
                     SubmitMessage::SubmitCommandBuffer(buf_params) => {
-                        if !cur_swapchain.is_some_and(|sc| sc == buf_params.swapchain) {
+                        if cur_swapchain.is_none_or(|sc| sc != buf_params.swapchain) {
                             continue;
                         }
 
