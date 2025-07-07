@@ -30,6 +30,7 @@ use syn::Error as CompileError;
 use syn::parse::Parser;
 
 const ATTR_SCRIPT_BIND: &str = "script_bind";
+const ATTR_NO_BIND: &str = "no_bind";
 const UNIV_ARG_IGNORE: &str = "ignore";
 const STRUCT_ARG_RENAME: &str = "rename";
 const STRUCT_ARG_REF_ONLY: &str = "ref_only";
@@ -206,8 +207,29 @@ fn handle_struct(item: &ItemStruct, args: Vec<&Meta>) -> Result<TokenStream2, Co
 
     let mut field_regs: Vec<TokenStream2> = Vec::new();
 
+    // Create a clone of the item that we can modify
+    let mut item_clone = item.clone();
+
+    // Remove #[no_bind] attributes from fields
+    for field in &mut item_clone.fields {
+        field.attrs.retain(|attr| {
+            if attr.path().segments.len() != 1 { return true; }
+            let seg = attr.path().segments.first().expect("First path segment was missing");
+            seg.ident != ATTR_NO_BIND
+        });
+    }
+
     for field in &item.fields {
         let Visibility::Public(_) = field.vis else { continue; };
+
+        // Skip fields with #[no_bind] attribute
+        if field.attrs.iter().any(|attr| {
+            if attr.path().segments.len() != 1 { return false; }
+            let seg = attr.path().segments.first().expect("First path segment was missing");
+            seg.ident == ATTR_NO_BIND
+        }) {
+            continue;
+        }
 
         let field_span = field.span();
         let field_ident = {
@@ -304,7 +326,7 @@ fn handle_struct(item: &ItemStruct, args: Vec<&Meta>) -> Result<TokenStream2, Co
 
     if allow_clone {
         Ok(quote! {
-            #item
+            #item_clone
             const _: () = {
                 #ctor_dtor_proxies_tokens
                 #script_bound_impl_tokens
@@ -315,7 +337,7 @@ fn handle_struct(item: &ItemStruct, args: Vec<&Meta>) -> Result<TokenStream2, Co
         })
     } else {
         Ok(quote! {
-            #item
+            #item_clone
             const _: () = {
                 #script_bound_impl_tokens
                 #register_struct_tokens
@@ -1211,7 +1233,7 @@ fn try_as_boxed_trait_object(ty: &Type) -> Option<&TypeTraitObject> {
 }
 
 fn parse_type(ty: &Type, flow_direction: ValueFlowDirection)
-    -> Result<(ObjectType, Vec<Type>), CompileError> {
+              -> Result<(ObjectType, Vec<Type>), CompileError> {
     parse_type_internal(ty, flow_direction, OuterTypeType::None)
 }
 
@@ -1515,7 +1537,7 @@ fn resolve_string(ty: &TypePath) -> Option<ObjectType> {
 }
 
 fn resolve_vec(ty: &TypePath, flow_direction: ValueFlowDirection)
-    -> Result<Option<(ObjectType, Option<Type>)>, CompileError> {
+               -> Result<Option<(ObjectType, Option<Type>)>, CompileError> {
     if !match_path(&ty.path, vec!["std", "collections", "Vec"]) {
         return Ok(None);
     }
@@ -1554,7 +1576,7 @@ fn resolve_vec(ty: &TypePath, flow_direction: ValueFlowDirection)
 }
 
 fn resolve_result(ty: &TypePath, flow_direction: ValueFlowDirection)
-    -> Result<Option<(ObjectType, Option<Type>, Option<Type>)>, CompileError> {
+                  -> Result<Option<(ObjectType, Option<Type>, Option<Type>)>, CompileError> {
     if !match_path(&ty.path, vec!["core", "Result"]) {
         return Ok(None);
     }
