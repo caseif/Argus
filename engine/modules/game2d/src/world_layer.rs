@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+use argus_render::common::Viewport;
+use std::collections::HashSet;
 use crate::actor::Actor2d;
 use crate::light_point::PointLight;
 use crate::sprite::Sprite;
@@ -28,6 +30,7 @@ use argus_scripting_bind::script_bind;
 use argus_util::dirtiable::ValueAndDirtyFlag;
 use argus_util::math::{Vector2f, Vector3f};
 use argus_util::pool::Handle;
+use rstar::{RTree, RTreeObject, AABB, PointDistance};
 use std::collections::{hash_map, HashMap};
 use std::ops::DerefMut;
 use uuid::Uuid;
@@ -38,6 +41,46 @@ const LAYER_PREFIX: &str = "_worldlayer_";
 
 //const LAST_COLLISIONS: LazyLock<Mutex<HashMap<(Uuid, Uuid), CollisionResolution>>> =
 //    LazyLock::new(|| Mutex::new(HashMap::new()));
+
+/// A spatial point that wraps a UUID and implements the necessary traits for rstar.
+#[derive(Debug, Clone, Copy)]
+struct SpatialPoint {
+    /// The UUID of the object
+    uuid: Uuid,
+    /// The position of the object in 2D space
+    min_extent: [f32; 2],
+    max_extent: [f32; 2],
+}
+
+// Implement PartialEq and Eq to compare only by UUID
+impl PartialEq for SpatialPoint {
+    fn eq(&self, other: &Self) -> bool {
+        self.uuid == other.uuid
+    }
+}
+
+impl Eq for SpatialPoint {}
+
+impl RTreeObject for SpatialPoint {
+    type Envelope = AABB<[f32; 2]>;
+
+    fn envelope(&self) -> Self::Envelope {
+        AABB::from_points(&[self.min_extent, self.max_extent])
+    }
+}
+
+impl PointDistance for SpatialPoint {
+    fn distance_2(&self, point: &[f32; 2]) -> f32 {
+        // Calculate the closest point on the AABB to the given point
+        let closest_x = point[0].max(self.min_extent[0]).min(self.max_extent[0]);
+        let closest_y = point[1].max(self.min_extent[1]).min(self.max_extent[1]);
+
+        // Calculate the squared distance from the closest point to the given point
+        let dx = closest_x - point[0];
+        let dy = closest_y - point[1];
+        dx * dx + dy * dy
+    }
+}
 
 #[script_bind(ref_only)]
 pub struct World2dLayer {
@@ -53,6 +96,11 @@ pub struct World2dLayer {
     pub(crate) static_objects: HashMap<Uuid, StaticObject2d>,
     pub(crate) actors: HashMap<Uuid, Actor2d>,
     point_lights: HashMap<Uuid, PointLight>,
+
+    // Quadtrees for spatial partitioning
+    static_objects_quadtree: RTree<SpatialPoint>,
+    actors_quadtree: RTree<SpatialPoint>,
+    point_lights_quadtree: RTree<SpatialPoint>,
 
     collision_layers: HashMap<String, u64>,
     next_collision_layer_bit: u64,
@@ -93,6 +141,9 @@ impl World2dLayer {
             static_objects: Default::default(),
             actors: Default::default(),
             point_lights: Default::default(),
+            static_objects_quadtree: RTree::new(),
+            actors_quadtree: RTree::new(),
+            point_lights_quadtree: RTree::new(),
             collision_layers: Default::default(),
             next_collision_layer_bit: 1,
         };
@@ -182,12 +233,25 @@ impl World2dLayer {
             size,
             z_index,
             can_occlude_light,
-            transform,
+            transform.clone(),
             collision_bit,
             collision_bitmask,
         );
         let id = Uuid::new_v4();
         self.static_objects.insert(id, obj);
+
+        // Add to quadtree
+        let position = transform.translation;
+        // Create a small AABB around the position
+        let half_size = 0.1; // Small size for point-like objects
+        let min = [position.x - half_size, position.y - half_size];
+        let max = [position.x + half_size, position.y + half_size];
+        self.static_objects_quadtree.insert(SpatialPoint { 
+            uuid: id, 
+            min_extent: min,
+            max_extent: max
+        });
+
         Ok(id)
     }
 
@@ -221,6 +285,15 @@ impl World2dLayer {
                     let context = get_render_context_2d();
                     context.get_scene_mut(self.get_scene_id()).unwrap().remove_object(render_obj);
                 }
+
+                // Remove from quadtree
+                self.static_objects_quadtree.remove(&SpatialPoint {
+                    uuid: *id,
+                    // The extents don't matter for removal since we're using the uuid for equality
+                    min_extent: [0.0, 0.0],
+                    max_extent: [0.0, 0.0],
+                });
+
                 Ok(())
             }
             None => Err("No such object exists for world layer (in delete_static_object)"),
@@ -272,7 +345,22 @@ impl World2dLayer {
             collision_bitmask,
         );
         let id = Uuid::new_v4();
+
+        // Get the position from the actor's transform
+        let position = actor.get_position();
         self.actors.insert(id, actor);
+
+        // Add to quadtree
+        // Create a small AABB around the position
+        let half_size = 0.1; // Small size for point-like objects
+        let min = [position.x - half_size, position.y - half_size];
+        let max = [position.x + half_size, position.y + half_size];
+        self.actors_quadtree.insert(SpatialPoint {
+            uuid: id,
+            min_extent: min,
+            max_extent: max,
+        });
+
         Ok(id)
     }
 
@@ -283,6 +371,14 @@ impl World2dLayer {
                     let context = get_render_context_2d();
                     context.get_scene_mut(self.get_scene_id()).unwrap().remove_object(render_obj);
                 }
+
+                // Remove from quadtree
+                self.actors_quadtree.remove(&SpatialPoint {
+                    uuid: *id,
+                    // The extents don't matter for removal since we're using the uuid for equality
+                    min_extent: [0.0, 0.0],
+                    max_extent: [0.0, 0.0],
+                });
 
                 Ok(())
             }
@@ -306,7 +402,16 @@ impl World2dLayer {
 
     pub fn add_point_light(&mut self, light: PointLight) -> Result<Uuid, String> {
         let uuid = Uuid::new_v4();
+
+        // get the position from the light's transform
+        let position = light.transform.peek().value.translation;
         self.point_lights.insert(uuid, light);
+
+        self.point_lights_quadtree.insert(SpatialPoint {
+            uuid,
+            min_extent: position.into(),
+            max_extent: position.into(),
+        });
 
         Ok(uuid)
     }
@@ -319,13 +424,103 @@ impl World2dLayer {
                     context.get_scene_mut(self.get_scene_id()).unwrap().remove_light(render_light);
                 }
 
+                // Remove from quadtree
+                self.point_lights_quadtree.remove(&SpatialPoint {
+                    uuid: *id,
+                    // The extents don't matter for removal since we're using the uuid for equality
+                    min_extent: [0.0, 0.0],
+                    max_extent: [0.0, 0.0],
+                });
+
                 Ok(())
             }
             None => Err("No such point light exists for world layer (in delete_point_light)"),
         }
     }
+    // Helper methods for updating quadtrees
 
-    fn get_render_transform(
+    /// Updates the position of a static object in the quadtree
+    pub fn update_static_object_in_quadtree(&mut self, id: &Uuid) {
+        if let Some(obj) = self.static_objects.get(id) {
+            self.static_objects_quadtree.remove(&SpatialPoint {
+                uuid: *id,
+                min_extent: [0.0, 0.0],
+                max_extent: [0.0, 0.0],
+            });
+
+            let position = obj.transform.translation;
+            self.static_objects_quadtree.insert(SpatialPoint {
+                uuid: *id,
+                min_extent: position.into(),
+                max_extent: position.into(),
+            });
+        }
+    }
+
+    /// Updates the position of an actor in the quadtree
+    pub fn update_actor_in_quadtree(&mut self, id: &Uuid) {
+        if let Some(actor) = self.actors.get(id) {
+            self.actors_quadtree.remove(&SpatialPoint {
+                uuid: *id,
+                min_extent: [0.0, 0.0],
+                max_extent: [0.0, 0.0],
+            });
+
+            let position = actor.get_position();
+            self.actors_quadtree.insert(SpatialPoint {
+                uuid: *id,
+                min_extent: position.into(),
+                max_extent: position.into(),
+            });
+        }
+    }
+
+    /// Updates the position of a point light in the quadtree.
+    pub fn update_point_light_in_quadtree(&mut self, id: &Uuid) {
+        if let Some(light) = self.point_lights.get(id) {
+            self.point_lights_quadtree.remove(&SpatialPoint {
+                uuid: *id,
+                min_extent: [0.0, 0.0],
+                max_extent: [0.0, 0.0],
+            });
+
+            let position = light.transform.peek().value.translation;
+            self.point_lights_quadtree.insert(SpatialPoint {
+                uuid: *id,
+                min_extent: position.into(),
+                max_extent: position.into(),
+            });
+        }
+    }
+
+    /// Finds static objects within a certain radius of a point.
+    pub fn find_static_objects(&self, center: Vector2f, radius: f32) -> Vec<Uuid> {
+        let point_arr = [center.x, center.y];
+        self.static_objects_quadtree
+            .locate_within_distance(point_arr, radius * radius)
+            .map(|p| p.uuid)
+            .collect()
+    }
+
+    /// Finds actors within a certain radius of a point.
+    pub fn find_actors(&self, center: Vector2f, radius: f32) -> Vec<Uuid> {
+        let point_arr = [center.x, center.y];
+        self.actors_quadtree
+            .locate_within_distance(point_arr, radius * radius)
+            .map(|p| p.uuid)
+            .collect()
+    }
+
+    /// Finds point lights within a certain radius of a point.
+    pub fn find_point_lights(&self, center: Vector2f, radius: f32) -> Vec<Uuid> {
+        let point_arr = [center.x, center.y];
+        self.point_lights_quadtree
+            .locate_within_distance(point_arr, radius * radius)
+            .map(|p| p.uuid)
+            .collect()
+    }
+
+    fn get_scaled_transform(
         world_transform: &Transform2d,
         _world_size: &Vector2f,
         world_scale_factor: f32,
@@ -435,7 +630,7 @@ impl World2dLayer {
                 let size = static_obj.get_size();
                 let z_index = static_obj.get_z_index();
                 let can_occlude_light = static_obj.get_can_occlude_light();
-                let render_transform = Self::get_render_transform(
+                let render_transform = Self::get_scaled_transform(
                     &static_obj.get_transform(),
                     &static_obj.common.size,
                     scale_factor,
@@ -467,6 +662,9 @@ impl World2dLayer {
         // upgrade object reference to mutable
         let static_obj = self.static_objects.get_mut(id).expect("Static object was missing");
         static_obj.get_sprite_mut().update_current_frame(&mut render_obj);
+
+        // Update the quadtree with the current position
+        self.update_static_object_in_quadtree(id);
     }
 
     fn render_actor(&mut self, scene: &mut Scene2d, id: &Uuid, scale_factor: f32) {
@@ -477,7 +675,7 @@ impl World2dLayer {
             None => {
                 let size = actor.get_size();
                 let z_index = actor.get_z_index();
-                let render_transform = Self::get_render_transform(
+                let render_transform = Self::get_scaled_transform(
                     &actor.get_transform(),
                     &size,
                     scale_factor,
@@ -521,12 +719,15 @@ impl World2dLayer {
 
         let size = Vector2f::default(); //actor.get_size();
         if read_transform.dirty {
-            render_obj.set_transform(Self::get_render_transform(
+            render_obj.set_transform(Self::get_scaled_transform(
                 &read_transform.value,
                 &size,
                 scale_factor,
                 1.0,
             ));
+
+            // Update the quadtree with the current position
+            self.update_actor_in_quadtree(id);
         }
 
         // upgrade reference
@@ -540,7 +741,7 @@ impl World2dLayer {
         let mut render_light = match light.render_light {
             Some(light_handle) => scene.get_light_mut(light_handle).unwrap(),
             None => {
-                let render_transform = Self::get_render_transform(
+                let render_transform = Self::get_scaled_transform(
                     &light.transform.peek().value,
                     &Vector2f::default(),
                     scale_factor,
@@ -579,14 +780,25 @@ impl World2dLayer {
 
         if read_transform.dirty {
             render_light.set_transform(
-                Self::get_render_transform(
+                Self::get_scaled_transform(
                     &read_transform.value,
                     &Vector2f::default(),
                     scale_factor,
                     1.0,
                 )
             );
+
+            // Update the quadtree with the current position
+            self.update_point_light_in_quadtree(id);
         }
+    }
+
+    pub(crate) fn hide_point_light(&self, scene: &mut Scene2d, id: &Uuid) {
+        let light = self.point_lights.get(id).expect("Point light was missing");
+
+        if let Some(render_light) = light.render_light {
+            scene.remove_light(render_light);
+        };
     }
 
     pub(crate) fn render(
@@ -598,20 +810,26 @@ impl World2dLayer {
     ) {
         let context = get_render_context_2d();
 
+        let layer_camera_transform = Self::get_scaled_transform(
+            &camera_transform.value,
+            &Vector2f::default(),
+            1.0,
+            self.parallax_coeff,
+        );
+        let layer_render_transform = Self::get_scaled_transform(
+            &camera_transform.value,
+            &Vector2f::default(),
+            scale_factor,
+            self.parallax_coeff,
+        );
+
         if camera_transform.dirty {
             context
                 .get_scene_mut(&self.scene_id)
                 .unwrap()
                 .get_camera_mut(self.get_render_camera_id())
                 .unwrap()
-                .set_transform(
-                    Self::get_render_transform(
-                        &camera_transform.value,
-                        &Vector2f::default(),
-                        scale_factor,
-                        self.parallax_coeff,
-                    )
-                );
+                .set_transform(layer_render_transform);
         }
 
         let mut scene = context.get_scene_mut(self.get_scene_id()).unwrap();
@@ -643,8 +861,19 @@ impl World2dLayer {
         for actor_id in actors_to_render {
             self.render_actor(scene.deref_mut(), &actor_id, scale_factor);
         }
-        
-        let point_lights_to_render = self.point_lights.keys().cloned().collect::<Vec<_>>();
+
+        let point_lights_to_render: HashSet<_> = self.point_lights_quadtree.locate_within_distance(
+            layer_camera_transform.translation.clone().into(),
+            20.0 * 20.0,
+        )
+            .map(|sp| sp.uuid)
+            .collect();
+        for (light_id, _) in &self.point_lights {
+            if !point_lights_to_render.contains(&light_id) {
+                //TODO: currently this triggers a deadlock
+                //self.hide_point_light(scene.deref_mut(), &light_id);
+            }
+        }
         for light_id in point_lights_to_render {
             self.render_point_light(scene.deref_mut(), &light_id, scale_factor);
         }
