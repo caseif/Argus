@@ -31,7 +31,7 @@ use argus_render::common::{AttachedViewport, Matrix4x4, RenderCanvas, Transform2
 use argus_render::constants::*;
 use argus_render::twod::get_render_context_2d;
 use argus_resman::Resource;
-use argus_util::math::Vector2u;
+use argus_util::math::{Vector2f, Vector2u};
 use argus_wm::*;
 use std::ffi::CStr;
 use std::ptr;
@@ -58,7 +58,7 @@ impl GlRenderer {
 
         let gl_mgr = WindowManager::instance().get_gl_manager()
             .expect("Failed to get OpenGL manager");
-        
+
         self.state.gl_context =
             Some(gl_mgr.create_context(window, 3, 3, context_flags).unwrap());
         self.state.gl_context.as_ref().unwrap().make_current(window)
@@ -400,17 +400,19 @@ fn recompute_2d_viewport_view_matrix(
     let center_x = (viewport.left + viewport.right) / 2.0;
     let center_y = (viewport.top + viewport.bottom) / 2.0;
 
-    let cur_translation = &transform.translation;
+    let mut adj_transform = transform.clone();
+    adj_transform.translation.x += (viewport.right - viewport.left) / 2.0;
+    adj_transform.translation.y += (viewport.bottom - viewport.top) / 2.0;
 
     let anchor_mat_1 = Matrix4x4::from_row_major([
         1.0,
         0.0,
         0.0,
-        -center_x + cur_translation.x,
+        -center_x + adj_transform.translation.x,
         0.0,
         1.0,
         0.0,
-        -center_y + cur_translation.y,
+        -center_y + adj_transform.translation.y,
         0.0,
         0.0,
         1.0,
@@ -424,11 +426,11 @@ fn recompute_2d_viewport_view_matrix(
         1.0,
         0.0,
         0.0,
-        center_x - cur_translation.x,
+        center_x - adj_transform.translation.x,
         0.0,
         1.0,
         0.0,
-        center_y - cur_translation.y,
+        center_y - adj_transform.translation.y,
         0.0,
         0.0,
         1.0,
@@ -440,10 +442,10 @@ fn recompute_2d_viewport_view_matrix(
     ]);
 
     let view_mat =
-        transform.get_translation_matrix() *
+        adj_transform.get_translation_matrix() *
         anchor_mat_2 *
-        transform.get_rotation_matrix() *
-        transform.get_scale_matrix() *
+            adj_transform.get_rotation_matrix() *
+            adj_transform.get_scale_matrix() *
         anchor_mat_1;
 
     *dest = compute_proj_matrix(resolution.x, resolution.y) * view_mat;
