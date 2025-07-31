@@ -1,5 +1,18 @@
 #version 460 core
 
+struct Light2D {
+    vec4 color;
+    vec4 position;
+    float intensity;
+    float falloff_gradient;
+    float falloff_distance;
+    float falloff_buffer;
+    float shadow_falloff_gradient;
+    float shadow_falloff_distance;
+    int type;
+    bool is_occludable;
+};
+
 layout(location = 0) in vec2 in_Position;
 layout(location = 1) in vec2 in_TexCoord;
 
@@ -8,6 +21,8 @@ out vec2 TexCoord;
 
 layout(std140, binding = 3) uniform Viewport {
     mat4 ViewMatrix;
+    uint LightCount;
+    Light2D Lights[32];
 } viewport;
 
 void main() {

@@ -58,15 +58,15 @@ pub const SHADER_UNIFORM_SCENE_AL_COLOR: &str = "AmbientLightColor";
 pub const SHADER_UNIFORM_SCENE_AL_COLOR_OFF: u32 = 0;
 pub const SHADER_UNIFORM_SCENE_AL_LEVEL: &str = "AmbientLightLevel";
 pub const SHADER_UNIFORM_SCENE_AL_LEVEL_OFF: u32 = 16;
-pub const SHADER_UNIFORM_SCENE_LIGHT_COUNT: &str = "LightCount";
-pub const SHADER_UNIFORM_SCENE_LIGHT_COUNT_OFF: u32 = 20;
-pub const SHADER_UNIFORM_SCENE_LIGHTS: &str = "Lights";
-pub const SHADER_UNIFORM_SCENE_LIGHTS_OFF: u32 = 32;
 
 pub const SHADER_UBO_VIEWPORT: &str = "Viewport";
-pub const SHADER_UBO_VIEWPORT_LEN: u32 = 64;
+pub const SHADER_UBO_VIEWPORT_LEN: u32 = 64 + 16 + (SHADER_STRUCT_LIGHT2D_LEN * LIGHTS_MAX);
 pub const SHADER_UNIFORM_VIEWPORT_VM: &str = "ViewMatrix";
 pub const SHADER_UNIFORM_VIEWPORT_VM_OFF: u32 = 0;
+pub const SHADER_UNIFORM_VIEWPORT_LIGHT_COUNT: &str = "LightCount";
+pub const SHADER_UNIFORM_VIEWPORT_LIGHT_COUNT_OFF: u32 = 64;
+pub const SHADER_UNIFORM_VIEWPORT_LIGHTS: &str = "Lights";
+pub const SHADER_UNIFORM_VIEWPORT_LIGHTS_OFF: u32 = 80;
 
 pub const SHADER_UBO_OBJ: &str = "Object";
 pub const SHADER_UBO_OBJ_LEN: u32 = 16;

@@ -34,9 +34,13 @@ layout(binding = 0) uniform usamplerBuffer u_RayBuffer;
 layout(std140, binding = 0) uniform Scene {
     vec4 AmbientLightColor;
     float AmbientLightLevel;
+} scene;
+
+layout(std140, binding = 1) uniform Viewport {
+    mat4 ViewMatrix;
     uint LightCount;
     Light2D Lights[32];
-} scene;
+} viewport;
 
 // Applies a power-like function with a non-integer exponent without doing an
 // expensive pow() operation.
@@ -83,11 +87,11 @@ void main() {
     vec3 light_sum = vec3(scene.AmbientLightColor.rgb * scene.AmbientLightLevel);
 
     for (int i = 0; i < LIGHTS_MAX; i++) {
-        if (i >= scene.LightCount) {
+        if (i >= viewport.LightCount) {
             break;
         }
 
-        Light2D light = scene.Lights[i];
+        Light2D light = viewport.Lights[i];
         vec2 light_pos = light.position.xy;
 
         vec2 offset = WorldPos.xy - light.position.xy;

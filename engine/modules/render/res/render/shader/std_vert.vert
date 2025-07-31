@@ -1,11 +1,26 @@
 #version 460 core
 
+struct Light2D {
+    vec4 color;
+    vec4 position;
+    float intensity;
+    float falloff_gradient;
+    float falloff_distance;
+    float falloff_buffer;
+    float shadow_falloff_gradient;
+    float shadow_falloff_distance;
+    int type;
+    bool is_occludable;
+};
+
 layout(std140, binding = 1) uniform Global {
     float Time;
 } global;
 
 layout(std140, binding = 3) uniform Viewport {
     mat4 ViewMatrix;
+    uint LightCount;
+    Light2D Lights[32];
 } viewport;
 
 layout(std140, binding = 4) uniform Object {

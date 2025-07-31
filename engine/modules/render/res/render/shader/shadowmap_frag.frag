@@ -13,10 +13,10 @@ struct Light2D {
     vec4 color;
     vec4 position;
     float intensity;
-    uint falloff_gradient;
+    float falloff_gradient;
     float falloff_distance;
     float falloff_buffer;
-    uint shadow_falloff_gradient;
+    float shadow_falloff_gradient;
     float shadow_falloff_distance;
     int type;
     bool is_occludable;
@@ -33,16 +33,16 @@ layout(binding = 0, r32ui) uniform uimageBuffer u_RayBuffer;
 layout(std140, binding = 2) uniform Scene {
     vec4 AmbientLightColor;
     float AmbientLightLevel;
-    int LightCount;
-    Light2D Lights[32];
 } scene;
 
 layout(std140, binding = 3) uniform Viewport {
     mat4 ViewMatrix;
+    uint LightCount;
+    Light2D Lights[32];
 } viewport;
 
 void main() {
-    if (scene.LightCount == 0) {
+    if (viewport.LightCount == 0) {
         discard;
     }
 
@@ -54,11 +54,11 @@ void main() {
     uint ray_count = 720;
 
     for (int i = 0; i < LIGHTS_MAX; i++) {
-        if (i >= scene.LightCount) {
+        if (i >= viewport.LightCount) {
             break;
         }
 
-        Light2D light = scene.Lights[i];
+        Light2D light = viewport.Lights[i];
         vec2 light_pos = light.position.xy;
         vec2 offset = WorldPos.xy - light_pos;
 

@@ -42,7 +42,7 @@ struct TransformedViewport {
 
 #[repr(C)]
 #[derive(Clone, Default)]
-struct Std140Light2D {
+pub(crate) struct Std140Light2D {
     // offset 0
     color: [f32; 4],
     // offset 16
@@ -153,54 +153,17 @@ fn update_scene_ubo_2d(scene_state: &mut Scene2dState) {
         let color: [f32; 4] = [al_color.value.x, al_color.value.y, al_color.value.z, 1f32];
         ubo.write_val(&color, SHADER_UNIFORM_SCENE_AL_COLOR_OFF as usize);
     }
-
-    let mut shader_lights_arr: [Std140Light2D; LIGHTS_MAX as usize] = Default::default();
-
-    //scene_state.scene.lock_render_state();
-
-    let mut scene = get_render_context_2d().get_scene_mut(&scene_state.scene_id).unwrap();
-    let light_handles = scene.get_light_handles().clone();
-    let lights_count = light_handles.len();
-
-    for (i, light_handle) in light_handles.into_iter().enumerate() {
-        let light = scene.get_light_mut(light_handle).unwrap();
-
-        let pos = &light.get_transform().translation;
-        let props = light.get_properties();
-        let color = props.color;
-        shader_lights_arr[i] = Std140Light2D {
-            color: [color.x, color.y, color.z, 1.0],
-            position: [pos.x, pos.y, 0.0, 1.0],
-            intensity: props.intensity,
-            falloff_gradient: props.falloff_gradient,
-            falloff_distance: props.falloff_distance,
-            falloff_buffer: props.falloff_buffer,
-            shadow_falloff_gradient: props.shadow_falloff_gradient,
-            shadow_falloff_distance: props.shadow_falloff_distance,
-            ty: props.ty as i32,
-            is_occludable: props.is_occludable,
-        };
-    }
-
-    ubo.write_val(
-        &lights_count,
-        SHADER_UNIFORM_SCENE_LIGHT_COUNT_OFF as usize,
-    );
-
-    //scene_state.scene.unlock_render_state();
-
-    ubo.write_val(&shader_lights_arr, SHADER_UNIFORM_SCENE_LIGHTS_OFF as usize);
 }
 
-fn update_viewport_ubo(viewport_state: &mut ViewportState) {
-    let mut must_update = viewport_state.view_matrix_dirty;
+fn update_viewport_ubo(scene_state: &Scene2dState, viewport_state: &mut ViewportState) {
+    let mut must_update = viewport_state.view_matrix_dirty || true; //TODO
 
     let ubo = viewport_state.buffers.ubo.get_or_insert_with(|| {
         must_update = true;
         GlBuffer::new(
             GL_UNIFORM_BUFFER,
             SHADER_UBO_VIEWPORT_LEN as usize,
-            GL_STATIC_DRAW,
+            GL_DYNAMIC_DRAW,
             true,
             false,
         )
@@ -211,6 +174,38 @@ fn update_viewport_ubo(viewport_state: &mut ViewportState) {
             &viewport_state.view_matrix.cells,
             SHADER_UNIFORM_VIEWPORT_VM_OFF as usize,
         );
+
+        let mut scene = get_render_context_2d().get_scene_mut(&scene_state.scene_id).unwrap();
+        let light_handles = scene.get_light_handles().clone();
+        let lights_count = light_handles.len();
+
+        let mut shader_lights_arr: [Std140Light2D; LIGHTS_MAX as usize] = Default::default();
+        for (i, light_handle) in light_handles.into_iter().enumerate() {
+            let light = scene.get_light_mut(light_handle).unwrap();
+
+            let pos = &light.get_transform().translation;
+            let props = light.get_properties();
+            let color = props.color;
+            shader_lights_arr[i] = Std140Light2D {
+                color: [color.x, color.y, color.z, 1.0],
+                position: [pos.x, pos.y, 0.0, 1.0],
+                intensity: props.intensity,
+                falloff_gradient: props.falloff_gradient,
+                falloff_distance: props.falloff_distance,
+                falloff_buffer: props.falloff_buffer,
+                shadow_falloff_gradient: props.shadow_falloff_gradient,
+                shadow_falloff_distance: props.shadow_falloff_distance,
+                ty: props.ty as i32,
+                is_occludable: props.is_occludable,
+            };
+        }
+
+        ubo.write_val(
+            &lights_count,
+            SHADER_UNIFORM_VIEWPORT_LIGHT_COUNT_OFF as usize,
+        );
+
+        ubo.write_val(&shader_lights_arr, SHADER_UNIFORM_VIEWPORT_LIGHTS_OFF as usize);
     }
 }
 
@@ -266,11 +261,11 @@ pub(crate) fn draw_scene_2d_to_framebuffer(
         renderer_state.scene_states_2d.get_mut(scene_id.as_ref()).unwrap()
     );
 
-    //let viewport_state = renderer_state.viewport_states_2d
-    //    .get_mut(&att_viewport.get_id()).unwrap();
     // set viewport uniforms
-    update_viewport_ubo(renderer_state.viewport_states_2d
-        .get_mut(&att_viewport.get_id()).unwrap());
+    update_viewport_ubo(
+        renderer_state.scene_states_2d.get(scene_id.as_ref()).expect("Scene state was missing!"),
+        renderer_state.viewport_states_2d.get_mut(&att_viewport.get_id()).unwrap(),
+    );
 
     let scene_state = renderer_state.scene_states_2d.get(scene_id.as_ref()).unwrap();
 
