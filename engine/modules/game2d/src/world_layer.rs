@@ -100,7 +100,6 @@ pub struct World2dLayer {
     // Quadtrees for spatial partitioning
     static_objects_quadtree: RTree<SpatialPoint>,
     actors_quadtree: RTree<SpatialPoint>,
-    point_lights_quadtree: RTree<SpatialPoint>,
 
     collision_layers: HashMap<String, u64>,
     next_collision_layer_bit: u64,
@@ -143,7 +142,6 @@ impl World2dLayer {
             point_lights: Default::default(),
             static_objects_quadtree: RTree::new(),
             actors_quadtree: RTree::new(),
-            point_lights_quadtree: RTree::new(),
             collision_layers: Default::default(),
             next_collision_layer_bit: 1,
         };
@@ -407,12 +405,6 @@ impl World2dLayer {
         let position = light.transform.peek().value.translation;
         self.point_lights.insert(uuid, light);
 
-        self.point_lights_quadtree.insert(SpatialPoint {
-            uuid,
-            min_extent: position.into(),
-            max_extent: position.into(),
-        });
-
         Ok(uuid)
     }
 
@@ -423,14 +415,6 @@ impl World2dLayer {
                     let context = get_render_context_2d();
                     context.get_scene_mut(self.get_scene_id()).unwrap().remove_light(render_light);
                 }
-
-                // Remove from quadtree
-                self.point_lights_quadtree.remove(&SpatialPoint {
-                    uuid: *id,
-                    // The extents don't matter for removal since we're using the uuid for equality
-                    min_extent: [0.0, 0.0],
-                    max_extent: [0.0, 0.0],
-                });
 
                 Ok(())
             }
@@ -475,24 +459,6 @@ impl World2dLayer {
         }
     }
 
-    /// Updates the position of a point light in the quadtree.
-    pub fn update_point_light_in_quadtree(&mut self, id: &Uuid) {
-        if let Some(light) = self.point_lights.get(id) {
-            self.point_lights_quadtree.remove(&SpatialPoint {
-                uuid: *id,
-                min_extent: [0.0, 0.0],
-                max_extent: [0.0, 0.0],
-            });
-
-            let position = light.transform.peek().value.translation;
-            self.point_lights_quadtree.insert(SpatialPoint {
-                uuid: *id,
-                min_extent: position.into(),
-                max_extent: position.into(),
-            });
-        }
-    }
-
     /// Finds static objects within a certain radius of a point.
     pub fn find_static_objects(&self, center: Vector2f, radius: f32) -> Vec<Uuid> {
         let point_arr = [center.x, center.y];
@@ -506,15 +472,6 @@ impl World2dLayer {
     pub fn find_actors(&self, center: Vector2f, radius: f32) -> Vec<Uuid> {
         let point_arr = [center.x, center.y];
         self.actors_quadtree
-            .locate_within_distance(point_arr, radius * radius)
-            .map(|p| p.uuid)
-            .collect()
-    }
-
-    /// Finds point lights within a certain radius of a point.
-    pub fn find_point_lights(&self, center: Vector2f, radius: f32) -> Vec<Uuid> {
-        let point_arr = [center.x, center.y];
-        self.point_lights_quadtree
             .locate_within_distance(point_arr, radius * radius)
             .map(|p| p.uuid)
             .collect()
@@ -787,9 +744,6 @@ impl World2dLayer {
                     1.0,
                 )
             );
-
-            // Update the quadtree with the current position
-            self.update_point_light_in_quadtree(id);
         }
     }
 
@@ -862,19 +816,8 @@ impl World2dLayer {
             self.render_actor(scene.deref_mut(), &actor_id, scale_factor);
         }
 
-        let point_lights_to_render: HashSet<_> = self.point_lights_quadtree.locate_within_distance(
-            layer_camera_transform.translation.clone().into(),
-            20.0 * 20.0,
-        )
-            .map(|sp| sp.uuid)
-            .collect();
-        for (light_id, _) in &self.point_lights {
-            if !point_lights_to_render.contains(&light_id) {
-                //TODO: currently this triggers a deadlock
-                //self.hide_point_light(scene.deref_mut(), &light_id);
-            }
-        }
-        for light_id in point_lights_to_render {
+        let point_lights_to_render = self.point_lights.keys().cloned().collect::<Vec<_>>();
+        for light_id in &point_lights_to_render {
             self.render_point_light(scene.deref_mut(), &light_id, scale_factor);
         }
     }
