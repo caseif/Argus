@@ -51,6 +51,11 @@ impl RenderCanvas {
     }
 
     #[must_use]
+    pub fn get_viewports_2d_mut(&mut self) -> Vec<&mut AttachedViewport2d> {
+        self.viewports_2d.values_mut().collect()
+    }
+
+    #[must_use]
     pub fn get_viewport(&self, id: u32) -> Option<&AttachedViewport2d> {
         self.viewports_2d.get(&id)
     }

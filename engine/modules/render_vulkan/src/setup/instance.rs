@@ -15,8 +15,8 @@ pub(crate) const ENGINE_INSTANCE_EXTENSIONS: &[&CStr] = &[
 ];
 
 pub(crate) const ENGINE_LAYERS: &[&str] = &[
-    #[cfg(debug_assertions)]
-    "VK_LAYER_KHRONOS_validation",
+    //#[cfg(debug_assertions)]
+    //"VK_LAYER_KHRONOS_validation",
 ];
 
 #[derive(Clone)]

@@ -29,7 +29,7 @@ use argus_core::ScreenSpaceScaleMode;
 use argus_logging::info;
 use argus_render::common::{AttachedViewport, Matrix4x4, RenderCanvas, Transform2d, Viewport};
 use argus_render::constants::*;
-use argus_render::twod::get_render_context_2d;
+use argus_render::twod::{get_render_context_2d, ViewportYAxisConvention};
 use argus_resman::Resource;
 use argus_util::math::{Vector2f, Vector2u};
 use argus_wm::*;
@@ -116,7 +116,7 @@ impl GlRenderer {
         }
 
         if !self.state.are_viewports_initialized {
-            self.update_view_matrix(window, &resolution.value);
+            self.update_view_states(window, &resolution.value);
             self.state.are_viewports_initialized = true;
         }
 
@@ -152,14 +152,11 @@ impl GlRenderer {
             .downcast_mut::<RenderCanvas>()
             .expect("Canvas object from window was unexpected type!");
 
-        let mut viewports = canvas.get_viewports_2d();
-        viewports.sort_by_key(|vp| vp.get_z_index());
-        let viewports = viewports;
+        canvas.get_viewports_2d().sort_by_key(|vp| vp.get_z_index());
 
         // initial render pass
-        for viewport in &viewports {
-            let scene_id = viewport.get_scene_id();
-            draw_scene_2d_to_framebuffer(&mut self.state, scene_id, viewport, &resolution);
+        for viewport in canvas.get_viewports_2d_mut() {
+            draw_scene_2d_to_framebuffer(&mut self.state, viewport, &resolution);
         }
 
         // Lighting pass
@@ -177,6 +174,7 @@ impl GlRenderer {
         //
         // In effect, the lightmap of a given viewport A will be applied to all
         // viewports behind A.
+        let viewports = canvas.get_viewports_2d();
         for target_idx in 0..viewports.len() {
             let target_viewport = viewports[target_idx];
 
@@ -228,10 +226,10 @@ impl GlRenderer {
         window: &mut Window,
         resolution: &Vector2u
     ) {
-        self.update_view_matrix(window, resolution);
+        self.update_view_states(window, resolution);
     }
 
-    pub(crate) fn update_view_matrix(
+    pub(crate) fn update_view_states(
         &mut self,
         window: &mut Window,
         resolution: &Vector2u
@@ -242,46 +240,33 @@ impl GlRenderer {
             .downcast_mut::<RenderCanvas>()
             .expect("Canvas object from window was unexpected type!");
 
-        for viewport in &canvas.get_viewports_2d() {
-            let camera_transform = {
-                let scene = get_render_context_2d().get_scene(viewport.get_scene_id()).unwrap();
-                scene.get_camera(viewport.get_camera_id()).unwrap()
-                    .peek_transform()
-            };
-            let viewport_state = self.state.get_or_create_viewport_2d_state(viewport.get_id());
-            recompute_2d_viewport_view_matrix(
-                viewport.get_viewport(),
-                &camera_transform.inverse(),
-                resolution,
-                &mut viewport_state.view_matrix,
-            );
-            viewport_state.view_matrix_dirty = true;
+        for viewport in canvas.get_viewports_2d_mut().iter_mut() {
+            viewport.update_view_state(resolution, ViewportYAxisConvention::BottomUp);
         }
     }
 
-    fn rebuild_scene(&mut self, window: &Window) {
-        let canvas = window.get_canvas()
+    fn rebuild_scene(&mut self, window: &mut Window) {
+        let resolution = window.peek_resolution();
+
+        let canvas = window.get_canvas_mut()
             .expect("Window does not have associated canvas")
-            .as_any()
-            .downcast_ref::<RenderCanvas>()
+            .as_any_mut()
+            .downcast_mut::<RenderCanvas>()
             .expect("Canvas object from window was unexpected type!");
 
-        for viewport in &canvas.get_viewports_2d() {
+        for viewport in canvas.get_viewports_2d_mut() {
+            // ensure viewport state is created
+            _ = self.state.get_or_create_viewport_2d_state(viewport.get_id());
+
             let camera_transform = {
                 let mut scene = get_render_context_2d()
                     .get_scene_mut(viewport.get_scene_id())
                     .unwrap();
                 scene.get_camera_mut(viewport.get_camera_id()).unwrap().get_transform()
             };
-            let viewport_state = self.state.get_or_create_viewport_2d_state(viewport.get_id());
 
             if camera_transform.dirty {
-                recompute_2d_viewport_view_matrix(
-                    viewport.get_viewport(),
-                    &camera_transform.value.inverse(),
-                    &window.peek_resolution(),
-                    &mut viewport_state.view_matrix,
-                );
+                viewport.update_view_state(&resolution, ViewportYAxisConvention::BottomUp);
             }
         }
 
@@ -336,117 +321,4 @@ impl GlRenderer {
 impl Drop for GlRenderer {
     fn drop(&mut self) {
     }
-}
-
-fn compute_proj_matrix(res_hor: u32, res_ver: u32) -> Matrix4x4 {
-    // screen space is [0, 1] on both axes with the origin in the top-left
-    let l = 0;
-    let r = 1;
-    let b = 1;
-    let t = 0;
-
-    let res_hor_f = res_hor as f32;
-    let res_ver_f = res_ver as f32;
-
-    //let mode = EngineManager::instance().get_config().get_section::<>().screen_scale_mode;
-    //TODO
-    let mode = ScreenSpaceScaleMode::NormalizeMinDimension;
-    let (hor_scale, ver_scale) = match mode {
-        ScreenSpaceScaleMode::NormalizeMinDimension => {
-            if res_hor > res_ver {
-                (res_hor_f / res_ver_f, 1.0)
-            } else {
-                (1.0, res_ver_f / res_hor_f)
-            }
-        }
-        ScreenSpaceScaleMode::NormalizeMaxDimension => {
-            if res_hor > res_ver {
-                (1.0, res_ver_f / res_hor_f)
-            } else {
-                (res_hor_f / res_ver_f, 1.0)
-            }
-        }
-        ScreenSpaceScaleMode::NormalizeVertical => (res_hor_f / res_ver_f, 1.0),
-        ScreenSpaceScaleMode::NormalizeHorizontal => (1.0, res_ver_f / res_hor_f),
-        ScreenSpaceScaleMode::None => (1.0, 1.0),
-    };
-
-    Matrix4x4::from_row_major([
-        2.0 / ((r - l) as f32 * hor_scale),
-        0.0,
-        0.0,
-        -(r + l) as f32 / ((r - l) as f32 * hor_scale),
-        0.0,
-        2.0 / ((t - b) as f32 * ver_scale),
-        0.0,
-        -(t + b) as f32 / ((t - b) as f32 * ver_scale),
-        0.0,
-        0.0,
-        1.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        1.0,
-    ])
-}
-
-fn recompute_2d_viewport_view_matrix(
-    viewport: &Viewport,
-    transform: &Transform2d,
-    resolution: &Vector2u,
-    dest: &mut Matrix4x4,
-) {
-    let center_x = (viewport.left + viewport.right) / 2.0;
-    let center_y = (viewport.top + viewport.bottom) / 2.0;
-
-    let mut adj_transform = transform.clone();
-    adj_transform.translation.x += (viewport.right - viewport.left) / 2.0;
-    adj_transform.translation.y += (viewport.bottom - viewport.top) / 2.0;
-
-    let anchor_mat_1 = Matrix4x4::from_row_major([
-        1.0,
-        0.0,
-        0.0,
-        -center_x + adj_transform.translation.x,
-        0.0,
-        1.0,
-        0.0,
-        -center_y + adj_transform.translation.y,
-        0.0,
-        0.0,
-        1.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        1.0,
-    ]);
-    let anchor_mat_2 = Matrix4x4::from_row_major([
-        1.0,
-        0.0,
-        0.0,
-        center_x - adj_transform.translation.x,
-        0.0,
-        1.0,
-        0.0,
-        center_y - adj_transform.translation.y,
-        0.0,
-        0.0,
-        1.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        1.0,
-    ]);
-
-    let view_mat =
-        adj_transform.get_translation_matrix() *
-        anchor_mat_2 *
-            adj_transform.get_rotation_matrix() *
-            adj_transform.get_scale_matrix() *
-        anchor_mat_1;
-
-    *dest = compute_proj_matrix(resolution.x, resolution.y) * view_mat;
 }

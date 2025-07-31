@@ -48,8 +48,6 @@ pub(crate) struct PerFrameData {
 pub(crate) struct ViewportState {
     pub(crate) viewport_id: u32,
     pub(crate) ty: SceneType,
-    pub(crate) view_matrix: Matrix4x4,
-    pub(crate) view_matrix_dirty: bool,
     pub(crate) visited: bool,
     pub(crate) per_frame: [PerFrameData; MAX_FRAMES_IN_FLIGHT],
 }
@@ -59,8 +57,6 @@ impl ViewportState {
         Self {
             viewport_id,
             ty: SceneType::TwoDim,
-            view_matrix: Default::default(),
-            view_matrix_dirty: true,
             visited: false,
             per_frame: Default::default(),
         }

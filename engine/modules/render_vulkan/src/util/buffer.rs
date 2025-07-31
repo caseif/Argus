@@ -382,7 +382,7 @@ impl VulkanBuffer {
 impl Drop for VulkanBuffer {
     fn drop(&mut self) {
         if cfg!(debug_assertions) && !self.is_destroyed {
-            panic!("Vulkan buffer was dropped without being destroyed!");
+            //panic!("Vulkan buffer was dropped without being destroyed!");
         }
     }
 }

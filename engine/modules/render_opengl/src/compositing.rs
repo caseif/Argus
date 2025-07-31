@@ -155,8 +155,8 @@ fn update_scene_ubo_2d(scene_state: &mut Scene2dState) {
     }
 }
 
-fn update_viewport_ubo(scene_state: &Scene2dState, viewport_state: &mut ViewportState) {
-    let mut must_update = viewport_state.view_matrix_dirty || true; //TODO
+fn update_viewport_ubo(viewport: &mut AttachedViewport2d, scene_state: &Scene2dState, viewport_state: &mut ViewportState) {
+    let mut must_update = viewport.is_view_state_dirty() || true; //TODO
 
     let ubo = viewport_state.buffers.ubo.get_or_insert_with(|| {
         must_update = true;
@@ -171,7 +171,7 @@ fn update_viewport_ubo(scene_state: &Scene2dState, viewport_state: &mut Viewport
 
     if must_update {
         ubo.write_val(
-            &viewport_state.view_matrix.cells,
+            &viewport.get_view_matrix().value.cells,
             SHADER_UNIFORM_VIEWPORT_VM_OFF as usize,
         );
 
@@ -243,12 +243,10 @@ fn create_textures(target: GLenum, n: GLsizei) -> Vec<GlTextureHandle> {
 
 pub(crate) fn draw_scene_2d_to_framebuffer(
     renderer_state: &mut RendererState,
-    scene_id: impl AsRef<str>,
-    att_viewport: &AttachedViewport2d,
+    att_viewport: &mut AttachedViewport2d,
     resolution: &ValueAndDirtyFlag<Vector2u>,
 ) {
-    let viewport = att_viewport.get_viewport();
-    let viewport_px = transform_viewport_to_pixels(viewport, &resolution.value);
+    let viewport_px = transform_viewport_to_pixels(att_viewport.get_viewport(), &resolution.value);
 
     let fb_width = (viewport_px.right - viewport_px.left).abs();
     let fb_height = (viewport_px.bottom - viewport_px.top).abs();
@@ -256,18 +254,21 @@ pub(crate) fn draw_scene_2d_to_framebuffer(
     let have_draw_buffers_blend = aglet_have_gl_version_4_0()
         || aglet_have_gl_arb_draw_buffers_blend();
 
+    let scene_id = att_viewport.get_scene_id().to_string();
+
     // set scene uniforms
     update_scene_ubo_2d(
-        renderer_state.scene_states_2d.get_mut(scene_id.as_ref()).unwrap()
+        renderer_state.scene_states_2d.get_mut(&scene_id).unwrap()
     );
 
     // set viewport uniforms
     update_viewport_ubo(
-        renderer_state.scene_states_2d.get(scene_id.as_ref()).expect("Scene state was missing!"),
+        att_viewport,
+        renderer_state.scene_states_2d.get(&scene_id).expect("Scene state was missing!"),
         renderer_state.viewport_states_2d.get_mut(&att_viewport.get_id()).unwrap(),
     );
 
-    let scene_state = renderer_state.scene_states_2d.get(scene_id.as_ref()).unwrap();
+    let scene_state = renderer_state.scene_states_2d.get(&scene_id).unwrap();
 
     init_viewport_buffers(
         renderer_state.viewport_states_2d.get_mut(&att_viewport.get_id()).unwrap(),
@@ -396,7 +397,7 @@ pub(crate) fn draw_scene_2d_to_framebuffer(
             renderer_state,
             att_viewport.get_id(),
             att_viewport.get_id(),
-            viewport,
+            att_viewport.get_viewport(),
             &resolution.value,
         );
     }

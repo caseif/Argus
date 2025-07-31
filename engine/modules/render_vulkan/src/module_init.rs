@@ -241,7 +241,7 @@ fn window_event_handler(event: &WindowEvent) {
                     let renderer = renderers.get_mut(window_id)
                         .expect("Failed to get renderer");
                     renderer.notify_window_resize(
-                        window.value(),
+                        window.value_mut(),
                         event.resolution.expect("Window resize event did not have resolution"),
                     );
                 });

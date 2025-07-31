@@ -8,11 +8,10 @@ use crate::setup::LOGGER;
 use crate::state::{NotifyCreatedSwapchainParams, NotifyDestroyedSwapchainParams, NotifyHaltingParams, PresentImageParams, RendererState, Scene2dState, SubmitMessage, ViewportState};
 use crate::util::defines::*;
 use crate::util::*;
-use argus_core::ScreenSpaceScaleMode;
 use argus_logging::debug;
-use argus_render::common::{AttachedViewport, Material, Matrix4x4, RenderCanvas, SceneType, Transform2d, Viewport};
+use argus_render::common::{AttachedViewport, Material, RenderCanvas, SceneType};
 use argus_render::constants::{SHADER_UBO_GLOBAL_LEN, SHADER_UBO_SCENE_LEN};
-use argus_render::twod::{get_render_context_2d, AttachedViewport2d};
+use argus_render::twod::{get_render_context_2d, AttachedViewport2d, ViewportYAxisConvention};
 use argus_resman::{ResourceIdentifier, ResourceManager};
 use argus_util::math::Vector2u;
 use argus_util::semaphore::Semaphore;
@@ -20,7 +19,6 @@ use argus_wm::{vk_create_surface, VkInstance, Window};
 use ash::vk::Handle;
 use ash::{khr, vk};
 use std::collections::HashSet;
-use std::ops::Deref;
 use std::sync::atomic::Ordering;
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
@@ -306,12 +304,13 @@ impl VulkanRenderer {
         let resolution = window.get_resolution();
 
         if !self.state.are_viewports_initialized {
-            update_view_matrix(window.deref(), &mut self.state, &resolution.value);
+            self.update_view_states(window, &resolution.value, true);
             self.state.are_viewports_initialized = true;
         }
 
+        self.update_view_states(window, &resolution.value, false);
+
         //timer_start = std::chrono::high_resolution_clock::now();
-        recompute_viewports(window, &mut self.state);
         compile_scenes(&self.vk_instance, &self.vk_device, window, &mut self.state);
         //timer_end = std::chrono::high_resolution_clock::now();
         //compile_time += (timer_end - timer_start);
@@ -336,25 +335,22 @@ impl VulkanRenderer {
 
         let canvas = window.get_canvas_mut().unwrap()
             .as_any_mut().downcast_mut::<RenderCanvas>().unwrap();
+        canvas.get_viewports_2d().clone().sort_by_key(|vp| vp.get_z_index());
 
-        {
-            let mut viewports = canvas.get_viewports_2d().clone();
-            viewports.sort_by_key(|vp| vp.get_z_index());
-        }
-        let viewports = canvas.get_viewports_2d();
+        let viewports = canvas.get_viewports_2d_mut();
 
         //timer_start = std::chrono::high_resolution_clock::now();
-        for viewport in &viewports {
+        for viewport in viewports {
             draw_scene_to_framebuffer(
                 &self.vk_instance,
                 &self.vk_device,
                 &mut self.state,
                 viewport,
-                canvas,
                 resolution,
                 cur_frame,
             );
         }
+        let viewports = canvas.get_viewports_2d();
 
         //timer_end = std::chrono::high_resolution_clock::now();
         //draw_time += (timer_end - timer_start);
@@ -400,8 +396,8 @@ impl VulkanRenderer {
         //time_samples++;
     }
 
-    pub(crate) fn notify_window_resize(&mut self, window: &Window, resolution: Vector2u) {
-        update_view_matrix(window, &mut self.state, &resolution);
+    pub(crate) fn notify_window_resize(&mut self, window: &mut Window, resolution: Vector2u) {
+        self.update_view_states(window, &resolution, true);
 
         let submit_ack_sem = Semaphore::default();
         self.state.submit_sender.as_ref().unwrap().send(
@@ -439,86 +435,27 @@ impl VulkanRenderer {
             ).unwrap();
         }
     }
-}
 
-fn compute_proj_matrix(res_hor: u32, res_ver: u32) -> Matrix4x4 {
-    // screen space is [0, 1] on both axes with the origin in the top-left
-    let l = 0;
-    let r = 1;
-    let b = 1;
-    let t = 0;
+    fn update_view_states(&mut self, window: &mut Window, resolution: &Vector2u, force: bool) {
+        let canvas = window.get_canvas_mut().unwrap().as_any_mut().downcast_mut::<RenderCanvas>().unwrap();
 
-    let res_hor_f = res_hor as f32;
-    let res_ver_f = res_ver as f32;
+        for viewport in canvas.get_viewports_2d_mut() {
+            let camera_transform = {
+                let mut scene = get_render_context_2d().get_scene_mut(viewport.get_scene_id()).unwrap();
+                let camera = scene.get_camera_mut(viewport.get_camera_id()).unwrap();
+                camera.get_transform()
+            };
 
-    //let scale_mode = EngineManager::instance().get_config().screen_scale_mode;
-    //TODO
-    let scale_mode = ScreenSpaceScaleMode::NormalizeMinDimension;
-    let (scale_h, scale_v) = match scale_mode {
-        ScreenSpaceScaleMode::NormalizeMinDimension => {
-            if res_hor > res_ver {
-                (res_hor_f / res_ver_f, 1.0)
-            } else {
-                (1.0, res_ver_f / res_hor_f)
+            if force || camera_transform.dirty {
+                viewport.update_view_state(&resolution, ViewportYAxisConvention::TopDown);
+
+                for per_frame in &mut self.state.viewport_states_2d
+                    .get_mut(&viewport.get_id()).unwrap().per_frame {
+                    per_frame.view_matrix_dirty = true;
+                }
             }
         }
-        ScreenSpaceScaleMode::NormalizeMaxDimension => {
-            if res_hor > res_ver {
-                (1.0, res_ver_f / res_hor_f)
-            } else {
-                (res_hor_f / res_ver_f, 1.0)
-            }
-        }
-        ScreenSpaceScaleMode::NormalizeVertical => {
-            (res_hor_f / res_ver_f, 1.0)
-        }
-        ScreenSpaceScaleMode::NormalizeHorizontal => {
-            (1.0, res_ver_f / res_hor_f)
-        }
-        ScreenSpaceScaleMode::None => {
-            (1.0, 1.0)
-        }
-    };
-
-    Matrix4x4::from_row_major([
-        2.0 / ((r - l) as f32 * scale_h), 0.0, 0.0,
-        -(r + l) as f32 / ((r - l) as f32 * scale_h),
-        0.0, -2.0 / ((t - b) as f32 * scale_v), 0.0,
-        -(t + b) as f32 / -((t - b) as f32 * scale_v),
-        0.0, 0.0, 1.0, 0.0,
-        0.0, 0.0, 0.0, 1.0,
-    ])
-}
-
-fn recompute_2d_viewport_view_matrix(
-    viewport: &Viewport,
-    transform: &Transform2d,
-    resolution: &Vector2u,
-) -> Matrix4x4 {
-    let center_x = (viewport.left + viewport.right) / 2.0;
-    let center_y = (viewport.top + viewport.bottom) / 2.0;
-
-    let cur_translation = transform.get_translation();
-
-    let anchor_mat_1 = Matrix4x4::from_row_major([
-        1.0, 0.0, 0.0, -center_x + cur_translation.x,
-        0.0, 1.0, 0.0, -center_y + cur_translation.y,
-        0.0, 0.0, 1.0, 0.0,
-        0.0, 0.0, 0.0, 1.0,
-    ]);
-    let anchor_mat_2 = Matrix4x4::from_row_major([
-        1.0, 0.0, 0.0, center_x - cur_translation.x,
-        0.0, 1.0, 0.0, center_y - cur_translation.y,
-        0.0, 0.0, 1.0, 0.0,
-        0.0, 0.0, 0.0, 1.0,
-    ]);
-    let view_mat = transform.get_translation_matrix()
-        * anchor_mat_2
-        * transform.get_rotation_matrix()
-        * transform.get_scale_matrix()
-        * anchor_mat_1;
-
-    compute_proj_matrix(resolution.x, resolution.y) * view_mat
+    }
 }
 
 fn get_associated_scenes_for_canvas(canvas: &RenderCanvas) -> HashSet<&str> {
@@ -691,45 +628,6 @@ fn add_remove_state_objects(
     // clear visited flag for all remaining states
     for viewport_state in state.viewport_states_2d.values_mut() {
         viewport_state.visited = false;
-    }
-}
-
-fn update_view_matrix(window: &Window, state: &mut RendererState, resolution: &Vector2u) {
-    let canvas = window.get_canvas().unwrap().as_any().downcast_ref::<RenderCanvas>().unwrap();
-
-    for viewport in canvas.get_viewports_2d() {
-        let viewport_state = state.viewport_states_2d.get_mut(&viewport.get_id()).unwrap();
-        let scene = get_render_context_2d().get_scene(viewport.get_scene_id()).unwrap();
-        let camera = scene.get_camera(viewport.get_camera_id()).unwrap();
-        let camera_transform = camera.peek_transform();
-
-        viewport_state.view_matrix = recompute_2d_viewport_view_matrix(
-            canvas.get_viewport(viewport_state.viewport_id).unwrap().get_viewport(),
-            &camera_transform.inverse(),
-            resolution,
-        );
-        for frame_state in &mut viewport_state.per_frame {
-            frame_state.view_matrix_dirty = true;
-        }
-    }
-}
-
-fn recompute_viewports(window: &Window, state: &mut RendererState) {
-    let canvas = window.get_canvas().unwrap().as_any().downcast_ref::<RenderCanvas>().unwrap();
-
-    for viewport in canvas.get_viewports_2d() {
-        let viewport_state = state.viewport_states_2d.get_mut(&viewport.get_id()).unwrap();
-        let mut scene = get_render_context_2d().get_scene_mut(viewport.get_scene_id()).unwrap();
-        let camera = scene.get_camera_mut(viewport.get_camera_id()).unwrap();
-        let camera_transform = camera.get_transform();
-
-        if camera_transform.dirty {
-            viewport_state.view_matrix = recompute_2d_viewport_view_matrix(
-                viewport.get_viewport(),
-                &camera_transform.value.inverse(),
-                &window.peek_resolution(),
-            );
-        }
     }
 }
 

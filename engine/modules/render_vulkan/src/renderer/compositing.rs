@@ -316,18 +316,15 @@ pub(crate) fn draw_scene_to_framebuffer(
     instance: &VulkanInstance,
     device: &VulkanDevice,
     state: &mut RendererState,
-    viewport: &AttachedViewport2d,
-    canvas: &RenderCanvas,
+    viewport: &mut AttachedViewport2d,
     resolution: ValueAndDirtyFlag<Vector2u>,
     cur_frame: usize,
 ) {
     let viewport_state = state.viewport_states_2d.get_mut(&viewport.get_id()).unwrap();
     let scene_state = state.scene_states_2d.get_mut(viewport.get_scene_id()).unwrap();
 
-    let viewport_id = viewport_state.viewport_id;
     let swapchain = &state.swapchain.as_ref().unwrap();
 
-    let viewport = canvas.get_viewport(viewport_id).unwrap();
     let viewport_px = transform_viewport_to_pixels(viewport.get_viewport(), &resolution.value);
 
     //uint32_t fb_width = uint32_t(std::abs(viewport_px.right - viewport_px.left));
@@ -403,7 +400,7 @@ pub(crate) fn draw_scene_to_framebuffer(
         instance,
         device,
         cur_frame_state,
-        &viewport_state.view_matrix,
+        &viewport.get_view_matrix().value,
     );
 
     begin_oneshot_commands(device, cur_frame_state.command_buf.as_ref().unwrap());
