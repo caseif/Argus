@@ -30,57 +30,13 @@ use argus_scripting_bind::script_bind;
 use argus_util::dirtiable::ValueAndDirtyFlag;
 use argus_util::math::{Vector2f, Vector3f};
 use argus_util::pool::Handle;
+use argus_util::rtree::SpatialPoint;
 use rstar::{RTree, RTreeObject, AABB, PointDistance};
 use std::collections::{hash_map, HashMap};
 use std::ops::DerefMut;
 use uuid::Uuid;
 
 const LAYER_PREFIX: &str = "_worldlayer_";
-
-//const COLLISION_ARROW_TTL: u32 = 20;
-
-//const LAST_COLLISIONS: LazyLock<Mutex<HashMap<(Uuid, Uuid), CollisionResolution>>> =
-//    LazyLock::new(|| Mutex::new(HashMap::new()));
-
-/// A spatial point that wraps a UUID and implements the necessary traits for rstar.
-#[derive(Debug, Clone, Copy)]
-struct SpatialPoint {
-    /// The UUID of the object
-    uuid: Uuid,
-    /// The position of the object in 2D space
-    min_extent: [f32; 2],
-    max_extent: [f32; 2],
-}
-
-// Implement PartialEq and Eq to compare only by UUID
-impl PartialEq for SpatialPoint {
-    fn eq(&self, other: &Self) -> bool {
-        self.uuid == other.uuid
-    }
-}
-
-impl Eq for SpatialPoint {}
-
-impl RTreeObject for SpatialPoint {
-    type Envelope = AABB<[f32; 2]>;
-
-    fn envelope(&self) -> Self::Envelope {
-        AABB::from_points(&[self.min_extent, self.max_extent])
-    }
-}
-
-impl PointDistance for SpatialPoint {
-    fn distance_2(&self, point: &[f32; 2]) -> f32 {
-        // Calculate the closest point on the AABB to the given point
-        let closest_x = point[0].max(self.min_extent[0]).min(self.max_extent[0]);
-        let closest_y = point[1].max(self.min_extent[1]).min(self.max_extent[1]);
-
-        // Calculate the squared distance from the closest point to the given point
-        let dx = closest_x - point[0];
-        let dy = closest_y - point[1];
-        dx * dx + dy * dy
-    }
-}
 
 #[script_bind(ref_only)]
 pub struct World2dLayer {
@@ -98,8 +54,8 @@ pub struct World2dLayer {
     point_lights: HashMap<Uuid, PointLight>,
 
     // Quadtrees for spatial partitioning
-    static_objects_quadtree: RTree<SpatialPoint>,
-    actors_quadtree: RTree<SpatialPoint>,
+    static_objects_quadtree: RTree<SpatialPoint<Uuid>>,
+    actors_quadtree: RTree<SpatialPoint<Uuid>>,
 
     collision_layers: HashMap<String, u64>,
     next_collision_layer_bit: u64,
@@ -216,8 +172,6 @@ impl World2dLayer {
             Err(e) => { return Err(e.info); }
         };
 
-        println!("collision_layers: {:?}", self.collision_layers);
-        println!("collision_layer: {:?}", collision_layer.as_ref());
         let collision_bit = match self.collision_layers.get(collision_layer.as_ref()) {
             Some(bit) => *bit,
             None => {
@@ -242,13 +196,9 @@ impl World2dLayer {
         let position = transform.translation;
         // Create a small AABB around the position
         let half_size = 0.1; // Small size for point-like objects
-        let min = [position.x - half_size, position.y - half_size];
-        let max = [position.x + half_size, position.y + half_size];
-        self.static_objects_quadtree.insert(SpatialPoint { 
-            uuid: id, 
-            min_extent: min,
-            max_extent: max
-        });
+        let min = Vector2f::new(position.x - half_size, position.y - half_size);
+        let max = Vector2f::new(position.x + half_size, position.y + half_size);
+        self.static_objects_quadtree.insert(SpatialPoint::new(id, min, max));
 
         Ok(id)
     }
@@ -285,12 +235,7 @@ impl World2dLayer {
                 }
 
                 // Remove from quadtree
-                self.static_objects_quadtree.remove(&SpatialPoint {
-                    uuid: *id,
-                    // The extents don't matter for removal since we're using the uuid for equality
-                    min_extent: [0.0, 0.0],
-                    max_extent: [0.0, 0.0],
-                });
+                self.static_objects_quadtree.remove(&SpatialPoint::from_handle(*id));
 
                 Ok(())
             }
@@ -351,13 +296,9 @@ impl World2dLayer {
         // Add to quadtree
         // Create a small AABB around the position
         let half_size = 0.1; // Small size for point-like objects
-        let min = [position.x - half_size, position.y - half_size];
-        let max = [position.x + half_size, position.y + half_size];
-        self.actors_quadtree.insert(SpatialPoint {
-            uuid: id,
-            min_extent: min,
-            max_extent: max,
-        });
+        let min = Vector2f::new(position.x - half_size, position.y - half_size);
+        let max = Vector2f::new(position.x + half_size, position.y + half_size);
+        self.actors_quadtree.insert(SpatialPoint::new(id, min, max));
 
         Ok(id)
     }
@@ -371,12 +312,7 @@ impl World2dLayer {
                 }
 
                 // Remove from quadtree
-                self.actors_quadtree.remove(&SpatialPoint {
-                    uuid: *id,
-                    // The extents don't matter for removal since we're using the uuid for equality
-                    min_extent: [0.0, 0.0],
-                    max_extent: [0.0, 0.0],
-                });
+                self.actors_quadtree.remove(&SpatialPoint::from_handle(*id));
 
                 Ok(())
             }
@@ -426,15 +362,11 @@ impl World2dLayer {
     /// Updates the position of a static object in the quadtree
     pub fn update_static_object_in_quadtree(&mut self, id: &Uuid) {
         if let Some(obj) = self.static_objects.get(id) {
-            self.static_objects_quadtree.remove(&SpatialPoint {
-                uuid: *id,
-                min_extent: [0.0, 0.0],
-                max_extent: [0.0, 0.0],
-            });
+            self.static_objects_quadtree.remove(&SpatialPoint::from_handle(*id));
 
             let position = obj.transform.translation;
             self.static_objects_quadtree.insert(SpatialPoint {
-                uuid: *id,
+                handle: *id,
                 min_extent: position.into(),
                 max_extent: position.into(),
             });
@@ -444,15 +376,11 @@ impl World2dLayer {
     /// Updates the position of an actor in the quadtree
     pub fn update_actor_in_quadtree(&mut self, id: &Uuid) {
         if let Some(actor) = self.actors.get(id) {
-            self.actors_quadtree.remove(&SpatialPoint {
-                uuid: *id,
-                min_extent: [0.0, 0.0],
-                max_extent: [0.0, 0.0],
-            });
+            self.actors_quadtree.remove(&SpatialPoint::from_handle(*id));
 
             let position = actor.get_position();
             self.actors_quadtree.insert(SpatialPoint {
-                uuid: *id,
+                handle: *id,
                 min_extent: position.into(),
                 max_extent: position.into(),
             });
@@ -464,7 +392,7 @@ impl World2dLayer {
         let point_arr = [center.x, center.y];
         self.static_objects_quadtree
             .locate_within_distance(point_arr, radius * radius)
-            .map(|p| p.uuid)
+            .map(|p| p.handle)
             .collect()
     }
 
@@ -473,7 +401,7 @@ impl World2dLayer {
         let point_arr = [center.x, center.y];
         self.actors_quadtree
             .locate_within_distance(point_arr, radius * radius)
-            .map(|p| p.uuid)
+            .map(|p| p.handle)
             .collect()
     }
 

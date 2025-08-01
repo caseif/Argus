@@ -21,6 +21,7 @@ lazy_static = { workspace = true }
 lodepng = { workspace = true }
 parking_lot = { workspace = true }
 rgb = { workspace = true }
+rstar = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 uuid = { workspace = true, features = ["v4"] }

@@ -1,13 +1,21 @@
+use crate::common::{get_next_viewport_id, AttachedViewport, Matrix4x4, Transform2d, Viewport};
+use crate::twod::get_render_context_2d;
 use argus_core::ScreenSpaceScaleMode;
 use argus_util::dirtiable::{Dirtiable, ValueAndDirtyFlag};
 use argus_util::math::Vector2u;
-use crate::common::{get_next_viewport_id, AttachedViewport, Matrix4x4, Transform2d, Viewport};
-use crate::twod::get_render_context_2d;
 
 #[derive(Clone, Copy, Debug)]
 pub enum ViewportYAxisConvention {
     TopDown, // Vulkan
     BottomUp, // OpenGL
+}
+
+#[derive(Clone, Copy, Debug, Default)]
+pub struct ViewFrustum {
+    pub top: f32,
+    pub bottom: f32,
+    pub left: f32,
+    pub right: f32,
 }
 
 #[derive(Clone, Debug)]
@@ -19,6 +27,7 @@ pub struct AttachedViewport2d {
     z_index: u32,
     postfx_shaders: Vec<String>,
     view_matrix: Dirtiable<Matrix4x4>,
+    view_frustum: ViewFrustum,
 }
 
 impl AttachedViewport for AttachedViewport2d {
@@ -63,6 +72,7 @@ impl AttachedViewport2d {
             z_index,
             postfx_shaders: vec![],
             view_matrix: Dirtiable::new(Matrix4x4::identity()),
+            view_frustum: Default::default(),
         }
     }
 
@@ -82,12 +92,17 @@ impl AttachedViewport2d {
         self.view_matrix.read()
     }
 
+    pub fn get_view_frustum(&self) -> &ViewFrustum {
+        &self.view_frustum
+    }
+
     pub fn update_view_state(
         &mut self,
         resolution: &Vector2u,
         y_axis_convention: ViewportYAxisConvention,
     ) {
-        self.update_view_matrix(resolution, y_axis_convention)
+        self.update_view_matrix(resolution, y_axis_convention);
+        self.update_view_frustum(resolution);
     }
 
     fn update_view_matrix(
@@ -109,6 +124,96 @@ impl AttachedViewport2d {
                 vm,
             );
         });
+    }
+
+    fn update_view_frustum(
+        &mut self,
+        resolution: &Vector2u,
+    ) {
+        let camera_transform = {
+            let scene = get_render_context_2d().get_scene(self.get_scene_id()).unwrap();
+            scene.get_camera(self.get_camera_id()).unwrap()
+                .peek_transform()
+        };
+
+        let viewport = &self.viewport;
+        let vp_center_x = (viewport.left + viewport.right) / 2.0;
+        let vp_center_y = (viewport.top + viewport.bottom) / 2.0;
+
+        let res_hor = resolution.x;
+        let res_ver = resolution.y;
+        let res_hor_f = res_hor as f32;
+        let res_ver_f = res_ver as f32;
+
+        let mode = ScreenSpaceScaleMode::NormalizeMinDimension;
+        let (hor_scale, ver_scale) = match mode {
+            ScreenSpaceScaleMode::NormalizeMinDimension => {
+                if res_hor > res_ver {
+                    (res_hor_f / res_ver_f, 1.0)
+                } else {
+                    (1.0, res_ver_f / res_hor_f)
+                }
+            }
+            ScreenSpaceScaleMode::NormalizeMaxDimension => {
+                if res_hor > res_ver {
+                    (1.0, res_ver_f / res_hor_f)
+                } else {
+                    (res_hor_f / res_ver_f, 1.0)
+                }
+            }
+            ScreenSpaceScaleMode::NormalizeVertical => (res_hor_f / res_ver_f, 1.0),
+            ScreenSpaceScaleMode::NormalizeHorizontal => (1.0, res_ver_f / res_hor_f),
+            ScreenSpaceScaleMode::None => (1.0, 1.0),
+        };
+        let vp_width = (viewport.right - viewport.left) / camera_transform.scale.x * hor_scale;
+        let vp_height = (viewport.bottom - viewport.top) / camera_transform.scale.y * ver_scale;
+
+        let center_x = vp_center_x + camera_transform.translation.x;
+        let center_y = vp_center_y + camera_transform.translation.y;
+
+        let half_width = vp_width / 2.0;
+        let half_height = vp_height / 2.0;
+
+        // corners prior to applying camera rotation
+        let corners = [
+            (center_x - half_width, center_y - half_height), // top-left
+            (center_x + half_width, center_y - half_height), // top-right
+            (center_x + half_width, center_y + half_height), // bottom-right
+            (center_x - half_width, center_y + half_height), // bottom-left
+        ];
+
+        // apply rotation to each corner
+        let rotation = camera_transform.rotation;
+        let sin_rot = rotation.sin();
+        let cos_rot = rotation.cos();
+
+        let mut min_x = f32::MAX;
+        let mut min_y = f32::MAX;
+        let mut max_x = f32::MIN;
+        let mut max_y = f32::MIN;
+
+        for &(x, y) in &corners {
+            let x_rel = x - center_x;
+            let y_rel = y - center_y;
+
+            let x_rot = x_rel * cos_rot - y_rel * sin_rot;
+            let y_rot = x_rel * sin_rot + y_rel * cos_rot;
+
+            let x_final = x_rot + center_x;
+            let y_final = y_rot + center_y;
+
+            min_x = min_x.min(x_final);
+            min_y = min_y.min(y_final);
+            max_x = max_x.max(x_final);
+            max_y = max_y.max(y_final);
+        }
+
+        self.view_frustum = ViewFrustum {
+            top: min_y - 0.5,
+            bottom: max_y - 0.5,
+            left: min_x - 0.5,
+            right: max_x - 0.5,
+        };
     }
 }
 

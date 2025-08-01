@@ -26,7 +26,7 @@ pub enum ViewportCoordinateSpaceMode {
     /// Each axis will be scaled independently, with 0 and 1 being on opposite
     /// edges of the surface.
     Individual,
-    /// Both axes will be scaled relative to the smaller of the two axes..
+    /// Both axes will be scaled relative to the smaller of the two axes.
     ///
     /// If the axes are not equal in length, the edges of the viewport on the
     /// larger dimension will stop short of the edges of the surface.

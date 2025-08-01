@@ -3,6 +3,8 @@ use argus_resman::Resource;
 use argus_util::dirtiable::{Dirtiable, ValueAndDirtyFlag};
 use argus_util::math::{Vector2f, Vector3f};
 use argus_util::pool::Handle;
+use rstar::{RTree, AABB};
+use argus_util::rtree::SpatialPoint;
 use crate::common::*;
 use crate::twod::*;
 
@@ -14,6 +16,7 @@ pub struct Scene2d {
     pub(crate) root_group_read: Option<Handle>,
     pub(crate) root_group_write: Option<Handle>,
     pub(crate) lights: Vec<Handle>,
+    lights_quadtree: RTree<SpatialPoint<Handle>>,
     cameras: HashMap<String, Camera2d>,
     pub(crate) last_rendered_versions: HashMap<(SceneItemType, Handle), u16>,
 }
@@ -38,11 +41,12 @@ impl Scene2d {
             root_group_read: None,
             root_group_write: Some(root_group_write),
             lights: Vec::new(),
+            lights_quadtree: RTree::new(),
             cameras: HashMap::new(),
             last_rendered_versions: HashMap::new(),
         }
     }
-    
+
     #[must_use]
     pub fn get_id(&self) -> &str {
         self.id.as_str()
@@ -96,10 +100,13 @@ impl Scene2d {
     ) -> Handle {
         // Let there be light.
         // That's, uh... God. I was quoting God.
-        let light = RenderLight2d::new(properties, initial_transform);
+        let light = RenderLight2d::new(properties, initial_transform.clone());
         let context = get_render_context_2d();
         let handle = context.add_light(light);
         self.lights.push(handle);
+        self.lights_quadtree.insert(
+            SpatialPoint::new(handle, initial_transform.translation, initial_transform.translation),
+        );
         handle
     }
 
@@ -122,12 +129,36 @@ impl Scene2d {
             return None;
         }
         let context = get_render_context_2d();
-        context.get_light_mut(handle)
+        let light = context.get_light_mut(handle);
+
+        light
+    }
+
+    pub fn update_light_position(&mut self, handle: Handle) {
+        let context = get_render_context_2d();
+        if self.lights.contains(&handle) {
+            if let Some(light) = context.get_light(handle) {
+                let position = light.get_transform().translation;
+                self.lights_quadtree.insert(SpatialPoint::new(handle, position, position));
+            }
+        }
     }
 
     pub fn remove_light(&mut self, handle: Handle) -> bool {
         let context = get_render_context_2d();
-        context.remove_light(handle, self.id.as_str())
+        let result = context.remove_light(handle, self.id.as_str());
+        if result {
+            self.lights_quadtree.remove(&SpatialPoint {
+                handle,
+                // The extents don't matter for removal since we're using the uuid for equality
+                min_extent: Default::default(),
+                max_extent: Default::default(),
+            });
+            if let Some(index) = self.lights.iter().position(|&h| h == handle) {
+                self.lights.swap_remove(index);
+            }
+        }
+        result
     }
 
     pub fn get_group(&self, handle: Handle)
@@ -285,5 +316,17 @@ impl Scene2d {
     #[allow(unused)]
     pub(crate) fn get_lights_for_render(&self) -> Vec<RenderLight2d> {
         todo!()
+    }
+
+    pub fn get_lights_for_frustum(&self, viewport: &AttachedViewport2d, buffer: f32)
+        -> Vec<Handle> {
+        let frustum = viewport.get_view_frustum();
+        let aabb = AABB::from_corners(
+            [frustum.left - buffer, frustum.top - buffer],
+            [frustum.right + buffer, frustum.bottom + buffer],
+        );
+        self.lights_quadtree.locate_in_envelope(&aabb)
+            .map(|sp| sp.handle)
+            .collect()
     }
 }

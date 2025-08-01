@@ -10,4 +10,5 @@ crate-type = ["rlib"]
 [dependencies]
 argus_scripting_bind = { path = "../scripting_bind" }
 
+rstar = { workspace = true }
 serde = { workspace = true, features = ["derive"] }

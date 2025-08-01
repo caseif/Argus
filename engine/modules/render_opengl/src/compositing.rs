@@ -33,6 +33,8 @@ use argus_util::math::Vector2u;
 
 const BINDING_INDEX_VBO: u32 = 0;
 
+const LIGHT_ENVELOPE_BUFFER: f32 = 2.0;
+
 struct TransformedViewport {
     pub(crate) top: i32,
     pub(crate) bottom: i32,
@@ -176,7 +178,7 @@ fn update_viewport_ubo(viewport: &mut AttachedViewport2d, scene_state: &Scene2dS
         );
 
         let mut scene = get_render_context_2d().get_scene_mut(&scene_state.scene_id).unwrap();
-        let light_handles = scene.get_light_handles().clone();
+        let light_handles = scene.get_lights_for_frustum(viewport, LIGHT_ENVELOPE_BUFFER);
         let lights_count = light_handles.len();
 
         let mut shader_lights_arr: [Std140Light2D; LIGHTS_MAX as usize] = Default::default();

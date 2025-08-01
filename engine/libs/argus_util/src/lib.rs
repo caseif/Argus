@@ -23,4 +23,5 @@ pub mod error;
 pub mod math;
 pub mod padding;
 pub mod pool;
+pub mod rtree;
 pub mod semaphore;
