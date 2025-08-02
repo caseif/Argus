@@ -335,9 +335,9 @@ impl VulkanRenderer {
 
         let canvas = window.get_canvas_mut().unwrap()
             .as_any_mut().downcast_mut::<RenderCanvas>().unwrap();
-        canvas.get_viewports_2d().clone().sort_by_key(|vp| vp.get_z_index());
-
-        let viewports = canvas.get_viewports_2d_mut();
+        let mut viewports = canvas.get_viewports_2d_mut();
+        viewports.sort_by_key(|vp| vp.get_z_index());
+        let viewports = viewports;
 
         //timer_start = std::chrono::high_resolution_clock::now();
         for viewport in viewports {

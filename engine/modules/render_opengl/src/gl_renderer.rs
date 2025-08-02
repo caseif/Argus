@@ -152,10 +152,11 @@ impl GlRenderer {
             .downcast_mut::<RenderCanvas>()
             .expect("Canvas object from window was unexpected type!");
 
-        canvas.get_viewports_2d().sort_by_key(|vp| vp.get_z_index());
+        let mut viewports = canvas.get_viewports_2d_mut();
+        viewports.sort_by_key(|vp| vp.get_z_index());
 
         // initial render pass
-        for viewport in canvas.get_viewports_2d_mut() {
+        for viewport in &mut viewports {
             draw_scene_2d_to_framebuffer(&mut self.state, viewport, &resolution);
         }
 
@@ -174,12 +175,11 @@ impl GlRenderer {
         //
         // In effect, the lightmap of a given viewport A will be applied to all
         // viewports behind A.
-        let viewports = canvas.get_viewports_2d();
         for target_idx in 0..viewports.len() {
-            let target_viewport = viewports[target_idx];
+            let target_viewport = &viewports[target_idx];
 
             for src_idx in target_idx..viewports.len() {
-                let source_viewport = viewports[src_idx];
+                let source_viewport = &viewports[src_idx];
                 let source_scene_id = source_viewport.get_scene_id();
                 let source_scene = get_render_context_2d().get_scene(source_scene_id).unwrap();
                 if !source_scene.is_lighting_enabled() {
@@ -190,7 +190,7 @@ impl GlRenderer {
                     source_viewport.get_id(),
                     target_viewport.get_id(),
                     target_viewport.get_viewport(),
-                    &resolution.value,
+                    &resolution.value, 
                 );
             }
         }
