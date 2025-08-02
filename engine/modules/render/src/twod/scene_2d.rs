@@ -3,7 +3,7 @@ use argus_resman::Resource;
 use argus_util::dirtiable::{Dirtiable, ValueAndDirtyFlag};
 use argus_util::math::{Vector2f, Vector3f};
 use argus_util::pool::Handle;
-use rstar::{RTree, AABB};
+use rstar::AABB;
 use argus_util::rtree::{QuadTree, QuadTreeNode};
 use crate::common::*;
 use crate::twod::*;
@@ -131,14 +131,16 @@ impl Scene2d {
     }
 
     pub fn update_lights_quadtree(&mut self) {
-        for node in &mut self.lights_quadtree {
-            let handle = node.handle;
+        for handle in self.lights_quadtree.iter().map(|node| node.handle).collect::<Vec<_>>() {
             let context = get_render_context_2d();
             if let Some(mut light) = context.get_light_mut(handle) {
                 let transform = light.get_transform();
                 if transform.dirty {
-                    node.min_extent = transform.value.translation;
-                    node.max_extent = transform.value.translation;
+                    self.lights_quadtree.update(
+                        &handle,
+                        transform.value.translation,
+                        transform.value.translation,
+                    );
                 }
             }
         }

@@ -259,6 +259,8 @@ pub(crate) fn draw_scene_2d_to_framebuffer(
 
     let scene_id = att_viewport.get_scene_id().to_string();
 
+    get_render_context_2d().get_scene_mut(&scene_id).unwrap().update_lights_quadtree();
+
     // set scene uniforms
     update_scene_ubo_2d(
         renderer_state.scene_states_2d.get_mut(&scene_id).unwrap()

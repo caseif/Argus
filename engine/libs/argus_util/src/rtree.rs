@@ -1,27 +1,27 @@
 use std::collections::HashSet;
 use std::fmt::Debug;
 use std::hash::{DefaultHasher, Hash, Hasher};
-use rstar::{PointDistance, RTreeObject, AABB};
+use rstar::{PointDistance, RTree, RTreeObject, AABB};
 use rstar::iterators::{RTreeIterator, RTreeIteratorMut};
 use crate::math::Vector2f;
 
 #[derive(Default)]
 pub struct QuadTree<T: PartialEq + Eq + Copy + Hash> {
-    tree: rstar::RTree<QuadTreeNode<T>>,
+    tree: RTree<QuadTreeNode<T>>,
     hashes: HashSet<u64>,
 }
 
 impl<T: PartialEq + Eq + Copy + Hash> QuadTree<T> {
     pub fn new() -> Self {
         Self {
-            tree: rstar::RTree::new(),
+            tree: RTree::new(),
             hashes: HashSet::new(),
         }
     }
 }
 
 impl<T: PartialEq + Eq + Copy + Hash> QuadTree<T> {
-    pub fn get_tree(&self) -> &rstar::RTree<QuadTreeNode<T>> {
+    pub fn get_tree(&self) -> &RTree<QuadTreeNode<T>> {
         &self.tree
     }
 
@@ -33,10 +33,19 @@ impl<T: PartialEq + Eq + Copy + Hash> QuadTree<T> {
         self.tree.insert(item);
         self.hashes.insert(Self::hash_item(&item.handle));
     }
+    
+    pub fn update(&mut self, key: &T, min_extent: Vector2f, max_extent: Vector2f) {
+        self.remove(key);
+        self.insert(QuadTreeNode::new(*key, min_extent, max_extent));
+    }
 
     pub fn remove(&mut self, item: &T) {
         self.tree.remove(&QuadTreeNode::from_handle(*item));
         self.hashes.remove(&Self::hash_item(item));
+    }
+    
+    pub fn iter(&self) -> RTreeIterator<QuadTreeNode<T>> {
+        (&self).into_iter()
     }
 
     fn hash_item(item: &T) -> u64 {
@@ -52,15 +61,6 @@ impl<'a, T: PartialEq + Eq + Copy + Hash> IntoIterator for &'a QuadTree<T> {
 
     fn into_iter(self) -> Self::IntoIter {
         self.tree.iter()
-    }
-}
-
-impl<'a, T: PartialEq + Eq + Copy + Hash> IntoIterator for &'a mut QuadTree<T> {
-    type Item = &'a mut QuadTreeNode<T>;
-    type IntoIter = RTreeIteratorMut<'a, QuadTreeNode<T>>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.tree.iter_mut()
     }
 }
 
