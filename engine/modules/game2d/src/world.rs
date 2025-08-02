@@ -15,6 +15,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+use std::str::FromStr;
 use crate::actor::Actor2d;
 use crate::light_point::PointLight;
 use crate::object::CommonObjectProperties;
@@ -477,6 +478,19 @@ impl World2d {
 
     pub fn delete_actor(&mut self, id: &Uuid) -> Result<(), &'static str> {
         self.get_primary_layer_mut().delete_actor(id)
+    }
+
+    pub fn get_point_light(&self, id: &Uuid) -> Option<&PointLight> {
+        self.prim_layer.get_point_light(id)
+    }
+
+    pub fn get_point_light_mut(&mut self, id: &Uuid) -> Option<&mut PointLight> {
+        self.prim_layer.get_point_light_mut(id)
+    }
+
+    #[script_bind(rename = "get_point_light_mut")]
+    pub fn get_point_light_mut_or_die(&mut self, id: &str) -> &mut PointLight {
+        self.prim_layer.get_point_light_mut(&Uuid::from_str(id).unwrap()).unwrap()
     }
     
     pub fn add_point_light(&mut self, light: PointLight) -> Result<Uuid, String> {

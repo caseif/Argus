@@ -178,14 +178,15 @@ fn update_viewport_ubo(viewport: &mut AttachedViewport2d, scene_state: &Scene2dS
         );
 
         let mut scene = get_render_context_2d().get_scene_mut(&scene_state.scene_id).unwrap();
+
         let light_handles = scene.get_lights_for_frustum(viewport, LIGHT_ENVELOPE_BUFFER);
         let lights_count = light_handles.len();
 
         let mut shader_lights_arr: [Std140Light2D; LIGHTS_MAX as usize] = Default::default();
         for (i, light_handle) in light_handles.into_iter().enumerate() {
-            let light = scene.get_light_mut(light_handle).unwrap();
+            let light = scene.get_light(light_handle).unwrap();
 
-            let pos = &light.get_transform().translation;
+            let pos = &light.peek_transform().translation;
             let props = light.get_properties();
             let color = props.color;
             shader_lights_arr[i] = Std140Light2D {

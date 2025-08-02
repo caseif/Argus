@@ -1,6 +1,8 @@
 use std::collections::HashSet;
+use std::fmt::Debug;
 use std::hash::{DefaultHasher, Hash, Hasher};
 use rstar::{PointDistance, RTreeObject, AABB};
+use rstar::iterators::{RTreeIterator, RTreeIteratorMut};
 use crate::math::Vector2f;
 
 #[derive(Default)]
@@ -41,6 +43,24 @@ impl<T: PartialEq + Eq + Copy + Hash> QuadTree<T> {
         let mut hasher = DefaultHasher::new();
         item.hash(&mut hasher);
         hasher.finish()
+    }
+}
+
+impl<'a, T: PartialEq + Eq + Copy + Hash> IntoIterator for &'a QuadTree<T> {
+    type Item = &'a QuadTreeNode<T>;
+    type IntoIter = RTreeIterator<'a, QuadTreeNode<T>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.tree.iter()
+    }
+}
+
+impl<'a, T: PartialEq + Eq + Copy + Hash> IntoIterator for &'a mut QuadTree<T> {
+    type Item = &'a mut QuadTreeNode<T>;
+    type IntoIter = RTreeIteratorMut<'a, QuadTreeNode<T>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.tree.iter_mut()
     }
 }
 

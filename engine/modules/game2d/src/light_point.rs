@@ -47,6 +47,16 @@ impl PointLight {
             render_light: None,
         }
     }
+
+    #[script_bind]
+    pub fn set_properties(&mut self, props: Light2dProperties) {
+        self.properties.set(props);
+    }
+
+    #[script_bind]
+    pub fn set_transform(&mut self, transform: Transform2d) {
+        self.transform.set(transform);
+    }
 }
 
 prop_getter_setter!(color, Vector3f, get_color, set_color);

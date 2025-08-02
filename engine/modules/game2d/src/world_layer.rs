@@ -321,18 +321,12 @@ impl World2dLayer {
         }
     }
 
-    pub fn get_point_light(&self, id: &Uuid) -> Result<&PointLight, &'static str> {
-        match self.point_lights.get(id) {
-            Some(light) => Ok(light),
-            None => Err("No such point light exists for world layer (in get_point_light)"),
-        }
+    pub fn get_point_light(&self, id: &Uuid) -> Option<&PointLight> {
+        self.point_lights.get(id)
     }
 
-    pub fn get_point_light_mut(&mut self, id: &Uuid) -> Result<&mut PointLight, &'static str> {
-        match self.point_lights.get_mut(id) {
-            Some(light) => Ok(light),
-            None => Err("No such point light exists for world layer (in get_point_light_mut)")
-        }
+    pub fn get_point_light_mut(&mut self, id: &Uuid) -> Option<&mut PointLight> {
+        self.point_lights.get_mut(id)
     }
 
     pub fn add_point_light(&mut self, light: PointLight) -> Result<Uuid, String> {
@@ -358,6 +352,7 @@ impl World2dLayer {
             None => Err("No such point light exists for world layer (in delete_point_light)"),
         }
     }
+
     // Helper methods for updating quadtrees
 
     /// Updates the position of a static object in the quadtree
@@ -676,14 +671,6 @@ impl World2dLayer {
                 )
             );
         }
-    }
-
-    pub(crate) fn hide_point_light(&self, scene: &mut Scene2d, id: &Uuid) {
-        let light = self.point_lights.get(id).expect("Point light was missing");
-
-        if let Some(render_light) = light.render_light {
-            scene.remove_light(render_light);
-        };
     }
 
     pub(crate) fn render(

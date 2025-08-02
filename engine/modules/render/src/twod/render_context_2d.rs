@@ -233,15 +233,8 @@ impl RenderContext2d {
         self.light_pool.write().insert(light)
     }
 
-    pub(crate) fn remove_light(&self, handle: Handle, parent_scene: impl AsRef<str>) -> bool {
-        if self.light_pool.write().remove(handle).is_none() {
-            return false;
-        }
-        let mut parent_scene = self.scenes.get_mut(parent_scene.as_ref())
-            .expect("Parent scene of light was missing from context!");
-        parent_scene.lights.retain(|h| h != &handle);
-        //TODO: validate parent scene
-        true
+    pub(crate) fn remove_light(&self, handle: Handle) -> bool {
+        self.light_pool.write().remove(handle).is_some()
     }
 
     pub(crate) fn get_light(&self, handle: Handle) -> Option<ContextObjectReadGuard<RenderLight2d>> {

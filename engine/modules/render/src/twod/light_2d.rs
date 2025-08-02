@@ -1,4 +1,5 @@
 use argus_scripting_bind::script_bind;
+use argus_util::dirtiable::{Dirtiable, ValueAndDirtyFlag};
 use argus_util::math::Vector3f;
 use crate::common::Transform2d;
 
@@ -55,7 +56,7 @@ impl Default for Light2dProperties {
 
 pub struct RenderLight2d {
     properties: Light2dProperties,
-    transform: Transform2d,
+    transform: Dirtiable<Transform2d>,
 }
 
 impl RenderLight2d {
@@ -66,7 +67,7 @@ impl RenderLight2d {
     ) -> RenderLight2d {
         Self {
             properties,
-            transform,
+            transform: Dirtiable::new(transform),
         }
     }
 
@@ -85,14 +86,19 @@ impl RenderLight2d {
     }
 
     #[must_use]
-    pub fn get_transform(&self) -> &Transform2d {
-        &self.transform
+    pub fn get_transform(&mut self) -> ValueAndDirtyFlag<Transform2d> {
+        self.transform.read()
+    }
+    
+    #[must_use]
+    pub fn peek_transform(&self) -> &Transform2d {
+        self.transform.peek_ref().value
     }
 
     pub fn set_transform(&mut self, transform: Transform2d) {
-        if transform == self.transform {
+        if &transform == self.transform.peek_ref().value {
             return;
         }
-        self.transform = transform;
+        self.transform.set(transform);
     }
 }

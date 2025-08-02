@@ -15,14 +15,12 @@ pub struct Scene2d {
     ambient_light_color: Dirtiable<Vector3f>,
     pub(crate) root_group_read: Option<Handle>,
     pub(crate) root_group_write: Option<Handle>,
-    pub(crate) lights: Vec<Handle>,
     lights_quadtree: QuadTree<Handle>,
     cameras: HashMap<String, Camera2d>,
     pub(crate) last_rendered_versions: HashMap<(SceneItemType, Handle), u16>,
 }
 
 impl Scene for Scene2d {
-    #[must_use]
     fn get_type(&self) -> SceneType {
         SceneType::TwoDim
     }
@@ -40,7 +38,6 @@ impl Scene2d {
             ambient_light_color: Dirtiable::new(Vector3f::new(1.0, 1.0, 1.0)),
             root_group_read: None,
             root_group_write: Some(root_group_write),
-            lights: Vec::new(),
             lights_quadtree: QuadTree::new(),
             cameras: HashMap::new(),
             last_rendered_versions: HashMap::new(),
@@ -89,8 +86,8 @@ impl Scene2d {
         self.ambient_light_color.set(color);
     }
 
-    pub fn get_light_handles(&self) -> &Vec<Handle> {
-        &self.lights
+    pub fn get_light_handles(&self) -> Vec<Handle> {
+        self.lights_quadtree.get_tree().iter().map(|sp| sp.handle).collect()
     }
 
     pub fn add_light(
@@ -103,7 +100,6 @@ impl Scene2d {
         let light = RenderLight2d::new(properties, initial_transform.clone());
         let context = get_render_context_2d();
         let handle = context.add_light(light);
-        self.lights.push(handle);
         self.lights_quadtree.insert(
             QuadTreeNode::new(handle, initial_transform.translation, initial_transform.translation),
         );
@@ -114,7 +110,7 @@ impl Scene2d {
         &mut self,
         handle: Handle
     ) -> Option<ContextObjectReadGuard<RenderLight2d>> {
-        if !self.lights.contains(&handle) {
+        if !self.lights_quadtree.contains(&handle) {
             return None;
         }
         let context = get_render_context_2d();
@@ -125,7 +121,7 @@ impl Scene2d {
         &mut self,
         handle: Handle
     ) -> Option<ContextObjectWriteGuard<RenderLight2d>> {
-        if !self.lights.contains(&handle) {
+        if !self.lights_quadtree.contains(&handle) {
             return None;
         }
         let context = get_render_context_2d();
@@ -134,24 +130,25 @@ impl Scene2d {
         light
     }
 
-    pub fn update_light_position(&mut self, handle: Handle) {
-        let context = get_render_context_2d();
-        if self.lights.contains(&handle) {
-            if let Some(light) = context.get_light(handle) {
-                let position = light.get_transform().translation;
-                self.lights_quadtree.insert(QuadTreeNode::new(handle, position, position));
+    pub fn update_lights_quadtree(&mut self) {
+        for node in &mut self.lights_quadtree {
+            let handle = node.handle;
+            let context = get_render_context_2d();
+            if let Some(mut light) = context.get_light_mut(handle) {
+                let transform = light.get_transform();
+                if transform.dirty {
+                    node.min_extent = transform.value.translation;
+                    node.max_extent = transform.value.translation;
+                }
             }
         }
     }
 
     pub fn remove_light(&mut self, handle: Handle) -> bool {
         let context = get_render_context_2d();
-        let result = context.remove_light(handle, self.id.as_str());
+        let result = context.remove_light(handle);
         if result {
             self.lights_quadtree.remove(&handle);
-            if let Some(index) = self.lights.iter().position(|&h| h == handle) {
-                self.lights.swap_remove(index);
-            }
         }
         result
     }

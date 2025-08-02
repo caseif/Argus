@@ -2,7 +2,7 @@ use crate::common::{get_next_viewport_id, AttachedViewport, Matrix4x4, Transform
 use crate::twod::get_render_context_2d;
 use argus_core::ScreenSpaceScaleMode;
 use argus_util::dirtiable::{Dirtiable, ValueAndDirtyFlag};
-use argus_util::math::Vector2u;
+use argus_util::math::{Vector2f, Vector2u};
 
 #[derive(Clone, Copy, Debug)]
 pub enum ViewportYAxisConvention {
@@ -12,6 +12,7 @@ pub enum ViewportYAxisConvention {
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct ViewFrustum {
+    pub center: Vector2f,
     pub top: f32,
     pub bottom: f32,
     pub left: f32,
@@ -209,6 +210,7 @@ impl AttachedViewport2d {
         }
 
         self.view_frustum = ViewFrustum {
+            center: Vector2f::new(center_x, center_y),
             top: min_y - 0.5,
             bottom: max_y - 0.5,
             left: min_x - 0.5,
@@ -222,10 +224,10 @@ fn compute_proj_matrix(res_hor: u32, res_ver: u32, y_convention: ViewportYAxisCo
     // screen space is [0, 1] on both axes with the origin in either the top-left or bottom-left
     let l = 0;
     let r = 1;
-    let (b, t) = match y_convention {
+    let (t, b) = match y_convention {
         // a sign is screwed up somewhere so these are the opposite of what you'd expect
-        ViewportYAxisConvention::BottomUp => (1, 0),
-        ViewportYAxisConvention::TopDown => (0, 1),
+        ViewportYAxisConvention::BottomUp => (0, 1),
+        ViewportYAxisConvention::TopDown => (1, 0),
     };
 
     let res_hor_f = res_hor as f32;
