@@ -4,7 +4,7 @@ use argus_util::dirtiable::{Dirtiable, ValueAndDirtyFlag};
 use argus_util::math::{Vector2f, Vector3f};
 use argus_util::pool::Handle;
 use rstar::{RTree, AABB};
-use argus_util::rtree::SpatialPoint;
+use argus_util::rtree::{QuadTree, QuadTreeNode};
 use crate::common::*;
 use crate::twod::*;
 
@@ -16,7 +16,7 @@ pub struct Scene2d {
     pub(crate) root_group_read: Option<Handle>,
     pub(crate) root_group_write: Option<Handle>,
     pub(crate) lights: Vec<Handle>,
-    lights_quadtree: RTree<SpatialPoint<Handle>>,
+    lights_quadtree: QuadTree<Handle>,
     cameras: HashMap<String, Camera2d>,
     pub(crate) last_rendered_versions: HashMap<(SceneItemType, Handle), u16>,
 }
@@ -41,7 +41,7 @@ impl Scene2d {
             root_group_read: None,
             root_group_write: Some(root_group_write),
             lights: Vec::new(),
-            lights_quadtree: RTree::new(),
+            lights_quadtree: QuadTree::new(),
             cameras: HashMap::new(),
             last_rendered_versions: HashMap::new(),
         }
@@ -105,7 +105,7 @@ impl Scene2d {
         let handle = context.add_light(light);
         self.lights.push(handle);
         self.lights_quadtree.insert(
-            SpatialPoint::new(handle, initial_transform.translation, initial_transform.translation),
+            QuadTreeNode::new(handle, initial_transform.translation, initial_transform.translation),
         );
         handle
     }
@@ -139,7 +139,7 @@ impl Scene2d {
         if self.lights.contains(&handle) {
             if let Some(light) = context.get_light(handle) {
                 let position = light.get_transform().translation;
-                self.lights_quadtree.insert(SpatialPoint::new(handle, position, position));
+                self.lights_quadtree.insert(QuadTreeNode::new(handle, position, position));
             }
         }
     }
@@ -148,12 +148,7 @@ impl Scene2d {
         let context = get_render_context_2d();
         let result = context.remove_light(handle, self.id.as_str());
         if result {
-            self.lights_quadtree.remove(&SpatialPoint {
-                handle,
-                // The extents don't matter for removal since we're using the uuid for equality
-                min_extent: Default::default(),
-                max_extent: Default::default(),
-            });
+            self.lights_quadtree.remove(&handle);
             if let Some(index) = self.lights.iter().position(|&h| h == handle) {
                 self.lights.swap_remove(index);
             }
@@ -325,7 +320,7 @@ impl Scene2d {
             [frustum.left - buffer, frustum.top - buffer],
             [frustum.right + buffer, frustum.bottom + buffer],
         );
-        self.lights_quadtree.locate_in_envelope(&aabb)
+        self.lights_quadtree.get_tree().locate_in_envelope(&aabb)
             .map(|sp| sp.handle)
             .collect()
     }

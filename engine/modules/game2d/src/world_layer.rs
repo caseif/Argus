@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+use argus_util::rtree::QuadTree;
 use argus_render::common::Viewport;
 use std::collections::HashSet;
 use crate::actor::Actor2d;
@@ -30,7 +31,7 @@ use argus_scripting_bind::script_bind;
 use argus_util::dirtiable::ValueAndDirtyFlag;
 use argus_util::math::{Vector2f, Vector3f};
 use argus_util::pool::Handle;
-use argus_util::rtree::SpatialPoint;
+use argus_util::rtree::QuadTreeNode;
 use rstar::{RTree, RTreeObject, AABB, PointDistance};
 use std::collections::{hash_map, HashMap};
 use std::ops::DerefMut;
@@ -54,8 +55,8 @@ pub struct World2dLayer {
     point_lights: HashMap<Uuid, PointLight>,
 
     // Quadtrees for spatial partitioning
-    static_objects_quadtree: RTree<SpatialPoint<Uuid>>,
-    actors_quadtree: RTree<SpatialPoint<Uuid>>,
+    static_objects_quadtree: QuadTree<Uuid>,
+    actors_quadtree: QuadTree<Uuid>,
 
     collision_layers: HashMap<String, u64>,
     next_collision_layer_bit: u64,
@@ -96,8 +97,8 @@ impl World2dLayer {
             static_objects: Default::default(),
             actors: Default::default(),
             point_lights: Default::default(),
-            static_objects_quadtree: RTree::new(),
-            actors_quadtree: RTree::new(),
+            static_objects_quadtree: QuadTree::default(),
+            actors_quadtree: QuadTree::default(),
             collision_layers: Default::default(),
             next_collision_layer_bit: 1,
         };
@@ -198,7 +199,7 @@ impl World2dLayer {
         let half_size = 0.1; // Small size for point-like objects
         let min = Vector2f::new(position.x - half_size, position.y - half_size);
         let max = Vector2f::new(position.x + half_size, position.y + half_size);
-        self.static_objects_quadtree.insert(SpatialPoint::new(id, min, max));
+        self.static_objects_quadtree.insert(QuadTreeNode::new(id, min, max));
 
         Ok(id)
     }
@@ -235,7 +236,7 @@ impl World2dLayer {
                 }
 
                 // Remove from quadtree
-                self.static_objects_quadtree.remove(&SpatialPoint::from_handle(*id));
+                self.static_objects_quadtree.remove(id);
 
                 Ok(())
             }
@@ -298,7 +299,7 @@ impl World2dLayer {
         let half_size = 0.1; // Small size for point-like objects
         let min = Vector2f::new(position.x - half_size, position.y - half_size);
         let max = Vector2f::new(position.x + half_size, position.y + half_size);
-        self.actors_quadtree.insert(SpatialPoint::new(id, min, max));
+        self.actors_quadtree.insert(QuadTreeNode::new(id, min, max));
 
         Ok(id)
     }
@@ -312,7 +313,7 @@ impl World2dLayer {
                 }
 
                 // Remove from quadtree
-                self.actors_quadtree.remove(&SpatialPoint::from_handle(*id));
+                self.actors_quadtree.remove(id);
 
                 Ok(())
             }
@@ -362,10 +363,10 @@ impl World2dLayer {
     /// Updates the position of a static object in the quadtree
     pub fn update_static_object_in_quadtree(&mut self, id: &Uuid) {
         if let Some(obj) = self.static_objects.get(id) {
-            self.static_objects_quadtree.remove(&SpatialPoint::from_handle(*id));
+            self.static_objects_quadtree.remove(id);
 
             let position = obj.transform.translation;
-            self.static_objects_quadtree.insert(SpatialPoint {
+            self.static_objects_quadtree.insert(QuadTreeNode {
                 handle: *id,
                 min_extent: position.into(),
                 max_extent: position.into(),
@@ -376,10 +377,10 @@ impl World2dLayer {
     /// Updates the position of an actor in the quadtree
     pub fn update_actor_in_quadtree(&mut self, id: &Uuid) {
         if let Some(actor) = self.actors.get(id) {
-            self.actors_quadtree.remove(&SpatialPoint::from_handle(*id));
+            self.actors_quadtree.remove(id);
 
             let position = actor.get_position();
-            self.actors_quadtree.insert(SpatialPoint {
+            self.actors_quadtree.insert(QuadTreeNode {
                 handle: *id,
                 min_extent: position.into(),
                 max_extent: position.into(),
@@ -391,6 +392,7 @@ impl World2dLayer {
     pub fn find_static_objects(&self, center: Vector2f, radius: f32) -> Vec<Uuid> {
         let point_arr = [center.x, center.y];
         self.static_objects_quadtree
+            .get_tree()
             .locate_within_distance(point_arr, radius * radius)
             .map(|p| p.handle)
             .collect()
@@ -400,6 +402,7 @@ impl World2dLayer {
     pub fn find_actors(&self, center: Vector2f, radius: f32) -> Vec<Uuid> {
         let point_arr = [center.x, center.y];
         self.actors_quadtree
+            .get_tree()
             .locate_within_distance(point_arr, radius * radius)
             .map(|p| p.handle)
             .collect()

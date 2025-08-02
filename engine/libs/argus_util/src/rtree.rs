@@ -1,10 +1,52 @@
-use std::hash::Hash;
+use std::collections::HashSet;
+use std::hash::{DefaultHasher, Hash, Hasher};
 use rstar::{PointDistance, RTreeObject, AABB};
 use crate::math::Vector2f;
 
+#[derive(Default)]
+pub struct QuadTree<T: PartialEq + Eq + Copy + Hash> {
+    tree: rstar::RTree<QuadTreeNode<T>>,
+    hashes: HashSet<u64>,
+}
+
+impl<T: PartialEq + Eq + Copy + Hash> QuadTree<T> {
+    pub fn new() -> Self {
+        Self {
+            tree: rstar::RTree::new(),
+            hashes: HashSet::new(),
+        }
+    }
+}
+
+impl<T: PartialEq + Eq + Copy + Hash> QuadTree<T> {
+    pub fn get_tree(&self) -> &rstar::RTree<QuadTreeNode<T>> {
+        &self.tree
+    }
+
+    pub fn contains(&self, item: &T) -> bool {
+        self.hashes.contains(&Self::hash_item(item))
+    }
+
+    pub fn insert(&mut self, item: QuadTreeNode<T>) {
+        self.tree.insert(item);
+        self.hashes.insert(Self::hash_item(&item.handle));
+    }
+
+    pub fn remove(&mut self, item: &T) {
+        self.tree.remove(&QuadTreeNode::from_handle(*item));
+        self.hashes.remove(&Self::hash_item(item));
+    }
+
+    fn hash_item(item: &T) -> u64 {
+        let mut hasher = DefaultHasher::new();
+        item.hash(&mut hasher);
+        hasher.finish()
+    }
+}
+
 /// A spatial point that wraps a handle and implements the necessary traits for rstar.
 #[derive(Clone, Copy, Debug)]
-pub struct SpatialPoint<T: PartialEq + Eq + Copy + Hash> {
+pub struct QuadTreeNode<T: PartialEq + Eq + Copy + Hash> {
     /// The UUID of the object
     pub handle: T,
     /// The position of the object in 2D space
@@ -12,7 +54,7 @@ pub struct SpatialPoint<T: PartialEq + Eq + Copy + Hash> {
     pub max_extent: Vector2f,
 }
 
-impl<T: PartialEq + Eq + Copy + Hash> SpatialPoint<T> {
+impl<T: PartialEq + Eq + Copy + Hash> QuadTreeNode<T> {
     pub fn new(handle: T, min_extent: Vector2f, max_extent: Vector2f) -> Self {
         Self {
             handle,
@@ -27,15 +69,15 @@ impl<T: PartialEq + Eq + Copy + Hash> SpatialPoint<T> {
 }
 
 // Implement PartialEq and Eq to compare only by handle
-impl<T: PartialEq + Eq + Copy + Hash> PartialEq for SpatialPoint<T> {
+impl<T: PartialEq + Eq + Copy + Hash> PartialEq for QuadTreeNode<T> {
     fn eq(&self, other: &Self) -> bool {
         self.handle == other.handle
     }
 }
 
-impl<T: PartialEq + Eq + Copy + Hash> Eq for SpatialPoint<T> {}
+impl<T: PartialEq + Eq + Copy + Hash> Eq for QuadTreeNode<T> {}
 
-impl<T: PartialEq + Eq + Copy + Hash> RTreeObject for SpatialPoint<T> {
+impl<T: PartialEq + Eq + Copy + Hash> RTreeObject for QuadTreeNode<T> {
     type Envelope = AABB<[f32; 2]>;
 
     fn envelope(&self) -> Self::Envelope {
@@ -46,7 +88,7 @@ impl<T: PartialEq + Eq + Copy + Hash> RTreeObject for SpatialPoint<T> {
     }
 }
 
-impl<T: PartialEq + Eq + Copy + Hash> PointDistance for SpatialPoint<T> {
+impl<T: PartialEq + Eq + Copy + Hash> PointDistance for QuadTreeNode<T> {
     fn distance_2(&self, point: &[f32; 2]) -> f32 {
         // Calculate the closest point on the AABB to the given point
         let closest_x = point[0].max(self.min_extent.x).min(self.max_extent.x);
