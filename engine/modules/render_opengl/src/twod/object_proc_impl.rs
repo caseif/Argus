@@ -22,10 +22,9 @@ use crate::state::{ProcessedObject, RendererState, Scene2dState};
 use crate::util::defines::*;
 use std::{ptr, slice};
 use std::ops::Deref;
-use argus_render::common::Matrix4x4;
 use argus_render::constants::*;
 use argus_render::twod::{get_render_context_2d, RenderObject2d};
-use argus_util::math::Vector4f;
+use argus_util::math::{Matrix4x4, Vector4f};
 use argus_util::pool::Handle;
 
 fn count_vertices(obj: &RenderObject2d) -> usize {
@@ -221,7 +220,6 @@ fn update_processed_object_2d(
     is_transform_dirty: bool,
     program: &LinkedProgram,
 ) {
-
     // if a parent group or the object itself has had its transform updated
     proc_obj.updated = is_transform_dirty;
 
@@ -231,7 +229,9 @@ fn update_processed_object_2d(
         proc_obj.anim_frame_updated = true;
     }
 
-    if !is_transform_dirty {
+    proc_obj.active = object.is_active();
+
+    if !is_transform_dirty || !proc_obj.active {
         // nothing to do
         proc_obj.visited = true;
         return;

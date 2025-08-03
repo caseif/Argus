@@ -2,7 +2,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicU16, Ordering};
 use argus_resman::{Resource, WeakResource};
 use argus_util::dirtiable::{Dirtiable, ValueAndDirtyFlag};
-use argus_util::math::{Vector2f, Vector2u};
+use argus_util::math::{Matrix4x4, Vector2f, Vector2u, AABB};
 use argus_util::pool::Handle;
 use crate::common::Transform2d;
 use crate::twod::RenderPrimitive2d;
@@ -17,7 +17,10 @@ pub struct RenderObject2d {
     z_index: u32,
     light_opacity: Dirtiable<f32>,
     transform: Dirtiable<Transform2d>,
+    aabb: AABB,
     active_frame: Dirtiable<Vector2u>,
+    pub(crate) transform_matrix: Matrix4x4,
+    pub(crate) active: bool,
     pub(crate) version: Arc<AtomicU16>,
 }
 
@@ -33,6 +36,7 @@ impl RenderObject2d {
         light_opacity: f32,
         transform: Transform2d,
     ) -> RenderObject2d {
+        let aabb = compute_aabb(&primitives);
         Self {
             handle: None,
             parent_group,
@@ -43,7 +47,10 @@ impl RenderObject2d {
             z_index,
             light_opacity: Dirtiable::new(light_opacity),
             transform: Dirtiable::new(transform),
+            aabb,
             active_frame: Default::default(),
+            transform_matrix: Matrix4x4::identity(),
+            active: false,
             version: Arc::new(AtomicU16::new(0)),
         }
     }
@@ -68,6 +75,11 @@ impl RenderObject2d {
     #[must_use]
     pub fn get_primitives(&self) -> &Vec<RenderPrimitive2d> {
         &self.primitives
+    }
+
+    /// Gets the minimum AABB of this object in local space.
+    pub fn get_aabb(&self) -> &AABB {
+        &self.aabb
     }
 
     /// Gets the anchor point of the object about which rotation and scaling
@@ -175,8 +187,29 @@ impl RenderObject2d {
         self.version.fetch_add(1, Ordering::Relaxed);
     }
 
+    pub fn is_active(&self) -> bool {
+        self.active
+    }
+
     #[must_use]
     pub fn duplicate(&self, _parent: Handle) -> Handle {
         todo!()
     }
+}
+
+#[must_use]
+fn compute_aabb(primitives: &Vec<RenderPrimitive2d>) -> AABB {
+    let mut min_x = f32::MAX;
+    let mut max_x = f32::MIN;
+    let mut min_y = f32::MAX;
+    let mut max_y = f32::MIN;
+    for prim in primitives {
+        for v in &prim.vertices {
+            min_x = min_x.min(v.position.x);
+            max_x = max_x.max(v.position.x);
+            min_y = min_y.min(v.position.y);
+            max_y = max_y.max(v.position.y);
+        }
+    }
+    AABB::from_corners(Vector2f::new(min_x, min_y), Vector2f::new(max_x, max_y))
 }

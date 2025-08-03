@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use std::sync::atomic::Ordering;
-use argus_util::math::Vector2f;
+use argus_util::math::{Matrix4x4, Vector2f, AABB};
 use argus_util::pool::Handle;
-use crate::common::{Matrix4x4, SceneItemType};
+use crate::common::SceneItemType;
 use crate::twod::{get_render_context_2d, RenderContext2d};
 
 pub fn process_objects_2d<S>(
@@ -14,7 +14,7 @@ pub fn process_objects_2d<S>(
 
     let root_group_handle = {
         let scene = get_render_context_2d().get_scene(scene_id.as_ref()).unwrap();
-        scene.root_group_write.unwrap()
+        scene.root_group.unwrap()
     };
     process_render_group_2d(
         scene_id.as_ref(),
@@ -44,7 +44,7 @@ fn compute_abs_group_transform(context: &RenderContext2d, group: Handle)
     while let Some(cur_handle) = cur_handle_opt {
         let cur_group = context.get_group_mut(cur_handle).unwrap();
         cur_handle_opt = cur_group.get_parent();
-        mat *= cur_group.peek_transform().as_matrix(Vector2f::new(0.0, 0.0));
+        mat *= cur_group.peek_transform().value.as_matrix(Vector2f::new(0.0, 0.0));
     }
 
     mat
@@ -60,6 +60,12 @@ fn process_render_group_2d<S>(
     state: &mut S,
 ) {
     let context = get_render_context_2d();
+
+    let view_matrices = context.get_viewports().iter()
+        .filter(|vp| vp.get_scene_id() == scene_id)
+        .map(|vp| vp.peek_view_matrix())
+        .collect::<Vec<_>>();
+    let ndc_frustum = AABB::from_corners(Vector2f::new(-1.0, -1.0), Vector2f::new(1.0, 1.0));
 
     let (group_version, child_groups, child_objects, group_transform) = {
         let mut group = context.get_group_mut(group_handle).unwrap();
@@ -92,7 +98,7 @@ fn process_render_group_2d<S>(
     }
 
     for child_obj_handle in child_objects {
-        let (obj_transform, obj_anchor, child_version) = {
+        let (obj_transform, obj_aabb, obj_anchor, obj_matrix, child_version) = {
             //TODO: stopgap until render graph buffering is properly implemented
             let Some(mut child_object) = get_render_context_2d()
                 .get_object_mut(child_obj_handle)
@@ -100,7 +106,9 @@ fn process_render_group_2d<S>(
 
             (
                 child_object.get_transform().value,
+                child_object.get_aabb().clone(),
                 child_object.get_anchor_point(),
+                child_object.transform_matrix,
                 child_object.version.load(Ordering::Relaxed),
             )
         };
@@ -117,20 +125,39 @@ fn process_render_group_2d<S>(
             compute_abs_group_transform(get_render_context_2d(), group_handle) *
                 obj_transform.as_matrix(obj_anchor)
         } else {
-            Matrix4x4::identity()
+            obj_matrix
         };
         // don't need to compute anything otherwise, update function will just
         // mark the object as visited
 
         let dirty_transform = recompute_child_transform || is_obj_dirty;
 
-        update_fn(
-            scene_id,
-            child_obj_handle,
-            &final_obj_transform,
-            dirty_transform,
-            state,
-        );
+        let obj_world_aabb = final_obj_transform * obj_aabb;
+        if dirty_transform {
+            // update object in scene quadtree
+            let mut scene =
+                get_render_context_2d().get_scene_mut(scene_id).expect("Scene was missing for object!");
+            scene.objects.update(&child_obj_handle, obj_world_aabb);
+        }
+
+        let active = view_matrices.iter()
+            .any(|vm| ndc_frustum.intersects(&(*vm * obj_world_aabb)));
+        {
+            let mut obj = get_render_context_2d().get_object_mut(child_obj_handle)
+                .expect("Object was missing!");
+            obj.active = true;
+            obj.transform_matrix = final_obj_transform;
+        }
+
+        if active {
+            update_fn(
+                scene_id,
+                child_obj_handle,
+                &final_obj_transform,
+                dirty_transform,
+                state,
+            );
+        }
     }
 
     for child_group_handle in child_groups {

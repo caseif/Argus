@@ -121,8 +121,8 @@ impl RenderGroup2d {
     /// The returned transform is local and, if this group is a child of
     /// another, does not necessarily reflect the group's absolute transform
     /// with respect to its containing [scene](Scene2d).
-    pub fn peek_transform(&self) -> Transform2d {
-        self.transform.peek().value
+    pub fn peek_transform(&self) -> ValueAndDirtyFlag<Transform2d> {
+        self.transform.peek()
     }
 
     /// Gets the local [transform](Transform2d) of this group, clearing its

@@ -1,22 +1,13 @@
-use crate::common::{get_next_viewport_id, AttachedViewport, Matrix4x4, Transform2d, Viewport};
+use crate::common::{get_next_viewport_id, AttachedViewport, Transform2d, Viewport};
 use crate::twod::get_render_context_2d;
 use argus_core::ScreenSpaceScaleMode;
 use argus_util::dirtiable::{Dirtiable, ValueAndDirtyFlag};
-use argus_util::math::{Vector2f, Vector2u};
+use argus_util::math::{AABB, Vector2f, Vector2u, Matrix4x4};
 
 #[derive(Clone, Copy, Debug)]
 pub enum ViewportYAxisConvention {
     TopDown, // Vulkan
     BottomUp, // OpenGL
-}
-
-#[derive(Clone, Copy, Debug, Default)]
-pub struct ViewFrustum {
-    pub center: Vector2f,
-    pub top: f32,
-    pub bottom: f32,
-    pub left: f32,
-    pub right: f32,
 }
 
 #[derive(Clone, Debug)]
@@ -28,7 +19,7 @@ pub struct AttachedViewport2d {
     z_index: u32,
     postfx_shaders: Vec<String>,
     view_matrix: Dirtiable<Matrix4x4>,
-    view_frustum: ViewFrustum,
+    view_frustum: AABB,
 }
 
 impl AttachedViewport for AttachedViewport2d {
@@ -92,8 +83,12 @@ impl AttachedViewport2d {
     pub fn get_view_matrix(&mut self) -> ValueAndDirtyFlag<Matrix4x4> {
         self.view_matrix.read()
     }
+    
+    pub fn peek_view_matrix(&self) -> Matrix4x4 {
+        self.view_matrix.peek().value
+    }
 
-    pub fn get_view_frustum(&self) -> &ViewFrustum {
+    pub fn get_view_frustum(&self) -> &AABB {
         &self.view_frustum
     }
 
@@ -117,6 +112,7 @@ impl AttachedViewport2d {
                 .peek_transform()
         };
         self.view_matrix.update_in_place(|vm| {
+            println!("camera transform: {:?}", camera_transform);
             recompute_2d_viewport_view_matrix(
                 &self.viewport,
                 &camera_transform.inverse(),
@@ -209,13 +205,8 @@ impl AttachedViewport2d {
             max_y = max_y.max(y_final);
         }
 
-        self.view_frustum = ViewFrustum {
-            center: Vector2f::new(center_x, center_y),
-            top: min_y - 0.5,
-            bottom: max_y - 0.5,
-            left: min_x - 0.5,
-            right: max_x - 0.5,
-        };
+        self.view_frustum =
+            AABB::from_corners(Vector2f::new(min_x, min_y), Vector2f::new(max_x, max_y));
     }
 }
 

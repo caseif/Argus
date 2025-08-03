@@ -39,6 +39,7 @@ pub(crate) struct ProcessedObject {
     pub(crate) newly_created: bool,
     pub(crate) visited: bool,
     pub(crate) updated: bool,
+    pub(crate) active: bool,
     pub(crate) anim_frame_updated: bool,
 }
 
@@ -60,6 +61,7 @@ impl ProcessedObject {
             newly_created: true,
             visited: false,
             updated: false,
+            active: false,
             anim_frame_updated: false,
         }
     }

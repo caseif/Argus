@@ -1,9 +1,9 @@
+use crate::math;
+use rstar::iterators::RTreeIterator;
+use rstar::{PointDistance, RTree, RTreeObject};
 use std::collections::HashSet;
 use std::fmt::Debug;
 use std::hash::{DefaultHasher, Hash, Hasher};
-use rstar::{PointDistance, RTree, RTreeObject, AABB};
-use rstar::iterators::{RTreeIterator, RTreeIteratorMut};
-use crate::math::Vector2f;
 
 #[derive(Default)]
 pub struct QuadTree<T: PartialEq + Eq + Copy + Hash> {
@@ -34,9 +34,9 @@ impl<T: PartialEq + Eq + Copy + Hash> QuadTree<T> {
         self.hashes.insert(Self::hash_item(&item.handle));
     }
     
-    pub fn update(&mut self, key: &T, min_extent: Vector2f, max_extent: Vector2f) {
+    pub fn update(&mut self, key: &T, aabb: math::AABB) {
         self.remove(key);
-        self.insert(QuadTreeNode::new(*key, min_extent, max_extent));
+        self.insert(QuadTreeNode::new(*key, aabb));
     }
 
     pub fn remove(&mut self, item: &T) {
@@ -70,21 +70,19 @@ pub struct QuadTreeNode<T: PartialEq + Eq + Copy + Hash> {
     /// The UUID of the object
     pub handle: T,
     /// The position of the object in 2D space
-    pub min_extent: Vector2f,
-    pub max_extent: Vector2f,
+    pub aabb: math::AABB,
 }
 
 impl<T: PartialEq + Eq + Copy + Hash> QuadTreeNode<T> {
-    pub fn new(handle: T, min_extent: Vector2f, max_extent: Vector2f) -> Self {
+    pub fn new(handle: T, aabb: math::AABB) -> Self {
         Self {
             handle,
-            min_extent,
-            max_extent,
+            aabb,
         }
     }
 
     pub fn from_handle(handle: T) -> Self {
-        Self::new(handle, Default::default(), Default::default())
+        Self::new(handle, Default::default())
     }
 }
 
@@ -98,21 +96,18 @@ impl<T: PartialEq + Eq + Copy + Hash> PartialEq for QuadTreeNode<T> {
 impl<T: PartialEq + Eq + Copy + Hash> Eq for QuadTreeNode<T> {}
 
 impl<T: PartialEq + Eq + Copy + Hash> RTreeObject for QuadTreeNode<T> {
-    type Envelope = AABB<[f32; 2]>;
+    type Envelope = rstar::AABB<[f32; 2]>;
 
     fn envelope(&self) -> Self::Envelope {
-        AABB::from_points(&[
-            [self.min_extent.x, self.min_extent.y],
-            [self.max_extent.x, self.max_extent.y],
-        ])
+        self.aabb.into()
     }
 }
 
 impl<T: PartialEq + Eq + Copy + Hash> PointDistance for QuadTreeNode<T> {
     fn distance_2(&self, point: &[f32; 2]) -> f32 {
         // Calculate the closest point on the AABB to the given point
-        let closest_x = point[0].max(self.min_extent.x).min(self.max_extent.x);
-        let closest_y = point[1].max(self.min_extent.y).min(self.max_extent.y);
+        let closest_x = point[0].max(self.aabb.get_min().x).min(self.aabb.get_max().x);
+        let closest_y = point[1].max(self.aabb.get_min().y).min(self.aabb.get_max().y);
 
         // Calculate the squared distance from the closest point to the given point
         let dx = closest_x - point[0];

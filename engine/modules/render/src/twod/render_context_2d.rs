@@ -149,15 +149,15 @@ impl RenderContext2d {
     pub fn remove_scene(&self, id: impl Into<String>) -> bool {
         let Some((_, scene)) = self.scenes.remove(&id.into()) else { return false; };
 
-        if let Some(root_handle) = scene.root_group_read {
-            self.remove_group(root_handle, None);
-        }
-
-        if let Some(root_handle) = scene.root_group_write {
+        if let Some(root_handle) = scene.root_group {
             self.remove_group(root_handle, None);
         }
 
         true
+    }
+    
+    pub(crate) fn get_viewports(&self) -> &DashMap<u32, AttachedViewport2d> {
+        &self.viewports
     }
 
     pub fn get_viewport(&self, id: u32) -> Option<Ref<u32, AttachedViewport2d>> {

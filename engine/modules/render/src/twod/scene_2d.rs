@@ -1,9 +1,8 @@
 use std::collections::HashMap;
 use argus_resman::Resource;
 use argus_util::dirtiable::{Dirtiable, ValueAndDirtyFlag};
-use argus_util::math::{Vector2f, Vector3f};
+use argus_util::math::{Vector2f, Vector3f, AABB};
 use argus_util::pool::Handle;
-use rstar::AABB;
 use argus_util::rtree::{QuadTree, QuadTreeNode};
 use crate::common::*;
 use crate::twod::*;
@@ -13,9 +12,9 @@ pub struct Scene2d {
     lighting_enabled: bool,
     ambient_light_level: Dirtiable<f32>,
     ambient_light_color: Dirtiable<Vector3f>,
-    pub(crate) root_group_read: Option<Handle>,
-    pub(crate) root_group_write: Option<Handle>,
-    lights_quadtree: QuadTree<Handle>,
+    pub(crate) root_group: Option<Handle>,
+    pub(crate) objects: QuadTree<Handle>,
+    lights: QuadTree<Handle>,
     cameras: HashMap<String, Camera2d>,
     pub(crate) last_rendered_versions: HashMap<(SceneItemType, Handle), u16>,
 }
@@ -29,16 +28,16 @@ impl Scene for Scene2d {
 impl Scene2d {
     #[must_use]
     pub(crate) fn new(id: impl Into<String>) -> Scene2d {
-        let root_group_write = get_render_context_2d()
+        let root_group = get_render_context_2d()
             .add_group(RenderGroup2d::new(Transform2d::default(), None));
         Self {
             id: id.into(),
             lighting_enabled: false,
             ambient_light_level: Dirtiable::new(1.0),
             ambient_light_color: Dirtiable::new(Vector3f::new(1.0, 1.0, 1.0)),
-            root_group_read: None,
-            root_group_write: Some(root_group_write),
-            lights_quadtree: QuadTree::new(),
+            root_group: Some(root_group),
+            objects: QuadTree::new(),
+            lights: QuadTree::new(),
             cameras: HashMap::new(),
             last_rendered_versions: HashMap::new(),
         }
@@ -87,7 +86,7 @@ impl Scene2d {
     }
 
     pub fn get_light_handles(&self) -> Vec<Handle> {
-        self.lights_quadtree.get_tree().iter().map(|sp| sp.handle).collect()
+        self.lights.get_tree().iter().map(|sp| sp.handle).collect()
     }
 
     pub fn add_light(
@@ -100,8 +99,11 @@ impl Scene2d {
         let light = RenderLight2d::new(properties, initial_transform.clone());
         let context = get_render_context_2d();
         let handle = context.add_light(light);
-        self.lights_quadtree.insert(
-            QuadTreeNode::new(handle, initial_transform.translation, initial_transform.translation),
+        self.lights.insert(
+            QuadTreeNode::new(
+                handle,
+                AABB::from_point(initial_transform.translation),
+            ),
         );
         handle
     }
@@ -110,7 +112,7 @@ impl Scene2d {
         &mut self,
         handle: Handle
     ) -> Option<ContextObjectReadGuard<RenderLight2d>> {
-        if !self.lights_quadtree.contains(&handle) {
+        if !self.lights.contains(&handle) {
             return None;
         }
         let context = get_render_context_2d();
@@ -121,7 +123,7 @@ impl Scene2d {
         &mut self,
         handle: Handle
     ) -> Option<ContextObjectWriteGuard<RenderLight2d>> {
-        if !self.lights_quadtree.contains(&handle) {
+        if !self.lights.contains(&handle) {
             return None;
         }
         let context = get_render_context_2d();
@@ -131,16 +133,12 @@ impl Scene2d {
     }
 
     pub fn update_lights_quadtree(&mut self) {
-        for handle in self.lights_quadtree.iter().map(|node| node.handle).collect::<Vec<_>>() {
+        for handle in self.lights.iter().map(|node| node.handle).collect::<Vec<_>>() {
             let context = get_render_context_2d();
             if let Some(mut light) = context.get_light_mut(handle) {
                 let transform = light.get_transform();
                 if transform.dirty {
-                    self.lights_quadtree.update(
-                        &handle,
-                        transform.value.translation,
-                        transform.value.translation,
-                    );
+                    self.lights.update(&handle, AABB::from_point(transform.value.translation));
                 }
             }
         }
@@ -150,7 +148,7 @@ impl Scene2d {
         let context = get_render_context_2d();
         let result = context.remove_light(handle);
         if result {
-            self.lights_quadtree.remove(&handle);
+            self.lights.remove(&handle);
         }
         result
     }
@@ -179,7 +177,7 @@ impl Scene2d {
         -> Option<ContextObjectReadGuard<RenderObject2d>> {
         let context = get_render_context_2d();
         let object = context.get_object(handle)?;
-        if object.get_parent() != self.root_group_write.unwrap() {
+        if object.get_parent() != self.root_group.unwrap() {
             panic!("Tried to get object from scene which was not direct child of scene");
         }
         Some(object)
@@ -189,7 +187,7 @@ impl Scene2d {
         -> Option<ContextObjectWriteGuard<RenderObject2d>> {
         let context = get_render_context_2d();
         let object = context.get_object_mut(handle)?;
-        if object.get_parent() != self.root_group_write.unwrap() {
+        if object.get_parent() != self.root_group.unwrap() {
             panic!("Tried to get object from scene which was not direct child of scene");
         }
         Some(object)
@@ -206,10 +204,10 @@ impl Scene2d {
     /// * `transform` The local transform of the new group.
     pub fn add_group(&mut self, transform: Transform2d)
         -> Handle {
-        let new_group = RenderGroup2d::new(transform, self.root_group_write);
+        let new_group = RenderGroup2d::new(transform, self.root_group);
         let context = get_render_context_2d();
         let new_handle = context.add_group(new_group);
-        let mut root_group = context.get_group_mut(self.root_group_write.unwrap()).unwrap();
+        let mut root_group = context.get_group_mut(self.root_group.unwrap()).unwrap();
         root_group.child_groups.push(new_handle);
         new_handle
     }
@@ -248,7 +246,7 @@ impl Scene2d {
         transform: Transform2d,
     ) -> Handle {
         let new_object = RenderObject2d::new(
-            self.root_group_write.unwrap(),
+            self.root_group.unwrap(),
             material,
             primitives,
             anchor_point,
@@ -259,7 +257,7 @@ impl Scene2d {
         );
         let context = get_render_context_2d();
         let new_handle = context.add_object(new_object);
-        let mut root_group = context.get_group_mut(self.root_group_write.unwrap()).unwrap();
+        let mut root_group = context.get_group_mut(self.root_group.unwrap()).unwrap();
         root_group.child_objects.push(new_handle);
         new_handle
     }
@@ -268,7 +266,7 @@ impl Scene2d {
     /// destroying it in the process.
     pub fn remove_group(&mut self, handle: Handle) {
         let context = get_render_context_2d();
-        if !context.remove_group(handle, Some(self.root_group_write.unwrap())) {
+        if !context.remove_group(handle, Some(self.root_group.unwrap())) {
             panic!("Tried to remove group that doesn't exist in the current render context");
         }
     }
@@ -277,7 +275,7 @@ impl Scene2d {
     /// this group, destroying it in the process.
     pub fn remove_object(&mut self, handle: Handle) {
         let context = get_render_context_2d();
-        if !context.remove_object(handle, self.root_group_write.unwrap()) {
+        if !context.remove_object(handle, self.root_group.unwrap()) {
             panic!("Tried to remove object that doesn't exist in the current render context");
         }
     }
@@ -307,19 +305,17 @@ impl Scene2d {
         self.cameras.remove(id.as_ref());
     }
 
-    #[allow(unused)]
-    pub(crate) fn get_lights_for_render(&self) -> Vec<RenderLight2d> {
-        todo!()
+    pub fn get_objects_for_viewport(&self, viewport: &AttachedViewport2d) -> Vec<Handle> {
+        let aabb = viewport.get_view_frustum().clone().into();
+        self.objects.get_tree().locate_in_envelope(&aabb)
+            .map(|sp| sp.handle)
+            .collect()
     }
 
-    pub fn get_lights_for_frustum(&self, viewport: &AttachedViewport2d, buffer: f32)
-        -> Vec<Handle> {
-        let frustum = viewport.get_view_frustum();
-        let aabb = AABB::from_corners(
-            [frustum.left - buffer, frustum.top - buffer],
-            [frustum.right + buffer, frustum.bottom + buffer],
-        );
-        self.lights_quadtree.get_tree().locate_in_envelope(&aabb)
+    pub fn get_lights_for_viewport(&self, viewport: &AttachedViewport2d, buffer: f32)
+                                   -> Vec<Handle> {
+        let aabb = viewport.get_view_frustum().expand(buffer).into();
+        self.lights.get_tree().locate_in_envelope(&aabb)
             .map(|sp| sp.handle)
             .collect()
     }

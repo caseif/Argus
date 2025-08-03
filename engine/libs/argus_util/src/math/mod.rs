@@ -16,6 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+mod aabb;
+mod matrix;
 mod vector;
 
+pub use self::aabb::*;
+pub use self::matrix::*;
 pub use self::vector::*;

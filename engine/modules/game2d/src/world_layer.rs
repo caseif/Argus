@@ -16,9 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+use argus_util::math::AABB;
 use argus_util::rtree::QuadTree;
-use argus_render::common::Viewport;
-use std::collections::HashSet;
 use crate::actor::Actor2d;
 use crate::light_point::PointLight;
 use crate::sprite::Sprite;
@@ -32,7 +31,6 @@ use argus_util::dirtiable::ValueAndDirtyFlag;
 use argus_util::math::{Vector2f, Vector3f};
 use argus_util::pool::Handle;
 use argus_util::rtree::QuadTreeNode;
-use rstar::{RTree, RTreeObject, AABB, PointDistance};
 use std::collections::{hash_map, HashMap};
 use std::ops::DerefMut;
 use uuid::Uuid;
@@ -199,7 +197,7 @@ impl World2dLayer {
         let half_size = 0.1; // Small size for point-like objects
         let min = Vector2f::new(position.x - half_size, position.y - half_size);
         let max = Vector2f::new(position.x + half_size, position.y + half_size);
-        self.static_objects_quadtree.insert(QuadTreeNode::new(id, min, max));
+        self.static_objects_quadtree.insert(QuadTreeNode::new(id, AABB::from_corners(min, max)));
 
         Ok(id)
     }
@@ -299,7 +297,7 @@ impl World2dLayer {
         let half_size = 0.1; // Small size for point-like objects
         let min = Vector2f::new(position.x - half_size, position.y - half_size);
         let max = Vector2f::new(position.x + half_size, position.y + half_size);
-        self.actors_quadtree.insert(QuadTreeNode::new(id, min, max));
+        self.actors_quadtree.insert(QuadTreeNode::new(id, AABB::from_corners(min, max)));
 
         Ok(id)
     }
@@ -363,8 +361,7 @@ impl World2dLayer {
             let position = obj.transform.translation;
             self.static_objects_quadtree.insert(QuadTreeNode {
                 handle: *id,
-                min_extent: position.into(),
-                max_extent: position.into(),
+                aabb: AABB::from_point(position),
             });
         }
     }
@@ -377,8 +374,7 @@ impl World2dLayer {
             let position = actor.get_position();
             self.actors_quadtree.insert(QuadTreeNode {
                 handle: *id,
-                min_extent: position.into(),
-                max_extent: position.into(),
+                aabb: AABB::from_point(position),
             });
         }
     }

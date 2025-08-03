@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-use std::collections::HashSet;
 use crate::aglet::*;
 use crate::bucket_proc::fill_buckets_2d;
 use crate::compositing::*;
@@ -26,14 +25,14 @@ use crate::twod::compile_scene_2d;
 use crate::util::buffer::GlBuffer;
 use crate::util::gl_util::gl_debug_callback;
 use crate::LOGGER;
-use argus_core::ScreenSpaceScaleMode;
 use argus_logging::info;
-use argus_render::common::{AttachedViewport, Matrix4x4, RenderCanvas, Transform2d, Viewport};
+use argus_render::common::{AttachedViewport, RenderCanvas};
 use argus_render::constants::*;
 use argus_render::twod::{get_render_context_2d, ViewportYAxisConvention};
 use argus_resman::Resource;
-use argus_util::math::{Vector2f, Vector2u};
+use argus_util::math::Vector2u;
 use argus_wm::*;
+use std::collections::HashSet;
 use std::ffi::CStr;
 use std::ptr;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};

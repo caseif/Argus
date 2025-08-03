@@ -17,7 +17,7 @@
  */
 use std::collections::HashMap;
 use ash::vk;
-use argus_render::common::{Matrix4x4, SceneType};
+use argus_render::common::SceneType;
 use argus_resman::ResourceIdentifier;
 use crate::util::{CommandBufferInfo, FramebufferGrouping, VulkanBuffer};
 use crate::util::defines::MAX_FRAMES_IN_FLIGHT;

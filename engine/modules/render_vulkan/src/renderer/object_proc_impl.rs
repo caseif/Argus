@@ -1,8 +1,8 @@
 use ash::vk;
-use argus_render::common::{Material, Matrix4x4};
+use argus_render::common::Material;
 use argus_render::constants::*;
 use argus_render::twod::{get_render_context_2d, RenderObject2d};
-use argus_util::math::Vector4f;
+use argus_util::math::{Matrix4x4, Vector4f};
 use argus_util::pool::Handle;
 use crate::setup::device::VulkanDevice;
 use crate::setup::instance::VulkanInstance;
