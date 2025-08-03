@@ -24,6 +24,7 @@ use crate::util::defines::*;
 use crate::util::gl_util::*;
 use std::cmp::{max, min};
 use std::mem::swap;
+use std::ops::DerefMut;
 use std::ptr;
 use argus_render::common::{AttachedViewport, Material, Viewport, ViewportCoordinateSpaceMode};
 use argus_render::constants::*;
@@ -246,9 +247,12 @@ fn create_textures(target: GLenum, n: GLsizei) -> Vec<GlTextureHandle> {
 
 pub(crate) fn draw_scene_2d_to_framebuffer(
     renderer_state: &mut RendererState,
-    att_viewport: &mut AttachedViewport2d,
+    viewport_id: u32,
     resolution: &ValueAndDirtyFlag<Vector2u>,
 ) {
+    let mut att_viewport = get_render_context_2d().get_viewport_mut(viewport_id)
+        .expect("Viewport was missing from context!");
+
     let viewport_px = transform_viewport_to_pixels(att_viewport.get_viewport(), &resolution.value);
 
     let fb_width = (viewport_px.right - viewport_px.left).abs();
@@ -268,15 +272,15 @@ pub(crate) fn draw_scene_2d_to_framebuffer(
 
     // set viewport uniforms
     update_viewport_ubo(
-        att_viewport,
+        att_viewport.deref_mut(),
         renderer_state.scene_states_2d.get(&scene_id).expect("Scene state was missing!"),
-        renderer_state.viewport_states_2d.get_mut(&att_viewport.get_id()).unwrap(),
+        renderer_state.viewport_states_2d.get_mut(&viewport_id).unwrap(),
     );
 
     let scene_state = renderer_state.scene_states_2d.get(&scene_id).unwrap();
 
     init_viewport_buffers(
-        renderer_state.viewport_states_2d.get_mut(&att_viewport.get_id()).unwrap(),
+        renderer_state.viewport_states_2d.get_mut(&viewport_id).unwrap(),
         resolution,
         fb_width,
         fb_height,

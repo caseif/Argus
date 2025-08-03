@@ -316,10 +316,12 @@ pub(crate) fn draw_scene_to_framebuffer(
     instance: &VulkanInstance,
     device: &VulkanDevice,
     state: &mut RendererState,
-    viewport: &mut AttachedViewport2d,
+    viewport_id: u32,
     resolution: ValueAndDirtyFlag<Vector2u>,
     cur_frame: usize,
 ) {
+    let mut viewport = get_render_context_2d().get_viewport_mut(viewport_id).unwrap();
+
     let viewport_state = state.viewport_states_2d.get_mut(&viewport.get_id()).unwrap();
     let scene_state = state.scene_states_2d.get_mut(viewport.get_scene_id()).unwrap();
 

@@ -14,6 +14,8 @@ pub const WINDOWING_MODE_FULLSCREEN: &str = "fullscreen";
 
 const CONFIG_KEY_WINDOW: &str = "window";
 
+const PRINT_FRAME_TIME: bool = false;
+
 crate_logger!(LOGGER, "argus/wm");
 
 #[allow(non_upper_case_globals)]
@@ -160,9 +162,23 @@ pub fn update_lifecycle_wm(stage: LifecycleStage) {
 fn render_loop(params: RenderLoopParams) {
     let mut last_time = Instant::now();
 
+    let mut total_frames = 0;
+    let mut last_message_at = Instant::now();
     loop {
         if params.should_shutdown() {
             return;
+        }
+
+        if PRINT_FRAME_TIME {
+            total_frames += 1;
+            if last_message_at.elapsed().as_secs() >= 10 {
+                println!(
+                    "Average frame time (us): {}",
+                    last_message_at.elapsed().as_micros() / total_frames,
+                );
+                last_message_at = Instant::now();
+                total_frames = 0;
+            }
         }
         
         let cur_time = Instant::now();

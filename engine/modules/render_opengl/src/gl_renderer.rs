@@ -15,6 +15,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+use std::collections::HashSet;
 use crate::aglet::*;
 use crate::bucket_proc::fill_buckets_2d;
 use crate::compositing::*;
@@ -152,12 +153,11 @@ impl GlRenderer {
             .downcast_mut::<RenderCanvas>()
             .expect("Canvas object from window was unexpected type!");
 
-        let mut viewports = canvas.get_viewports_2d_mut();
-        viewports.sort_by_key(|vp| vp.get_z_index());
+        let mut viewport_ids = canvas.get_viewports_2d();
 
         // initial render pass
-        for viewport in &mut viewports {
-            draw_scene_2d_to_framebuffer(&mut self.state, viewport, &resolution);
+        for &viewport_id in &viewport_ids {
+            draw_scene_2d_to_framebuffer(&mut self.state, viewport_id, &resolution);
         }
 
         // Lighting pass
@@ -175,11 +175,13 @@ impl GlRenderer {
         //
         // In effect, the lightmap of a given viewport A will be applied to all
         // viewports behind A.
-        for target_idx in 0..viewports.len() {
-            let target_viewport = &viewports[target_idx];
+        for target_idx in 0..viewport_ids.len() {
+            let target_viewport = get_render_context_2d().get_viewport(viewport_ids[target_idx])
+                .expect("Viewport was missing from context!");
 
-            for src_idx in target_idx..viewports.len() {
-                let source_viewport = &viewports[src_idx];
+            for src_idx in target_idx..viewport_ids.len() {
+                let source_viewport = get_render_context_2d().get_viewport(viewport_ids[src_idx])
+                    .expect("Viewport was missing from context!");
                 let source_scene_id = source_viewport.get_scene_id();
                 let source_scene = get_render_context_2d().get_scene(source_scene_id).unwrap();
                 if !source_scene.is_lighting_enabled() {
@@ -187,8 +189,8 @@ impl GlRenderer {
                 }
                 draw_lightmap_to_framebuffer(
                     &self.state,
-                    source_viewport.get_id(),
-                    target_viewport.get_id(),
+                    viewport_ids[src_idx],
+                    viewport_ids[target_idx],
                     target_viewport.get_viewport(),
                     &resolution.value, 
                 );
@@ -205,12 +207,14 @@ impl GlRenderer {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        for viewport in &viewports {
-            let viewport_state = self.state.get_viewport_2d_state(viewport.get_id());
+        for &viewport_id in &viewport_ids {
+            let viewport_state = self.state.get_viewport_2d_state(viewport_id);
+            let viewport = get_render_context_2d().get_viewport(viewport_id)
+                .expect("Viewport was missing from context!").get_viewport().clone();
 
             draw_framebuffer_to_screen(
                 viewport_state,
-                viewport.get_viewport(),
+                &viewport,
                 self.state.frame_program.as_ref().unwrap(),
                 self.state.frame_vao.unwrap(),
                 &resolution,
@@ -240,8 +244,10 @@ impl GlRenderer {
             .downcast_mut::<RenderCanvas>()
             .expect("Canvas object from window was unexpected type!");
 
-        for viewport in canvas.get_viewports_2d_mut().iter_mut() {
-            viewport.update_view_state(resolution, ViewportYAxisConvention::BottomUp);
+        for viewport_id in canvas.get_viewports_2d() {
+            get_render_context_2d().get_viewport_mut(viewport_id)
+                .expect("Viewport was missing from context!")
+                .update_view_state(resolution, ViewportYAxisConvention::BottomUp);
         }
     }
 
@@ -254,9 +260,15 @@ impl GlRenderer {
             .downcast_mut::<RenderCanvas>()
             .expect("Canvas object from window was unexpected type!");
 
-        for viewport in canvas.get_viewports_2d_mut() {
+        let mut scene_ids = HashSet::new();
+
+        for viewport_id in canvas.get_viewports_2d() {
             // ensure viewport state is created
-            _ = self.state.get_or_create_viewport_2d_state(viewport.get_id());
+            _ = self.state.get_or_create_viewport_2d_state(viewport_id);
+
+            let mut viewport = get_render_context_2d().get_viewport_mut(viewport_id)
+                .expect("Viewport was missing from context!");
+            scene_ids.insert(viewport.get_scene_id().to_string());
 
             let camera_transform = {
                 let mut scene = get_render_context_2d()
@@ -270,10 +282,7 @@ impl GlRenderer {
             }
         }
 
-        let scene_ids = canvas.get_viewports_2d().iter()
-            .map(|vp| vp.get_scene_id())
-            .collect::<Vec<_>>();
-        for scene_id in scene_ids {
+        for scene_id in &scene_ids {
             compile_scene_2d(&mut self.state, scene_id);
 
             fill_buckets_2d(&mut self.state, scene_id);

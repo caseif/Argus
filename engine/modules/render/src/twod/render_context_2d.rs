@@ -1,10 +1,11 @@
-use crate::twod::{RenderGroup2d, RenderLight2d, RenderObject2d, Scene2d};
+use crate::twod::{AttachedViewport2d, RenderGroup2d, RenderLight2d, RenderObject2d, Scene2d};
 use argus_util::pool::{Handle, ValuePool};
 use dashmap::mapref::one::{Ref, RefMut};
 use dashmap::DashMap;
 use lazy_static::lazy_static;
 use parking_lot::{MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock, RwLockReadGuard, RwLockWriteGuard};
 use std::ops::{Deref, DerefMut};
+use crate::common::{AttachedViewport, Viewport};
 
 lazy_static! {
     static ref RENDER_CONTEXT: RenderContext2d = RenderContext2d::new();
@@ -13,6 +14,7 @@ lazy_static! {
 #[derive(Default)]
 pub struct RenderContext2d {
     scenes: DashMap<String, Scene2d>,
+    viewports: DashMap<u32, AttachedViewport2d>,
     group_pool: RwLock<ValuePool<RenderGroup2d>>,
     object_pool: RwLock<ValuePool<RenderObject2d>>,
     light_pool: RwLock<ValuePool<RenderLight2d>>,
@@ -120,6 +122,7 @@ impl RenderContext2d {
     pub fn new() -> Self {
         Self {
             scenes: DashMap::new(),
+            viewports: DashMap::new(),
             group_pool: RwLock::new(ValuePool::new()),
             object_pool: RwLock::new(ValuePool::new()),
             light_pool: RwLock::new(ValuePool::new()),
@@ -155,6 +158,34 @@ impl RenderContext2d {
         }
 
         true
+    }
+
+    pub fn get_viewport(&self, id: u32) -> Option<Ref<u32, AttachedViewport2d>> {
+        self.viewports.get(&id)
+    }
+
+    pub fn get_viewport_mut(&self, id: u32)
+                         -> Option<RefMut<u32, AttachedViewport2d>> {
+        self.viewports.get_mut(&id)
+    }
+
+    pub(crate) fn create_viewport(
+        &self,
+        scene_id: impl AsRef<str>,
+        camera_id: impl AsRef<str>,
+        viewport: Viewport,
+        z_index: u32,
+    )
+        -> RefMut<u32, AttachedViewport2d> {
+        let viewport =
+            AttachedViewport2d::new(scene_id.as_ref(), camera_id.as_ref(), viewport, z_index);
+        let id = viewport.get_id();
+        self.viewports.insert(id, viewport);
+        self.viewports.get_mut(&id).unwrap()
+    }
+
+    pub(crate) fn remove_viewport(&self, id: u32) -> bool {
+        self.viewports.remove(&id).is_some()
     }
 
     pub(crate) fn add_group(&self, group: RenderGroup2d) -> Handle {

@@ -335,17 +335,15 @@ impl VulkanRenderer {
 
         let canvas = window.get_canvas_mut().unwrap()
             .as_any_mut().downcast_mut::<RenderCanvas>().unwrap();
-        let mut viewports = canvas.get_viewports_2d_mut();
-        viewports.sort_by_key(|vp| vp.get_z_index());
-        let viewports = viewports;
+        let mut viewport_ids = canvas.get_viewports_2d();
 
         //timer_start = std::chrono::high_resolution_clock::now();
-        for viewport in viewports {
+        for viewport_id in viewport_ids {
             draw_scene_to_framebuffer(
                 &self.vk_instance,
                 &self.vk_device,
                 &mut self.state,
-                viewport,
+                viewport_id,
                 resolution,
                 cur_frame,
             );
@@ -439,7 +437,10 @@ impl VulkanRenderer {
     fn update_view_states(&mut self, window: &mut Window, resolution: &Vector2u, force: bool) {
         let canvas = window.get_canvas_mut().unwrap().as_any_mut().downcast_mut::<RenderCanvas>().unwrap();
 
-        for viewport in canvas.get_viewports_2d_mut() {
+        for viewport_id in canvas.get_viewports_2d() {
+            let mut viewport = get_render_context_2d().get_viewport_mut(viewport_id)
+                .expect("Viewport was missing from context!");
+
             let camera_transform = {
                 let mut scene = get_render_context_2d().get_scene_mut(viewport.get_scene_id()).unwrap();
                 let camera = scene.get_camera_mut(viewport.get_camera_id()).unwrap();
@@ -458,9 +459,9 @@ impl VulkanRenderer {
     }
 }
 
-fn get_associated_scenes_for_canvas(canvas: &RenderCanvas) -> HashSet<&str> {
+fn get_associated_scenes_for_canvas(canvas: &RenderCanvas) -> HashSet<String> {
     canvas.get_viewports_2d().iter()
-        .map(|viewport| viewport.get_scene_id())
+        .map(|&id| get_render_context_2d().get_viewport(id).unwrap().get_scene_id().to_string())
         .collect()
 }
 
@@ -468,9 +469,9 @@ fn create_viewport_2d_state(
     instance: &VulkanInstance,
     device: &VulkanDevice,
     command_pool: vk::CommandPool,
-    viewport: &AttachedViewport2d
+    viewport_id: u32,
 ) -> ViewportState {
-    let mut viewport_state = ViewportState::new(viewport.get_id());
+    let mut viewport_state = ViewportState::new(viewport_id);
 
     let sem_info = vk::SemaphoreCreateInfo::default();
 
@@ -589,18 +590,22 @@ fn add_remove_state_objects(
 ) {
     let canvas = window.get_canvas().unwrap().as_any().downcast_ref::<RenderCanvas>().unwrap();
 
-    for viewport in canvas.get_viewports_2d() {
-        let vp_state = state.viewport_states_2d.entry(viewport.get_id())
+    for viewport_id in canvas.get_viewports_2d() {
+        let vp_state = state.viewport_states_2d.entry(viewport_id)
             .or_insert_with(|| create_viewport_2d_state(
                 instance,
                 device,
                 state.graphics_command_pool.unwrap(),
-                viewport,
+                viewport_id,
             ));
 
         vp_state.visited = true;
 
-        let scene_id = viewport.get_scene_id();
+        let scene_id = {
+            get_render_context_2d().get_viewport(viewport_id)
+                .expect("Viewport was missing from context!")
+                .get_scene_id().to_string()
+        };
         let scene_state = state.scene_states_2d.entry(scene_id.to_owned())
             .or_insert_with(|| create_scene_state(instance, device, scene_id));
         scene_state.visited = true;
@@ -640,7 +645,7 @@ fn compile_scenes(
     let canvas = window.get_canvas().unwrap().as_any().downcast_ref::<RenderCanvas>().unwrap();
 
     for scene_id in get_associated_scenes_for_canvas(canvas) {
-        compile_scene_2d(instance, device, state, scene_id);
+        compile_scene_2d(instance, device, state, &scene_id);
     }
 }
 
@@ -687,9 +692,9 @@ fn record_scene_rebuild(
     begin_oneshot_commands(device, state.copy_cmd_buf[cur_frame].as_ref().unwrap());
 
     for scene_id in get_associated_scenes_for_canvas(canvas) {
-        check_scene_ubo_dirty(state, scene_id);
+        check_scene_ubo_dirty(state, &scene_id);
 
-        let scene_state = state.scene_states_2d.get_mut(scene_id).unwrap();
+        let scene_state = state.scene_states_2d.get_mut(&scene_id).unwrap();
 
         fill_buckets(
             instance,
@@ -797,7 +802,7 @@ fn get_next_image(device: &VulkanDevice, state: &mut RendererState, cur_frame: u
 fn composite_framebuffers(
     device: &VulkanDevice,
     state: &mut RendererState,
-    viewports: &Vec<&AttachedViewport2d>,
+    viewports: &Vec<u32>,
     sc_image_index: u32,
     cur_frame: usize,
 ) {
@@ -874,13 +879,16 @@ fn composite_framebuffers(
         );
     }
 
-    for viewport in viewports {
-        let viewport_state = state.viewport_states_2d.get_mut(&viewport.get_id()).unwrap();
+    for &viewport_id in viewports {
+        let viewport_state = state.viewport_states_2d.get_mut(&viewport_id).unwrap();
+        let viewport = get_render_context_2d().get_viewport(viewport_id)
+            .expect("Viewport was missing from context!")
+            .get_viewport().clone();
 
         draw_framebuffer_to_swapchain(
             device,
             &mut viewport_state.per_frame[cur_frame],
-            viewport.get_viewport(),
+            &viewport,
             state.swapchain.as_ref().unwrap(),
             state.composite_pipeline.as_ref().unwrap(),
             state.composite_cmd_bufs.get(&sc_image_index).unwrap().0.clone(),
