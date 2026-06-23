@@ -467,3 +467,6 @@ venv/
 
 Cargo.lock
 !/bootstrap/Cargo.lock
+
+resources/
+tools/gen_binding_spec_lua/*.lua
