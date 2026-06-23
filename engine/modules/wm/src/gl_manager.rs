@@ -1,7 +1,7 @@
 use crate::{Window, WindowManager};
 use bitflags::bitflags;
 use fragile::Fragile;
-use sdl3::video::GLProfile;
+use sdl3::video::{GLProfile, SwapInterval};
 use sdl3::VideoSubsystem;
 use std::ffi::CStr;
 use std::{ffi, mem};
@@ -144,7 +144,8 @@ impl GlManager {
     }
 
     pub fn set_swap_interval(&self, interval: i32) {
-        self.video_subsystem.gl_set_swap_interval(interval).unwrap();
+        let swap_interval = SwapInterval::from_i32(interval).unwrap_or(SwapInterval::Immediate);
+        self.video_subsystem.gl_set_swap_interval(swap_interval).unwrap();
     }
 
     pub fn swap_buffers(&self, window: &Window) -> Result<(), String> {

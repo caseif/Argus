@@ -59,7 +59,9 @@ impl VulkanRenderer {
 
     pub(crate) fn init(&mut self, window: &Window) {
         let ash_instance = self.vk_instance.get_underlying().handle();
-        let wm_instance = VkInstance::from_raw(ash_instance.as_raw());
+        // SAFETY: The struct is only created via ::new which accepts a VK
+        //         instance via a safe VulkanInstance object.
+        let wm_instance = unsafe { VkInstance::from_raw(ash_instance.as_raw()) };
         let wm_surface = vk_create_surface(window, &wm_instance)
             .expect("Failed to create Vulkan surface");
         let ash_surface = vk::SurfaceKHR::from_raw(wm_surface.as_raw());

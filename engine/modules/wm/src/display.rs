@@ -69,11 +69,7 @@ impl Display {
         -> Result<SdlDisplayMode, String> {
         let sdl_mode = SdlDisplayMode::new(
             self.handle,
-            // SAFETY: This parameter is unused by get_closest_display_mode.
-            // The function simply initializes an instance of the struct with
-            // the value SDL_PixelFormat::UNKNOWN which is not unsafe in and
-            // of itself.
-            unsafe { PixelFormat::unknown() },
+            PixelFormat::UNKNOWN,
             mode.resolution.x as i32,
             mode.resolution.y as i32,
             0.0, // unused

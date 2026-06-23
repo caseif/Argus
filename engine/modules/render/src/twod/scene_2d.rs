@@ -307,7 +307,7 @@ impl Scene2d {
 
     pub fn get_objects_for_viewport(&self, viewport: &AttachedViewport2d) -> Vec<Handle> {
         let aabb = viewport.get_view_frustum().clone().into();
-        self.objects.get_tree().locate_in_envelope(&aabb)
+        self.objects.get_tree().locate_in_envelope(aabb)
             .map(|sp| sp.handle)
             .collect()
     }
@@ -315,7 +315,7 @@ impl Scene2d {
     pub fn get_lights_for_viewport(&self, viewport: &AttachedViewport2d, buffer: f32)
                                    -> Vec<Handle> {
         let aabb = viewport.get_view_frustum().expand(buffer).into();
-        self.lights.get_tree().locate_in_envelope(&aabb)
+        self.lights.get_tree().locate_in_envelope(aabb)
             .map(|sp| sp.handle)
             .collect()
     }

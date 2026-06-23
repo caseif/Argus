@@ -27,7 +27,7 @@ use crate::mouse::*;
 #[script_bind(ref_only)]
 pub struct Controller {
     name: String,
-    attached_gamepad: Option<u32>,
+    attached_gamepad: Option<sdl3::joystick::JoystickId>,
     pub(crate) was_gamepad_disconnected: bool,
 
     deadzones: DeadzoneConfig,
@@ -91,9 +91,10 @@ impl Controller {
             panic!("Controller already has associated gamepad");
         }
 
+        let joystick_id = sdl3::joystick::JoystickId::new(id);
         //TODO: figure out if we need to propagate this error
-        assoc_gamepad(id, self.get_name()).expect("Failed to associate gamepad");
-        self.attached_gamepad = Some(id);
+        assoc_gamepad(joystick_id, self.get_name()).expect("Failed to associate gamepad");
+        self.attached_gamepad = Some(joystick_id);
 
         info!(
             LOGGER,
@@ -134,7 +135,7 @@ impl Controller {
     #[script_bind]
     pub fn get_gamepad_name(&self) -> String {
         match self.attached_gamepad {
-            Some(gamepad) => get_gamepad_name(gamepad),
+            Some(gamepad) => get_gamepad_name(gamepad.value()),
             None => panic!("Controller does not have an associated gamepad"),
         }
     }
@@ -384,7 +385,7 @@ impl Controller {
             panic!("Cannot query gamepad button state for controller: No gamepad is associated");
         };
 
-        is_gamepad_button_pressed(gamepad, button)
+        is_gamepad_button_pressed(gamepad.value(), button)
     }
 
     pub fn get_gamepad_axis(&self, axis: GamepadAxis) -> f64 {
@@ -392,7 +393,7 @@ impl Controller {
             panic!("Cannot query gamepad axis state for controller: No gamepad is associated");
         };
 
-        get_gamepad_axis(gamepad, axis)
+        get_gamepad_axis(gamepad.value(), axis)
     }
 
     #[script_bind]
@@ -401,7 +402,7 @@ impl Controller {
             panic!("Cannot query gamepad axis state for controller: No gamepad is associated");
         };
 
-        get_gamepad_axis_delta(gamepad, axis)
+        get_gamepad_axis_delta(gamepad.value(), axis)
     }
 
     #[script_bind]

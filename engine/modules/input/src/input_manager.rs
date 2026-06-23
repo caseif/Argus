@@ -45,9 +45,9 @@ pub(crate) struct MouseState {
 
 #[derive(Default)]
 pub(crate) struct GamepadDevicesState {
-    pub(crate) available_gamepads: Vec<HidDeviceInstanceId>,
+    pub(crate) available_gamepads: Vec<sdl3::joystick::JoystickId>,
     pub(crate) mapped_gamepads:
-        HashMap<HidDeviceInstanceId, (Fragile<sdl3::gamepad::Gamepad>, String)>,
+        HashMap<sdl3::joystick::JoystickId, (Fragile<sdl3::gamepad::Gamepad>, String)>,
     pub(crate) are_gamepads_initted: bool,
 }
 
@@ -82,7 +82,7 @@ pub struct InputManager {
     pub(crate) keyboard_state: RwLock<KeyboardState>,
     pub(crate) mouse_state: RwLock<MouseState>,
     pub(crate) gamepad_devices_state: RwLock<GamepadDevicesState>,
-    pub(crate) gamepad_states: DashMap<HidDeviceInstanceId, GamepadState>,
+    pub(crate) gamepad_states: DashMap<sdl3::joystick::JoystickId, GamepadState>,
     pub(crate) deadzone_config: RwLock<DeadzoneConfig>,
     pub(crate) sdl_joystick_ss: OnceLock<Fragile<JoystickSubsystem>>,
     pub(crate) sdl_gamepad_ss: OnceLock<Fragile<GamepadSubsystem>>,

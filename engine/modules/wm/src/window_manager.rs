@@ -18,8 +18,7 @@ use crate::window::dispatch_window_event;
 
 use sdl3::event::Event as SdlEvent;
 use sdl3::event::WindowEvent as SdlWindowEvent;
-use sdl3::sys::video::SDL_WINDOW_INPUT_FOCUS;
-use sdl3::video::{FullscreenType, Window as SdlWindow, WindowBuilder};
+use sdl3::video::{FullscreenType, Window as SdlWindow, WindowBuilder, WindowFlags};
 use argus_logging::warn;
 
 static INSTANCE: LazyLock<WindowManager> = LazyLock::new(WindowManager::new);
@@ -267,7 +266,7 @@ impl WindowManager {
             builder.position_centered();
         }
         builder
-            .set_window_flags(SDL_WINDOW_INPUT_FOCUS as u32)
+            .set_flags(WindowFlags::INPUT_FOCUS)
             .resizable()
             .hidden();
 

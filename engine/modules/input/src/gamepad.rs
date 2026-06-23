@@ -13,6 +13,7 @@ use argus_wm::WindowManager;
 use sdl3::event::Event as SdlEvent;
 use sdl3::gamepad::Axis as SdlGamepadAxis;
 use sdl3::gamepad::Button as SdlGamepadButton;
+use sdl3::joystick::JoystickId;
 
 const GAMEPAD_NAME_INVALID: &str = "invalid";
 
@@ -165,7 +166,7 @@ pub fn get_unattached_gamepad_count() -> u8 {
 #[script_bind]
 //TODO: gamepad arg should be HidDeviceInstanceId
 pub fn get_gamepad_name(gamepad: u32) -> String {
-    let Ok(controller) = InputManager::instance().get_sdl_gamepad_ss().unwrap().open(gamepad) else {
+    let Ok(controller) = InputManager::instance().get_sdl_gamepad_ss().unwrap().open(JoystickId::new(gamepad)) else {
         warn!(LOGGER, "Client queried unknown gamepad ID {}", gamepad);
         return GAMEPAD_NAME_INVALID.to_string();
     };
@@ -181,7 +182,7 @@ pub fn is_gamepad_button_pressed(gamepad: u32, button: GamepadButton) -> bool {
         return false;
     };
 
-    let Some(gamepad_state) = InputManager::instance().gamepad_states.get(&gamepad) else {
+    let Some(gamepad_state) = InputManager::instance().gamepad_states.get(&JoystickId::new(gamepad)) else {
         warn!(LOGGER, "Client polled unknown gamepad ID {}", gamepad);
         return false;
     };
@@ -194,7 +195,7 @@ pub fn is_gamepad_button_pressed(gamepad: u32, button: GamepadButton) -> bool {
 #[script_bind]
 //TODO: gamepad arg should be HidDeviceInstanceId
 pub fn get_gamepad_axis(gamepad: u32, axis: GamepadAxis) -> f64 {
-    let Some(gamepad_state) = InputManager::instance().gamepad_states.get(&gamepad) else {
+    let Some(gamepad_state) = InputManager::instance().gamepad_states.get(&JoystickId::new(gamepad)) else {
         warn!(LOGGER, "Client polled unknown gamepad ID {}", gamepad);
         return 0.0;
     };
@@ -205,7 +206,7 @@ pub fn get_gamepad_axis(gamepad: u32, axis: GamepadAxis) -> f64 {
 #[script_bind]
 //TODO: gamepad arg should be HidDeviceInstanceId
 pub fn get_gamepad_axis_delta(gamepad: u32, axis: GamepadAxis) -> f64 {
-    let Some(gamepad_state) = InputManager::instance().gamepad_states.get(&gamepad) else {
+    let Some(gamepad_state) = InputManager::instance().gamepad_states.get(&JoystickId::new(gamepad)) else {
         warn!(LOGGER, "Client polled unknown gamepad ID {}", gamepad);
         return 0.0;
     };
@@ -218,7 +219,7 @@ fn init_gamepads(devices_state: &mut GamepadDevicesState) {
         .expect("Failed to enumerate joysticks") {
         let Ok(gamepad) = InputManager::instance().get_sdl_gamepad_ss().unwrap()
             .open(joystick_id) else {
-            debug!(LOGGER, "Joystick {} is not reported as a gamepad, ignoring", joystick_id);
+            debug!(LOGGER, "Joystick {} is not reported as a gamepad, ignoring", joystick_id.value());
             continue;
         };
         let name = gamepad.name();
@@ -251,9 +252,9 @@ fn normalize_axis(val: i16) -> f64 {
     }
 }
 
-fn poll_gamepad(devices_state: &GamepadDevicesState, id: HidDeviceInstanceId) {
+fn poll_gamepad(devices_state: &GamepadDevicesState, id: JoystickId) {
     let Ok(gamepad) = InputManager::instance().get_sdl_gamepad_ss().unwrap().open(id) else {
-        warn!(LOGGER, "Failed to get SDL controller from instance ID {}", id);
+        warn!(LOGGER, "Failed to get SDL controller from instance ID {}", id.value());
         return;
     };
 
@@ -426,12 +427,12 @@ fn dispatch_gamepad_connect_event(gamepad_id: HidDeviceInstanceId) {
 
 fn dispatch_gamepad_disconnect_event(
     controller_name: impl Into<String>,
-    gamepad_id: HidDeviceInstanceId
+    gamepad_id: JoystickId,
 ) {
     dispatch_event::<InputDeviceEvent>(InputDeviceEvent::new(
         InputDeviceEventType::GamepadDisconnected,
         controller_name,
-        gamepad_id
+        gamepad_id.value(),
     ));
 }
 
@@ -464,7 +465,7 @@ fn handle_gamepad_events(devices_state: &mut GamepadDevicesState) {
                 dispatch_axis_events(sdl_axis, normalize_axis(value), 0.0);
             }
             SdlEvent::ControllerDeviceAdded { which, .. } => {
-                let device_index = which;
+                let device_index = JoystickId::new(which);
 
                 let gamepad = InputManager::instance().get_sdl_gamepad_ss().unwrap()
                     .open(device_index).unwrap();
@@ -476,7 +477,7 @@ fn handle_gamepad_events(devices_state: &mut GamepadDevicesState) {
                         LOGGER,
                         "Ignoring connect event for previously opened gamepad
                             with instance ID {}",
-                        instance_id);
+                        instance_id.value());
                     continue;
                 }
 
@@ -487,13 +488,13 @@ fn handle_gamepad_events(devices_state: &mut GamepadDevicesState) {
                     LOGGER,
                     "Gamepad '{}' with instance ID {} was connected",
                     name,
-                    instance_id
+                    instance_id.value()
                 );
 
-                dispatch_gamepad_connect_event(instance_id);
+                dispatch_gamepad_connect_event(instance_id.value());
             }
             SdlEvent::ControllerDeviceRemoved { which, .. } => {
-                let instance_id = which as HidDeviceInstanceId;
+                let instance_id = JoystickId::new(which);
 
                 let mut devices_state =
                     InputManager::instance().gamepad_devices_state.write();
@@ -526,7 +527,7 @@ fn handle_gamepad_events(devices_state: &mut GamepadDevicesState) {
                     debug!(
                         LOGGER,
                         "Gamepad with instance ID {} was disconnected",
-                        instance_id
+                        instance_id.value()
                     );
 
                     dispatch_gamepad_disconnect_event("", instance_id);
@@ -567,7 +568,7 @@ pub(crate) fn flush_gamepad_deltas() {
     }
 }
 
-pub(crate) fn assoc_gamepad(id: HidDeviceInstanceId, controller_name: impl Into<String>)
+pub(crate) fn assoc_gamepad(id: JoystickId, controller_name: impl Into<String>)
     -> Result<(), String> {
     let mut devices_state = InputManager::instance().gamepad_devices_state.write();
     let gamepads = &mut devices_state.available_gamepads;
@@ -584,7 +585,7 @@ pub(crate) fn assoc_gamepad(id: HidDeviceInstanceId, controller_name: impl Into<
 }
 
 pub(crate) fn assoc_first_available_gamepad(controller_name: impl Into<String>)
-    -> Result<HidDeviceInstanceId, String> {
+    -> Result<JoystickId, String> {
     let devices_state = InputManager::instance().gamepad_devices_state.write();
 
     match devices_state.available_gamepads.first() {
@@ -596,18 +597,18 @@ pub(crate) fn assoc_first_available_gamepad(controller_name: impl Into<String>)
     }
 }
 
-pub(crate) fn unassoc_gamepad(id: HidDeviceInstanceId) {
+pub(crate) fn unassoc_gamepad(id: JoystickId) {
     let mut devices_state = InputManager::instance().gamepad_devices_state.write();
 
     if devices_state.mapped_gamepads.remove(&id).is_none() {
-        warn!(LOGGER, "Client attempted to close unmapped gamepad instance ID {}", id);
+        warn!(LOGGER, "Client attempted to close unmapped gamepad instance ID {}", id.value());
         return;
     };
 
     devices_state.available_gamepads.push(id);
 }
 
-fn close_gamepad(_id: HidDeviceInstanceId) {
+fn close_gamepad(_id: JoystickId) {
     //TODO
     /*let Ok(controller) = InputManager::instance().get_sdl_gamepad_ss().unwrap().open(id) else {
         warn!(

@@ -138,7 +138,11 @@ fn activate_vulkan_backend() -> bool {
         return false;
     }*/
 
-    let vk_inst_wm = argus_wm::VkInstance::from_raw(vk_instance.get_underlying().handle().as_raw());
+    // SAFETY: We just created the Vulkan instance and haven't done anything
+    //         with it yet, so we know that it's valid.
+    let vk_inst_wm = unsafe {
+        argus_wm::VkInstance::from_raw(vk_instance.get_underlying().handle().as_raw())
+    };
 
     let probe_surface_wm = match vk_create_surface(window, &vk_inst_wm) {
         Ok(surface) => surface,

@@ -14,7 +14,9 @@
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */use fragile::Fragile;
+ */
+
+use fragile::Fragile;
 use crate::Window;
 
 use sdl3::video::VkInstance as SdlVkInstance;
@@ -25,12 +27,13 @@ pub struct VkInstance {
 }
 
 impl VkInstance {
-    pub fn from_raw(handle: u64) -> Self {
+    // SAFETY: handle must be a pointer to a valid Vulkan instance.
+    pub unsafe fn from_raw(handle: u64) -> Self {
         Self {
             underlying: Fragile::new(handle as SdlVkInstance),
         }
     }
-    
+
     pub fn as_raw(&self) -> u64 {
         self.underlying.get().addr() as u64
     }
@@ -58,9 +61,14 @@ pub fn vk_create_surface(
         .ok_or_else(|| "SDL window is not yet created".to_owned())?
         .try_get()
         .map_err(|_| "Vulkan surface cannot be created outside of render thread")?;
-    let vk_surface = sdl_window
-        .vulkan_create_surface(*instance.underlying.get())
-        .map_err(|err| format!("Failed to create Vulkan surface: {:?}", err))?;
+    // SAFETY: The instance is obtained via VkInstance object which delegates
+    //         safety around the validity of its underlying pointer to the
+    //         creator.
+    let vk_surface = unsafe {
+        sdl_window
+            .vulkan_create_surface(*instance.underlying.get())
+            .map_err(|err| format!("Failed to create Vulkan surface: {:?}", err))?
+    };
     Ok(VkSurfaceKHR { underlying: vk_surface })
 }
 
