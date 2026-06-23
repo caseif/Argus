@@ -112,7 +112,6 @@ impl AttachedViewport2d {
                 .peek_transform()
         };
         self.view_matrix.update_in_place(|vm| {
-            println!("camera transform: {:?}", camera_transform);
             recompute_2d_viewport_view_matrix(
                 &self.viewport,
                 &camera_transform.inverse(),

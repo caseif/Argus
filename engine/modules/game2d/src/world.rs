@@ -27,8 +27,6 @@ use argus_scripting_bind::script_bind;
 use argus_util::dirtiable::Dirtiable;
 use argus_util::math::{Vector2f, Vector3f};
 use argus_wm::WindowManager;
-use box2d_sys::b2BodyId;
-use box2d_sys::{b2Atan2, b2BodyType_b2_dynamicBody, b2BodyType_b2_staticBody, b2Body_GetTransform, b2Body_SetLinearVelocity, b2Capsule, b2Circle, b2ComputeCosSin, b2CreateBody, b2CreateCapsuleShape, b2CreateCircleShape, b2CreatePolygonShape, b2CreateWorld, b2DefaultBodyDef, b2DefaultShapeDef, b2DefaultWorldDef, b2MakeBox, b2Rot, b2Vec2, b2WorldId, b2World_Step};
 use fragile::Fragile;
 use lazy_static::lazy_static;
 use std::collections::HashMap;
@@ -37,7 +35,7 @@ use std::sync::{Arc, LazyLock, Mutex, RwLock};
 use std::time::Duration;
 use uuid::Uuid;
 
-static B2_WORLDS: LazyLock<Mutex<HashMap<String, Fragile<b2WorldId>>>> =
+static B2_WORLDS: LazyLock<Mutex<HashMap<String, Fragile<boxdd::World>>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
 
 const MAX_SECONDARY_LAYERS: u32 = 16;
@@ -86,7 +84,7 @@ impl World2d {
             abstract_camera: Default::default(),
         };
 
-        let b2_world = unsafe { b2CreateWorld(&b2DefaultWorldDef()) };
+        let b2_world = boxdd::World::new(Default::default()).expect("Failed to create Box2D world");
         B2_WORLDS.lock().unwrap()
             .insert(format!("{}|{}", id.clone(), PRIM_LAYER_ID), Fragile::new(b2_world));
 
@@ -218,31 +216,31 @@ impl World2d {
     fn simulate(&mut self, delta: Duration) {
         let mut b2_world_map = B2_WORLDS.lock().unwrap();
         let b2_world = b2_world_map.get_mut(&format!("{}|{}", self.id, PRIM_LAYER_ID))
-            .unwrap().get();
-        Self::simulate_layer(&mut self.prim_layer, *b2_world, delta);
+            .unwrap().get_mut();
+        Self::simulate_layer(&mut self.prim_layer, b2_world, delta);
     }
 
     fn simulate_layer(
         layer: &mut World2dLayer,
-        b2_world: b2WorldId,
+        b2_world: &mut boxdd::World,
         delta: Duration
     ) {
         for obj in layer.static_objects.values_mut() {
             if obj.common.b2_body.is_none() {
                 let transform = &obj.transform;
-                let cos_sin = unsafe { b2ComputeCosSin(transform.rotation) };
 
-                let mut body_def = unsafe { b2DefaultBodyDef() };
-                body_def.type_ = b2BodyType_b2_staticBody;
-                body_def.position = b2Vec2 { x: transform.translation.x, y: transform.translation.y };
-                body_def.rotation = b2Rot { c: cos_sin.cosine, s: cos_sin.sine };
-                let body_id = unsafe { b2CreateBody(b2_world, &body_def) };
+                let body_def = boxdd::BodyDef::builder()
+                    .body_type(boxdd::BodyType::Static)
+                    .position(Into::<[f32; 2]>::into(transform.translation))
+                    .angle(transform.rotation)
+                    .build();
+                let mut body = b2_world.create_body(body_def);
 
                 if let Some(bounding_shape) = obj.bounding_shape {
-                    Self::create_shape(&obj.common, &bounding_shape, body_id);
+                    Self::create_shape(&obj.common, &bounding_shape, &mut body);
                 }
 
-                obj.common.b2_body = Some(body_id);
+                obj.common.b2_body = Some(body.id());
             }
             let _body_handle = obj.common.b2_body.unwrap();
         }
@@ -250,43 +248,34 @@ impl World2d {
         for actor in layer.actors.values_mut() {
             if actor.common.b2_body.is_none() {
                 let transform = actor.transform.peek().value;
-                let cos_sin = unsafe { b2ComputeCosSin(transform.rotation) };
-                let mut body_def = unsafe { b2DefaultBodyDef() };
-                body_def.type_ = b2BodyType_b2_dynamicBody;
-                body_def.position = b2Vec2 {
-                    x: transform.translation.x,
-                    y: transform.translation.y,
-                };
-                body_def.rotation = b2Rot { c: cos_sin.cosine, s: cos_sin.sine };
-                body_def.linearVelocity = b2Vec2 {
-                    x: actor.velocity.x,
-                    y: actor.velocity.y,
-                };
-                body_def.angularVelocity = 0.0;
-                body_def.fixedRotation = false;
-                let body_id = unsafe { b2CreateBody(b2_world, &body_def) };
+                let body_def = boxdd::BodyDef::builder()
+                    .body_type(boxdd::BodyType::Dynamic)
+                    .position(Into::<[f32; 2]>::into(transform.translation))
+                    .angle(transform.rotation)
+                    .linear_velocity(Into::<[f32; 2]>::into(actor.velocity))
+                    .angular_velocity(0.0)
+                    .build();
+                let body_id = b2_world.create_body_id(body_def);
+                b2_world.set_body_motion_locks(body_id, boxdd::MotionLocks::new(false, false, false));
+                let mut body = b2_world.body(body_id).expect("New Box2D body disappeared from world!!!");
                 if let Some(bounding_shape) = actor.bounding_shape.peek().value {
-                    Self::create_shape(&actor.common, &bounding_shape, body_id);
+                    Self::create_shape(&actor.common, &bounding_shape, &mut body);
                 }
                 actor.common.b2_body = Some(body_id);
             }
             let body_handle = actor.common.b2_body.unwrap();
 
-            unsafe {
-                b2Body_SetLinearVelocity(
-                    body_handle,
-                    b2Vec2 { x: actor.velocity.x, y: actor.velocity.y }
-                );
-            }
+            b2_world.set_body_linear_velocity(body_handle, Into::<[f32; 2]>::into(actor.velocity));
         }
-        unsafe { b2World_Step(b2_world, delta.as_secs_f32(), 4) };
+        b2_world.step(delta.as_secs_f32(), 4);
 
         for actor in layer.actors.values_mut() {
-            let body_transform = unsafe { b2Body_GetTransform(actor.common.b2_body.unwrap()) };
+            let body_transform = b2_world.body_transform(actor.common.b2_body.unwrap());
+            let pos = body_transform.position();
             actor.transform.set(Transform2d::new(
-                Vector2f { x: body_transform.p.x, y: body_transform.p.y },
+                Vector2f::new(pos.x, pos.y),
                 actor.transform.peek().value.scale,
-                unsafe { b2Atan2(body_transform.q.s, body_transform.q.c) },
+                body_transform.rotation().angle(),
             ));
         }
     }
@@ -294,32 +283,37 @@ impl World2d {
     fn create_shape(
         obj_props: &CommonObjectProperties,
         bounding_shape: &BoundingShape,
-        body_id: b2BodyId
+        body: &mut boxdd::Body
     ) {
-        let mut shape = unsafe { b2DefaultShapeDef() };
-        shape.density = 1.0;
-        shape.friction = 0.0;
-        shape.filter.categoryBits = obj_props.collision_layer;
-        shape.filter.maskBits = obj_props.collision_mask;
+        let shape = boxdd::ShapeDef::builder()
+            .density(1.0)
+            .material(boxdd::SurfaceMaterial::default()
+                .with_friction(0.0))
+            .filter(boxdd::Filter {
+                category_bits: obj_props.collision_layer,
+                mask_bits: obj_props.collision_mask,
+                group_index: 0,
+            })
+            .build();
 
         match bounding_shape {
             BoundingShape::Rectangle(rect) => {
-                let polygon = unsafe { b2MakeBox(rect.size.x / 2.0, rect.size.y / 2.0) };
-                unsafe { b2CreatePolygonShape(body_id, &shape, &polygon) };
+                let polygon = boxdd::Polygon::box_polygon(rect.size.x / 2.0, rect.size.y / 2.0);
+                body.create_polygon_shape(&shape, &polygon);
             }
             BoundingShape::Capsule(cap) => {
                 let radius = cap.width / 2.0;
-                let center1 = b2Vec2 { x: cap.offset.x, y: -cap.length / 2.0 + radius + cap.offset.y };
-                let center2 = b2Vec2 { x: cap.offset.x, y: cap.length / 2.0 - radius + cap.offset.y };
-                let capsule = b2Capsule { center1, center2, radius };
-                unsafe { b2CreateCapsuleShape(body_id, &shape, &capsule) };
+                let center1 = boxdd::Vec2::new(cap.offset.x, -cap.length / 2.0 + radius + cap.offset.y);
+                let center2 = boxdd::Vec2::new(cap.offset.x, cap.length / 2.0 - radius + cap.offset.y);
+                let capsule = boxdd::Capsule { center1, center2, radius };
+                body.create_capsule_shape(&shape, &capsule);
             }
             BoundingShape::Circle(cir) => {
-                let circle = b2Circle {
-                    center: b2Vec2 { x: 0.0, y: 0.0 },
-                    radius: cir.radius
+                let circle = boxdd::Circle {
+                    center: boxdd::Vec2::new(0.0, 0.0),
+                    radius: cir.radius,
                 };
-                unsafe { b2CreateCircleShape(body_id, &shape, &circle) };
+                body.create_circle_shape(&shape, &circle);
             }
         }
     }

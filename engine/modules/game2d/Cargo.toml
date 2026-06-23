@@ -18,7 +18,7 @@ argus_render = { path = "../render" }
 argus_resman = { path = "../resman" }
 argus_wm = { path = "../wm" }
 
-box2d_sys = { workspace = true }
+boxdd = { workspace = true }
 fragile = { workspace = true }
 lazy_static = { workspace = true }
 rand = { workspace = true }

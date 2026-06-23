@@ -33,6 +33,12 @@ macro_rules! create_vector2_ops {
             }
         }
 
+        impl From<[$el_type; 2]> for $vec_type {
+            fn from(a: [$el_type; 2]) -> Self {
+                Self { x: a[0], y: a[1] }
+            }
+        }
+
         impl std::ops::Add<Self> for $vec_type {
             type Output = Self;
 
@@ -228,6 +234,12 @@ macro_rules! create_vector3_ops {
             }
         }
 
+        impl From<[$el_type; 3]> for $vec_type {
+            fn from(a: [$el_type; 3]) -> Self {
+                Self { x: a[0], y: a[1], z: a[2] }
+            }
+        }
+
         impl std::ops::Add<Self> for $vec_type {
             type Output = Self;
 
@@ -350,6 +362,12 @@ macro_rules! create_vector4_ops {
         impl From<$vec_type> for [$el_type; 4] {
             fn from(v: $vec_type) -> Self {
                 [v.x, v.y, v.z, v.w]
+            }
+        }
+
+        impl From<[$el_type; 4]> for $vec_type {
+            fn from(a: [$el_type; 4]) -> Self {
+                Self { x: a[0], y: a[1], z: a[2], w: a[3] }
             }
         }
 
