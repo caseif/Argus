@@ -100,7 +100,7 @@ impl<T> DerefMut for ContextObjectRefMut<'_, T> {
 
 #[inline(always)]
 fn get_pool_value<T>(pool: &RwLock<ValuePool<T>>, handle: Handle)
-    -> Option<ContextObjectReadGuard<T>> {
+    -> Option<ContextObjectReadGuard<'_, T>> {
     RwLockReadGuard::try_map(pool.read(), |p| p.get(handle))
         .ok()
         .map(Into::into)
@@ -108,7 +108,7 @@ fn get_pool_value<T>(pool: &RwLock<ValuePool<T>>, handle: Handle)
 
 #[inline(always)]
 fn get_pool_value_mut<T>(pool: &RwLock<ValuePool<T>>, handle: Handle)
-                     -> Option<ContextObjectWriteGuard<T>> {
+                     -> Option<ContextObjectWriteGuard<'_, T>> {
     RwLockWriteGuard::try_map(pool.write(), |p| p.get_mut(handle))
         .ok()
         .map(Into::into)
@@ -129,17 +129,17 @@ impl RenderContext2d {
         }
     }
 
-    pub fn get_scene(&self, scene_id: impl AsRef<str>) -> Option<Ref<String, Scene2d>> {
+    pub fn get_scene(&self, scene_id: impl AsRef<str>) -> Option<Ref<'_, String, Scene2d>> {
         self.scenes.get(scene_id.as_ref())
     }
 
     pub fn get_scene_mut(&self, scene_id: impl AsRef<str>)
-        -> Option<RefMut<String, Scene2d>> {
+        -> Option<RefMut<'_, String, Scene2d>> {
         self.scenes.get_mut(scene_id.as_ref())
     }
 
     pub fn create_scene(&self, id: impl Into<String>)
-        -> RefMut<String, Scene2d> {
+        -> RefMut<'_, String, Scene2d> {
         let id = id.into();
         self.scenes
             .entry(id.clone())
@@ -160,12 +160,12 @@ impl RenderContext2d {
         &self.viewports
     }
 
-    pub fn get_viewport(&self, id: u32) -> Option<Ref<u32, AttachedViewport2d>> {
+    pub fn get_viewport(&self, id: u32) -> Option<Ref<'_, u32, AttachedViewport2d>> {
         self.viewports.get(&id)
     }
 
     pub fn get_viewport_mut(&self, id: u32)
-                         -> Option<RefMut<u32, AttachedViewport2d>> {
+                         -> Option<RefMut<'_, u32, AttachedViewport2d>> {
         self.viewports.get_mut(&id)
     }
 
@@ -176,7 +176,7 @@ impl RenderContext2d {
         viewport: Viewport,
         z_index: u32,
     )
-        -> RefMut<u32, AttachedViewport2d> {
+        -> RefMut<'_, u32, AttachedViewport2d> {
         let viewport =
             AttachedViewport2d::new(scene_id.as_ref(), camera_id.as_ref(), viewport, z_index);
         let id = viewport.get_id();
@@ -221,12 +221,12 @@ impl RenderContext2d {
     }
 
     pub(crate) fn get_group(&self, handle: Handle)
-        -> Option<ContextObjectReadGuard<RenderGroup2d>> {
+        -> Option<ContextObjectReadGuard<'_, RenderGroup2d>> {
         get_pool_value(&self.group_pool, handle)
     }
 
     pub(crate) fn get_group_mut(&self, handle: Handle)
-        -> Option<ContextObjectWriteGuard<RenderGroup2d>> {
+        -> Option<ContextObjectWriteGuard<'_, RenderGroup2d>> {
         get_pool_value_mut(&self.group_pool, handle)
     }
 
@@ -251,12 +251,12 @@ impl RenderContext2d {
         true
     }
 
-    pub fn get_object(&self, handle: Handle) -> Option<ContextObjectReadGuard<RenderObject2d>> {
+    pub fn get_object(&self, handle: Handle) -> Option<ContextObjectReadGuard<'_, RenderObject2d>> {
         get_pool_value(&self.object_pool, handle)
     }
 
     pub fn get_object_mut(&self, handle: Handle)
-        -> Option<ContextObjectWriteGuard<RenderObject2d>> {
+        -> Option<ContextObjectWriteGuard<'_, RenderObject2d>> {
         get_pool_value_mut(&self.object_pool, handle)
     }
 
@@ -268,11 +268,11 @@ impl RenderContext2d {
         self.light_pool.write().remove(handle).is_some()
     }
 
-    pub(crate) fn get_light(&self, handle: Handle) -> Option<ContextObjectReadGuard<RenderLight2d>> {
+    pub(crate) fn get_light(&self, handle: Handle) -> Option<ContextObjectReadGuard<'_, RenderLight2d>> {
         get_pool_value(&self.light_pool, handle)
     }
 
-    pub(crate) fn get_light_mut(&self, handle: Handle) -> Option<ContextObjectWriteGuard<RenderLight2d>> {
+    pub(crate) fn get_light_mut(&self, handle: Handle) -> Option<ContextObjectWriteGuard<'_, RenderLight2d>> {
         get_pool_value_mut(&self.light_pool, handle)
     }
 }

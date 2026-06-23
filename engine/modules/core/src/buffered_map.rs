@@ -63,7 +63,7 @@ where
         self.queues.lock().remove_queue.push(key);
     }
 
-    pub(crate) fn items(&self) -> Ref<HashMap<K, V>> {
+    pub(crate) fn items(&self) -> Ref<'_, HashMap<K, V>> {
         self.items.get().borrow()
     }
 

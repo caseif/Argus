@@ -46,7 +46,6 @@ impl Matrix4x4 {
 impl Mul<Self> for &Matrix4x4 {
     type Output = Matrix4x4;
 
-    #[must_use]
     fn mul(self, other: Self) -> Self::Output {
         let mut res: [f32; 16] = Default::default();
 
@@ -67,9 +66,8 @@ impl Mul<Self> for &Matrix4x4 {
 impl Mul<Self> for Matrix4x4 {
     type Output = Matrix4x4;
 
-    #[must_use]
     fn mul(self, other: Self) -> Self::Output {
-        &self * &other
+        Mul::<&Matrix4x4>::mul(&self, &other)
     }
 }
 
@@ -82,7 +80,6 @@ impl MulAssign<Self> for Matrix4x4 {
 impl Mul<Vector4f> for &Matrix4x4 {
     type Output = Vector4f;
 
-    #[must_use]
     fn mul(self, vector: Vector4f) -> Self::Output {
         Vector4f {
             x: self.get(0, 0) * vector.x +
@@ -108,8 +105,7 @@ impl Mul<Vector4f> for &Matrix4x4 {
 impl Mul<Vector4f> for Matrix4x4 {
     type Output = Vector4f;
 
-    #[must_use]
     fn mul(self, vector: Vector4f) -> Self::Output {
-        &self * vector
+        Mul::<Vector4f>::mul(&self, vector)
     }
 }

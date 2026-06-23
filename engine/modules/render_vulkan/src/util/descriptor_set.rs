@@ -21,7 +21,7 @@ const INITIAL_UBO_COUNT: u32 = INITIAL_DS_COUNT * UBOS_PER_BUCKET;
 const INITIAL_SAMPLER_COUNT: u32 = INITIAL_DS_COUNT * SAMPLERS_PER_BUCKET;
 
 fn create_ubo_bindings(shader_refl: &ShaderReflectionInfo)
-    -> Vec<vk::DescriptorSetLayoutBinding> {
+    -> Vec<vk::DescriptorSetLayoutBinding<'_>> {
     shader_refl.get_ubo_bindings().iter()
         .map(|(_, ubo)| {
             vk::DescriptorSetLayoutBinding::default()

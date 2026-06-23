@@ -200,11 +200,11 @@ impl EngineManager {
         Ok(())
     }
 
-    pub fn get_config(&self) -> RwLockReadGuard<EngineConfig> {
+    pub fn get_config(&self) -> RwLockReadGuard<'_, EngineConfig> {
         self.config.read().unwrap()
     }
 
-    pub fn get_config_mut(&self) -> RwLockWriteGuard<EngineConfig> {
+    pub fn get_config_mut(&self) -> RwLockWriteGuard<'_, EngineConfig> {
         if !self.is_current_thread_update_thread() {
             panic!("Engine config cannot be updated outside of update thread");
         }

@@ -1,5 +1,4 @@
 #![feature(used_with_arg)]
-#![feature(hash_extract_if)] //TODO: remove once Rust 1.87 is out
 
 pub(crate) mod loader;
 pub(crate) mod module_init;

@@ -118,7 +118,7 @@ impl WindowManager {
         })
     }
 
-    pub fn get_sdl_event_pump(&self) -> Result<cell::Ref<EventPump>, String> {
+    pub fn get_sdl_event_pump(&self) -> Result<cell::Ref<'_, EventPump>, String> {
         self.sdl_event_pump.get().ok_or_else(|| "SDL was not initialized!".to_owned())
             .and_then(|pump| {
                 pump.try_get().map_err(|_| {
@@ -130,7 +130,7 @@ impl WindowManager {
             })
     }
 
-    pub fn get_sdl_event_pump_mut(&self) -> Result<cell::RefMut<EventPump>, String> {
+    pub fn get_sdl_event_pump_mut(&self) -> Result<cell::RefMut<'_, EventPump>, String> {
         self.sdl_event_pump.get().ok_or_else(|| "SDL was not initialized!".to_owned())
             .and_then(|pump| {
                 pump.try_get().map_err(|_| {
@@ -191,7 +191,7 @@ impl WindowManager {
     /// @remark A Canvas will be implicitly created during construction
     ///         of a Window.
     pub fn create_window(&self, id: impl Into<String>) ->
-        Result<RefMut<String, Window>, String> {
+        Result<RefMut<'_, String, Window>, String> {
         if !is_wm_module_initialized() {
             return Err("Cannot create window before wm module is initialized.".to_owned());
         }
@@ -311,11 +311,11 @@ impl WindowManager {
     ///        the method is called.
     ///
     /// @return The Window with the specified ID.
-    pub fn get_window(&self, id: impl AsRef<str>) -> Option<Ref<String, Window>> {
+    pub fn get_window(&self, id: impl AsRef<str>) -> Option<Ref<'_, String, Window>> {
         self.windows.get(id.as_ref())
     }
 
-    pub fn get_window_mut(&self, id: impl AsRef<str>) -> Option<RefMut<String, Window>> {
+    pub fn get_window_mut(&self, id: impl AsRef<str>) -> Option<RefMut<'_, String, Window>> {
         self.windows.get_mut(id.as_ref())
     }
 
@@ -333,17 +333,17 @@ impl WindowManager {
     ///
     /// @return The Window with the provided handle, or None if the handle
     ///         pointer is not known to the engine.
-    pub fn get_window_from_handle(&self, handle: SdlWindow) -> Option<Ref<String, Window>> {
+    pub fn get_window_from_handle(&self, handle: SdlWindow) -> Option<Ref<'_, String, Window>> {
         let id = self.window_handle_map.get(&handle.id())?;
         self.windows.get(id.value())
     }
 
-    pub fn get_window_from_handle_mut(&self, handle: SdlWindow) -> Option<RefMut<String, Window>> {
+    pub fn get_window_from_handle_mut(&self, handle: SdlWindow) -> Option<RefMut<'_, String, Window>> {
         let id = self.window_handle_map.get(&handle.id())?;
         self.windows.get_mut(id.value())
     }
 
-    pub fn get_window_from_handle_id(&self, id: u32) -> Option<Ref<String, Window>> {
+    pub fn get_window_from_handle_id(&self, id: u32) -> Option<Ref<'_, String, Window>> {
         let id = self.window_handle_map.get(&id)?;
         self.windows.get(id.value())
     }

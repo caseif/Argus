@@ -216,7 +216,7 @@ impl VulkanBuffer {
         offset: vk::DeviceSize,
         size: vk::DeviceSize,
         flags: vk::MemoryMapFlags,
-    ) -> VkResult<MappedBuffer> {
+    ) -> VkResult<MappedBuffer<'_>> {
         assert!(!self.handle.is_null());
         assert!(!*self.is_map_in_use.borrow(), "Buffer is already mapped elsewhere");
         assert!(offset < self.size);

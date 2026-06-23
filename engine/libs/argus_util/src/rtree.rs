@@ -44,8 +44,8 @@ impl<T: PartialEq + Eq + Copy + Hash> QuadTree<T> {
         self.hashes.remove(&Self::hash_item(item));
     }
     
-    pub fn iter(&self) -> RTreeIterator<QuadTreeNode<T>> {
-        (&self).into_iter()
+    pub fn iter(&self) -> RTreeIterator<'_, QuadTreeNode<T>> {
+        self.into_iter()
     }
 
     fn hash_item(item: &T) -> u64 {

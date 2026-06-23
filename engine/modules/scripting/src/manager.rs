@@ -58,14 +58,14 @@ impl ScriptManager {
     pub fn get_language_plugin(
         &self,
         lang_name: impl AsRef<str>,
-    ) -> Option<Ref<String, Box<dyn ScriptLanguagePlugin>>> {
+    ) -> Option<Ref<'_, String, Box<dyn ScriptLanguagePlugin>>> {
         self.lang_plugins.get(lang_name.as_ref())
     }
 
     pub fn get_language_plugin_mut(
         &self,
         lang_name: impl AsRef<str>,
-    ) -> Option<RefMut<String, Box<dyn ScriptLanguagePlugin>>> {
+    ) -> Option<RefMut<'_, String, Box<dyn ScriptLanguagePlugin>>> {
         self.lang_plugins.get_mut(lang_name.as_ref())
     }
     
@@ -79,14 +79,14 @@ impl ScriptManager {
     pub fn get_media_type_plugin(
         &self,
         media_type: impl AsRef<str>,
-    ) -> Option<Ref<String, Box<dyn ScriptLanguagePlugin>>> {
+    ) -> Option<Ref<'_, String, Box<dyn ScriptLanguagePlugin>>> {
         self.get_language_plugin(self.get_media_type_language(media_type)?)
     }
 
     pub fn get_media_type_plugin_mut(
         &mut self,
         media_type: impl AsRef<str>,
-    ) -> Option<RefMut<String, Box<dyn ScriptLanguagePlugin>>> {
+    ) -> Option<RefMut<'_, String, Box<dyn ScriptLanguagePlugin>>> {
         let lang = self.media_type_langs.get(media_type.as_ref())?.clone();
         self.get_language_plugin_mut(lang)
     }
@@ -113,7 +113,7 @@ impl ScriptManager {
         self.loaded_resources.remove(P::get_language_name());
     }
 
-    pub fn get_bindings(&self) -> MutexGuard<ScriptBindings> {
+    pub fn get_bindings(&self) -> MutexGuard<'_, ScriptBindings> {
         self.bindings.lock().unwrap()
     }
 
@@ -217,12 +217,12 @@ impl ScriptManager {
     }
 
     pub fn get_context(&self, handle: ScriptContextHandle)
-        -> Ref<ScriptContextHandle, Fragile<ScriptContext>> {
+        -> Ref<'_, ScriptContextHandle, Fragile<ScriptContext>> {
         self.script_contexts.get(&handle).unwrap()
     }
 
     pub fn get_context_mut(&self, handle: ScriptContextHandle)
-        -> RefMut<ScriptContextHandle, Fragile<ScriptContext>> {
+        -> RefMut<'_, ScriptContextHandle, Fragile<ScriptContext>> {
         self.script_contexts.get_mut(&handle).unwrap()
     }
 

@@ -152,7 +152,7 @@ impl GlRenderer {
             .downcast_mut::<RenderCanvas>()
             .expect("Canvas object from window was unexpected type!");
 
-        let mut viewport_ids = canvas.get_viewports_2d();
+        let viewport_ids = canvas.get_viewports_2d();
 
         // initial render pass
         for &viewport_id in &viewport_ids {

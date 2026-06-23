@@ -1,5 +1,5 @@
 use std::any::Any;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use dashmap::mapref::one::{Ref, RefMut};
 use uuid::Uuid;
 use argus_util::error::ArgumentError;
@@ -55,7 +55,7 @@ impl RenderCanvas {
     }
 
     #[must_use]
-    pub fn get_viewport_2d(&self, id: u32) -> Option<Ref<u32, AttachedViewport2d>> {
+    pub fn get_viewport_2d(&self, id: u32) -> Option<Ref<'_, u32, AttachedViewport2d>> {
         if !self.viewports_2d.contains_key(&id) {
             return None;
         }
@@ -67,7 +67,7 @@ impl RenderCanvas {
     }
 
     #[must_use]
-    pub fn get_viewport_2d_mut(&self, id: u32) -> Option<RefMut<u32, AttachedViewport2d>> {
+    pub fn get_viewport_2d_mut(&self, id: u32) -> Option<RefMut<'_, u32, AttachedViewport2d>> {
         if !self.viewports_2d.contains_key(&id) {
             return None;
         }
@@ -84,7 +84,7 @@ impl RenderCanvas {
         camera_id: impl AsRef<str>,
         viewport: Viewport,
         z_index: u32
-    ) -> Result<RefMut<u32, AttachedViewport2d>, ArgumentError> {
+    ) -> Result<RefMut<'_, u32, AttachedViewport2d>, ArgumentError> {
         //TODO: validate scene arg
         //TODO: validate camera arg
         let vp = get_render_context_2d().create_viewport(scene_id, camera_id, viewport, z_index);
@@ -97,7 +97,7 @@ impl RenderCanvas {
         scene_id: impl AsRef<str>,
         camera_id: impl AsRef<str>,
         z_index: u32
-    ) -> Result<RefMut<u32, AttachedViewport2d>, ArgumentError> {
+    ) -> Result<RefMut<'_, u32, AttachedViewport2d>, ArgumentError> {
         let viewport = Viewport {
             top: 0.0,
             left: 0.0,

@@ -1,9 +1,9 @@
-use std::ops::{Deref, Mul, MulAssign};
+use std::ops::Deref;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU16, Ordering};
 use argus_scripting_bind::script_bind;
 use parking_lot::{RwLock, RwLockReadGuard, RwLockUpgradableReadGuard, RwLockWriteGuard};
-use argus_util::math::{Matrix4x4, Vector2f, Vector4f};
+use argus_util::math::{Matrix4x4, Vector2f};
 
 #[derive(Debug)]
 #[script_bind]
@@ -148,7 +148,7 @@ impl Transform2d {
         }
     }
 
-    fn compute_aux_matrices(&self) -> RwLockReadGuard<Option<TransformMatrixCache>> {
+    fn compute_aux_matrices(&self) -> RwLockReadGuard<'_, Option<TransformMatrixCache>> {
         let guard = self.matrices.upgradable_read();
         RwLockUpgradableReadGuard::downgrade(
             self.compute_aux_matrices_with_guard(guard)
@@ -226,7 +226,7 @@ impl Transform2d {
     }
 
     fn compute_matrices(&self, anchor_point: Vector2f)
-        -> RwLockReadGuard<Option<TransformMatrixCache>> {
+        -> RwLockReadGuard<'_, Option<TransformMatrixCache>> {
         let mut guard = self.matrices.upgradable_read();
         let (compute_aux, compute_full) = match guard.deref() {
             Some(cache) => {

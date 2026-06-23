@@ -125,14 +125,14 @@ impl InputManager {
             })
     }
 
-    pub fn get_controller(&self, name: impl AsRef<str>) -> Ref<String, Controller> {
+    pub fn get_controller(&self, name: impl AsRef<str>) -> Ref<'_, String, Controller> {
         match self.controllers.get(name.as_ref()) {
             Some(controller) => controller,
             None => panic!("Invalid controller name: {}", name.as_ref()),
         }
     }
 
-    pub fn get_controller_mut(&self, name: impl AsRef<str>) -> RefMut<String, Controller> {
+    pub fn get_controller_mut(&self, name: impl AsRef<str>) -> RefMut<'_, String, Controller> {
         match self.controllers.get_mut(name.as_ref()) {
             Some(controller) => controller,
             None => panic!("Invalid controller name: {}", name.as_ref()),
@@ -144,7 +144,7 @@ impl InputManager {
         unsafe { &mut *ptr::from_mut(self.get_controller_mut(name).value_mut()) }
     }
 
-    pub fn add_controller(&self, name: impl Into<String>) -> RefMut<String, Controller> {
+    pub fn add_controller(&self, name: impl Into<String>) -> RefMut<'_, String, Controller> {
         if self.controllers.len() >= MAX_CONTROLLERS as usize {
             panic!("Controller limit reached");
         }

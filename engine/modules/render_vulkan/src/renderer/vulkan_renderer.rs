@@ -11,7 +11,7 @@ use crate::util::*;
 use argus_logging::debug;
 use argus_render::common::{AttachedViewport, Material, RenderCanvas, SceneType};
 use argus_render::constants::{SHADER_UBO_GLOBAL_LEN, SHADER_UBO_SCENE_LEN};
-use argus_render::twod::{get_render_context_2d, AttachedViewport2d, ViewportYAxisConvention};
+use argus_render::twod::{get_render_context_2d, ViewportYAxisConvention};
 use argus_resman::{ResourceIdentifier, ResourceManager};
 use argus_util::math::Vector2u;
 use argus_util::semaphore::Semaphore;
@@ -335,7 +335,7 @@ impl VulkanRenderer {
 
         let canvas = window.get_canvas_mut().unwrap()
             .as_any_mut().downcast_mut::<RenderCanvas>().unwrap();
-        let mut viewport_ids = canvas.get_viewports_2d();
+        let viewport_ids = canvas.get_viewports_2d();
 
         //timer_start = std::chrono::high_resolution_clock::now();
         for viewport_id in viewport_ids {

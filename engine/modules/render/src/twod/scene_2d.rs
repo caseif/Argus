@@ -111,7 +111,7 @@ impl Scene2d {
     pub fn get_light(
         &mut self,
         handle: Handle
-    ) -> Option<ContextObjectReadGuard<RenderLight2d>> {
+    ) -> Option<ContextObjectReadGuard<'_, RenderLight2d>> {
         if !self.lights.contains(&handle) {
             return None;
         }
@@ -122,7 +122,7 @@ impl Scene2d {
     pub fn get_light_mut(
         &mut self,
         handle: Handle
-    ) -> Option<ContextObjectWriteGuard<RenderLight2d>> {
+    ) -> Option<ContextObjectWriteGuard<'_, RenderLight2d>> {
         if !self.lights.contains(&handle) {
             return None;
         }
@@ -154,7 +154,7 @@ impl Scene2d {
     }
 
     pub fn get_group(&self, handle: Handle)
-        -> Option<ContextObjectReadGuard<RenderGroup2d>> {
+        -> Option<ContextObjectReadGuard<'_, RenderGroup2d>> {
         let context = get_render_context_2d();
         let group = context.get_group(handle)?;
         if group.get_parent().is_some() {
@@ -164,7 +164,7 @@ impl Scene2d {
     }
 
     pub fn get_group_mut(&mut self, handle: Handle)
-                     -> Option<ContextObjectWriteGuard<RenderGroup2d>> {
+                     -> Option<ContextObjectWriteGuard<'_, RenderGroup2d>> {
         let context = get_render_context_2d();
         let group = context.get_group_mut(handle)?;
         if group.get_parent().is_some() {
@@ -174,7 +174,7 @@ impl Scene2d {
     }
 
     pub fn get_object(&self, handle: Handle)
-        -> Option<ContextObjectReadGuard<RenderObject2d>> {
+        -> Option<ContextObjectReadGuard<'_, RenderObject2d>> {
         let context = get_render_context_2d();
         let object = context.get_object(handle)?;
         if object.get_parent() != self.root_group.unwrap() {
@@ -184,7 +184,7 @@ impl Scene2d {
     }
 
     pub fn get_object_mut(&mut self, handle: Handle)
-        -> Option<ContextObjectWriteGuard<RenderObject2d>> {
+        -> Option<ContextObjectWriteGuard<'_, RenderObject2d>> {
         let context = get_render_context_2d();
         let object = context.get_object_mut(handle)?;
         if object.get_parent() != self.root_group.unwrap() {

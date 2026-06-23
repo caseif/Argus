@@ -19,7 +19,7 @@ impl ScriptContext {
         self.language.as_str()
     }
 
-    pub fn get_plugin_data(&self) -> ReentrantMutexGuard<dyn Any> {
+    pub fn get_plugin_data(&self) -> ReentrantMutexGuard<'_, dyn Any> {
         self.plugin_data.as_ref().expect("Language plugin data is missing").lock()
     }
 
