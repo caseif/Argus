@@ -63,7 +63,7 @@ impl Display for GlError {
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub(crate) unsafe extern "C" fn gl_debug_callback(
     _source: GLenum,
     _ty: GLenum,

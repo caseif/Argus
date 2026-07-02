@@ -791,16 +791,13 @@ fn gen_fn_binding_code(
                     fn into(self) -> #syn_type {
                         Box::new(move |#(#proxy_signature_param_tokens),*| {
                             let params_wrapped = vec![#(#callback_invoke_tokens),*];
-                            <#cb_ret_type_tokens as ::argus_scripting_bind::Wrappable>::
-                            unwrap_as_value(
-                                unsafe {
-                                    &(self.entry_point)(
-                                        params_wrapped,
-                                        ::std::sync::Arc::clone(&self.userdata)
-                                    )
-                                        .expect("Failed to invoke script callback")
-                                }
+                            let wrapped_result = &(self.entry_point)(
+                                params_wrapped,
+                                ::std::sync::Arc::clone(&self.userdata)
                             )
+                                .expect("Failed to invoke script callback");
+                            <#cb_ret_type_tokens as ::argus_scripting_bind::Wrappable>::
+                            unwrap_as_value(wrapped_result);
                         })
                     }
                 }
@@ -1072,7 +1069,7 @@ fn handle_impl(impl_block: &ItemImpl, _args: Vec<&Meta>) -> Result<TokenStream2,
     let mut transformed_items = Vec::new();
     for item in &impl_block.items {
         let new_item = match item {
-            ImplItem::Fn(ref f) => {
+            ImplItem::Fn(f) => {
                 if let Some(pos) = f.attrs.iter().position(|attr| {
                     if attr.path().segments.len() != 1 { return false; }
                     let seg = attr.path().segments.first().expect("First path segment was missing");
