@@ -59,9 +59,10 @@ fn generate_opengl_bindings(profile_path: &Path) {
         Err(_) => panic!("Ruby must be installed and available on the path")
     }
 
-    run_bundler(AGLET_SUBMODULE_PATH);
+    let bundler_exe = run_bundler(AGLET_SUBMODULE_PATH);
 
-    let output = Command::new(RUBY_EXE)
+    let output = Command::new(bundler_exe)
+        .arg("exec")
         .arg(format!("{AGLET_SUBMODULE_PATH}/aglet.rb"))
         .arg("--lang=rust")
         .args(["-p", profile_path.to_str().unwrap()])
@@ -78,7 +79,7 @@ fn generate_opengl_bindings(profile_path: &Path) {
     }
 }
 
-fn run_bundler(working_dir: &str) {
+fn run_bundler(working_dir: &str) -> &'static str {
     for bundler_exe in BUNDLER_EXES {
         if let Ok(res) = Command::new(bundler_exe)
             .args(["config", "set", "--local", "path", "./vendor/cache"])
@@ -92,6 +93,7 @@ fn run_bundler(working_dir: &str) {
                 );
             }
             let res_2 = Command::new(bundler_exe)
+                .args(["install"])
                 .current_dir(working_dir)
                 .output()
                 .expect("Bundler executable disappeared!");
@@ -103,7 +105,7 @@ fn run_bundler(working_dir: &str) {
                 );
             }
 
-            return;
+            return bundler_exe;
         }
     }
 
