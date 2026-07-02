@@ -12,3 +12,4 @@ num_enum = { workspace = true }
 quote = { workspace = true }
 proc-macro2 = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
+typeid = { workspace = true }

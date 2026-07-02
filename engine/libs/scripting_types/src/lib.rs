@@ -16,10 +16,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use std::any::TypeId;
-use std::{ffi, mem, ptr, slice};
+use std::any::{type_name, TypeId};
+use std::{mem, ptr, slice};
 use std::alloc::{alloc_zeroed, dealloc, Layout};
+use std::cell::RefCell;
 use std::ffi::{CStr, CString};
+use std::mem::ManuallyDrop;
 use std::ptr::{slice_from_raw_parts, slice_from_raw_parts_mut};
 use std::sync::{Arc, Mutex};
 use num_enum::{IntoPrimitive, TryFromPrimitive};
@@ -52,7 +54,7 @@ pub type FfiCopyCtor = unsafe extern "C" fn(dst: *mut (), src: *const ());
 pub type FfiDtor = unsafe extern "C" fn(target: *mut ());
 
 #[derive(Debug, Clone, Copy, PartialEq, Deserialize, Serialize)]
-pub enum IntegralType {
+pub enum FundamentalType {
     Empty,
     Int8,
     Int16,
@@ -77,32 +79,32 @@ pub enum IntegralType {
     Callback,
 }
 
-impl IntegralType {
+impl FundamentalType {
     pub fn is_int(&self) -> bool {
-        self == &IntegralType::Int8 ||
-        self == &IntegralType::Int16 ||
-        self == &IntegralType::Int32 ||
-        self == &IntegralType::Int64 ||
-        self == &IntegralType::Int128
+        self == &FundamentalType::Int8 ||
+        self == &FundamentalType::Int16 ||
+        self == &FundamentalType::Int32 ||
+        self == &FundamentalType::Int64 ||
+        self == &FundamentalType::Int128
     }
 
     pub fn is_uint(&self) -> bool {
-        self == &IntegralType::Uint8 ||
-            self == &IntegralType::Uint16 ||
-            self == &IntegralType::Uint32 ||
-            self == &IntegralType::Uint64 ||
-            self == &IntegralType::Uint128
+        self == &FundamentalType::Uint8 ||
+            self == &FundamentalType::Uint16 ||
+            self == &FundamentalType::Uint32 ||
+            self == &FundamentalType::Uint64 ||
+            self == &FundamentalType::Uint128
     }
 
     pub fn is_float(&self) -> bool {
-        self == &IntegralType::Float32 ||
-            self == &IntegralType::Float64
+        self == &FundamentalType::Float32 ||
+            self == &FundamentalType::Float64
     }
 
     pub fn is_integral(&self) -> bool {
         self.is_int() ||
             self.is_uint() ||
-            self == &IntegralType::Enum
+            self == &FundamentalType::Enum
     }
 }
 
@@ -214,16 +216,17 @@ impl ToTokens for FunctionType {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ObjectType {
-    pub ty: IntegralType,
+    pub ty: FundamentalType,
     pub size: usize,
     pub is_const: bool,
     pub is_refable: Option<bool>,
     pub is_refable_getter: Option<IsRefableGetterWrapper>,
     #[serde(skip)]
-    pub type_id: Option<String>,
-    pub type_name: Option<String>,
+    pub base_type_id: Option<String>,
+    pub base_type_name: Option<String>,
     pub primary_type: Option<Box<ObjectType>>,
     pub secondary_type: Option<Box<ObjectType>>,
+    pub synthetic_type: Option<String>,
     pub callback_info: Option<Box<CallbackInfo>>,
     pub copy_ctor: Option<CopyCtorWrapper>,
     pub dtor: Option<DtorWrapper>,
@@ -238,15 +241,16 @@ pub struct CallbackInfo {
 impl ObjectType {
     pub fn empty() -> Self {
         Self {
-            ty: IntegralType::Empty,
+            ty: FundamentalType::Empty,
             size: 0,
             is_const: false,
             is_refable: None,
             is_refable_getter: None,
-            type_id: None,
-            type_name: None,
+            base_type_id: None,
+            base_type_name: None,
             primary_type: None,
             secondary_type: None,
+            synthetic_type: None,
             callback_info: None,
             copy_ctor: None,
             dtor: None,
@@ -262,23 +266,56 @@ impl ObjectType {
     }
 }
 
-pub const EMPTY_TYPE: ObjectType = ObjectType {
-    ty: IntegralType::Empty,
-    size: 0,
-    is_const: false,
-    is_refable: None,
-    is_refable_getter: None,
-    type_id: None,
-    type_name: None,
-    primary_type: None,
-    secondary_type: None,
-    callback_info: None,
-    copy_ctor: None,
-    dtor: None,
-};
-
 pub trait ScriptBound: Sized {
     fn get_object_type() -> ObjectType;
+}
+
+pub unsafe trait WrappableUnderlying {
+    /// # Safety
+    /// `ptr` must point to a valid instance of `Self` of length `size` bytes.
+    unsafe fn ptr_from_parts(ptr: *const (), size: usize) -> *const Self;
+    /// # Safety
+    /// `ptr` must point to a valid instance of `Self` of length `size` bytes.
+    unsafe fn ptr_from_parts_mut(ptr: *mut (), size: usize) -> *mut Self;
+}
+
+unsafe impl<T: Sized> WrappableUnderlying for T {
+    unsafe fn ptr_from_parts(ptr: *const (), _size: usize) -> *const Self {
+        ptr as *const Self
+    }
+
+    unsafe fn ptr_from_parts_mut(ptr: *mut (), _size: usize) -> *mut Self {
+        ptr as *mut Self
+    }
+}
+
+unsafe impl<T: Sized> WrappableUnderlying for [T] {
+    unsafe fn ptr_from_parts(ptr: *const (), size: usize) -> *const Self {
+        // SAFETY: The caller is responsible for ensuring that `ptr` points to
+        //         a `T` instance of length `size` bytes.
+        unsafe { slice::from_raw_parts(ptr as *mut T, size / size_of::<T>()) }
+    }
+
+    unsafe fn ptr_from_parts_mut(ptr: *mut (), size: usize) -> *mut Self {
+        // SAFETY: The caller is responsible for ensuring that `ptr` points to
+        //         a `T` instance of length `size` bytes.
+        unsafe { slice::from_raw_parts_mut(ptr as *mut T, size / size_of::<T>()) }
+    }
+}
+
+pub trait Wrappable<'a>: ScriptBound + 'a {
+    /// The type of data stored directly by the wrapper's data buffer.
+    type InternalFormat: WrappableUnderlying + ?Sized;
+    type Owned: Sized;
+
+    fn write_into(self, dst: &mut ManuallyDrop<Self::InternalFormat>);
+
+    fn get_required_buffer_size(&self) -> usize;
+
+    /// Unwraps the value stored by the passed wrapper object.
+    fn unwrap_as_value(wrapper: &WrappedObject) -> Result<Self::Owned, ()>;
+
+    fn from_owned(owned: &'a Self::Owned) -> Self;
 }
 
 macro_rules! impl_wrappable {
@@ -286,15 +323,16 @@ macro_rules! impl_wrappable {
         impl $crate::ScriptBound for $ty {
             fn get_object_type() -> $crate::ObjectType {
                 ObjectType {
-                    ty: $crate::IntegralType::$enum_var,
+                    ty: $crate::FundamentalType::$enum_var,
                     size: ::std::mem::size_of::<Self>(),
                     is_const: false,
                     is_refable: None,
                     is_refable_getter: None,
-                    type_id: None,
-                    type_name: None,
+                    base_type_id: None,
+                    base_type_name: None,
                     primary_type: None,
                     secondary_type: None,
+                    synthetic_type: None,
                     callback_info: None,
                     copy_ctor: None,
                     dtor: None,
@@ -302,44 +340,34 @@ macro_rules! impl_wrappable {
             }
         }
 
-        impl Wrappable for $ty {
+        impl<'a> $crate::Wrappable<'a> for $ty {
             type InternalFormat = Self;
+            type Owned = Self;
 
-            fn wrap_into(self, wrapper: &mut $crate::WrappedObject)
+            fn write_into(self, dst: &mut ManuallyDrop<Self::InternalFormat>)
             where
-                Self: $crate::Wrappable<InternalFormat = Self> + ::std::clone::Clone {
-                if ::std::mem::size_of::<Self>() > 0 {
-                    unsafe { wrapper.store_value::<Self>(self) }
-                }
+                Self: $crate::Wrappable<'a, InternalFormat = Self> + ::std::clone::Clone {
+                *dst = ManuallyDrop::new(self);
             }
 
             fn get_required_buffer_size(&self) -> usize
             where
-                Self: $crate::Wrappable<InternalFormat = Self> + ::std::clone::Clone {
+                Self: $crate::Wrappable<'a, InternalFormat = Self> + ::std::clone::Clone {
                 ::std::mem::size_of::<Self>()
             }
 
-            fn unwrap_as_value(wrapper: &$crate::WrappedObject) -> Self
+            fn unwrap_as_value(wrapper: &$crate::WrappedObject) -> Result<Self::Owned, ()>
             where
-                Self: $crate::Wrappable<InternalFormat = Self> + ::std::clone::Clone {
-                // SAFETY: the implementation provided by this macro guarantees
-                //         that Self::InternalFormat == Self
-                unsafe { <Self::InternalFormat as Clone>::clone(&*wrapper.get_ptr::<Self>()) }
+                Self: $crate::Wrappable<'a, InternalFormat = Self, Owned = Self> + ::std::clone::Clone {
+                assert!(wrapper.populated);
+                Ok(<Self::InternalFormat as Clone>::clone(wrapper.get::<Self>()?))
+            }
+
+            fn from_owned(owned: &'a Self::Owned) -> Self {
+                *owned
             }
         }
     )
-}
-
-pub trait Wrappable : ScriptBound {
-    type InternalFormat;
-
-    fn wrap_into(self, wrapper: &mut WrappedObject);
-
-    fn get_required_buffer_size(&self) -> usize {
-        size_of::<Self::InternalFormat>()
-    }
-
-    fn unwrap_as_value(wrapper: &WrappedObject) -> Self;
 }
 
 impl_wrappable!(i8, Int8);
@@ -358,15 +386,16 @@ impl_wrappable!((), Empty);
 impl ScriptBound for String {
     fn get_object_type() -> ObjectType {
         ObjectType {
-            ty: IntegralType::String,
+            ty: FundamentalType::String,
             size: 0,
             is_const: false,
             is_refable: None,
             is_refable_getter: None,
-            type_id: None,
-            type_name: None,
+            base_type_id: None,
+            base_type_name: None,
             primary_type: None,
             secondary_type: None,
+            synthetic_type: None,
             callback_info: None,
             copy_ctor: Some(CopyCtorWrapper::of(copy_string)),
             dtor: Some(DtorWrapper::of(drop_string)),
@@ -374,45 +403,48 @@ impl ScriptBound for String {
     }
 }
 
-impl Wrappable for String {
-    type InternalFormat = ffi::c_char;
+impl<'a> Wrappable<'a> for String {
+    type InternalFormat = [u8];
+    type Owned = Self;
 
-    fn wrap_into(self, wrapper: &mut WrappedObject) {
+    fn write_into(self, dst: &mut ManuallyDrop<Self::InternalFormat>) {
         let cstr = CString::new(self.as_str()).unwrap();
-
-        unsafe { wrapper.copy_from_slice(cstr.as_bytes_with_nul()); }
-
-        wrapper.is_populated = true;
+        dst.copy_from_slice(cstr.as_bytes_with_nul());
     }
 
     fn get_required_buffer_size(&self) -> usize {
-        CString::new(self.as_str()).unwrap().count_bytes() + 1
+        let temp = CString::new(self.as_str()).unwrap().count_bytes();
+        temp + 1
     }
 
-    fn unwrap_as_value(wrapper: &WrappedObject) -> Self {
-        assert_eq!(wrapper.ty.ty, IntegralType::String, "Wrong object type");
-        assert!(wrapper.is_populated);
+    fn unwrap_as_value(wrapper: &WrappedObject) -> Result<Self::Owned, ()> {
+        assert_eq!(wrapper.ty.ty, FundamentalType::String, "Wrong object type");
+        assert!(wrapper.populated);
 
-        unsafe {
-            let char_ptr = wrapper.get_ptr::<Self>();
-            let c_str = CStr::from_ptr(char_ptr);
-            c_str.to_str().unwrap().to_string()
-        }
+        let temp = wrapper.get::<Self>()?;
+        let c_str = CStr::from_bytes_with_nul(temp)
+            .expect("Malformed string in WrappedObject!");
+        Ok(c_str.to_str().unwrap().to_string())
+    }
+
+    fn from_owned(owned: &'a Self::Owned) -> Self {
+        owned.clone()
     }
 }
 
 impl ScriptBound for &str {
     fn get_object_type() -> ObjectType {
         ObjectType {
-            ty: IntegralType::String,
+            ty: FundamentalType::String,
             size: 0,
             is_const: false,
             is_refable: None,
             is_refable_getter: None,
-            type_id: None,
-            type_name: None,
+            base_type_id: None,
+            base_type_name: None,
             primary_type: None,
             secondary_type: None,
+            synthetic_type: None,
             callback_info: None,
             copy_ctor: Some(CopyCtorWrapper::of(copy_string)),
             dtor: None,
@@ -420,45 +452,49 @@ impl ScriptBound for &str {
     }
 }
 
-impl Wrappable for &str {
-    type InternalFormat = ffi::c_char;
+impl<'a> Wrappable<'a> for &'a str {
+    type InternalFormat = [u8];
+    type Owned = String;
 
-    fn wrap_into(self, wrapper: &mut WrappedObject) {
+    fn write_into(self, dst: &mut ManuallyDrop<Self::InternalFormat>) {
         let cstr = CString::new(self).unwrap();
-
-        unsafe { wrapper.copy_from_slice(cstr.as_bytes_with_nul()); }
-
-        wrapper.is_populated = true;
+        dst.copy_from_slice(cstr.as_bytes_with_nul());
     }
 
     fn get_required_buffer_size(&self) -> usize {
-        CString::new(*self).unwrap().count_bytes() + 1
+        let temp = CString::new(*self).unwrap().count_bytes();
+        temp + 1
     }
 
-    fn unwrap_as_value(wrapper: &WrappedObject) -> Self {
-        assert_eq!(wrapper.ty.ty, IntegralType::String, "Wrong object type");
-        assert!(wrapper.is_populated);
+    fn unwrap_as_value(wrapper: &WrappedObject) -> Result<Self::Owned, ()> {
+        assert_eq!(wrapper.ty.ty, FundamentalType::String, "Wrong object type");
+        assert!(wrapper.populated);
 
-        unsafe {
-            let char_ptr = wrapper.get_ptr::<Self>();
-            let c_str = CStr::from_ptr(char_ptr);
-            c_str.to_str().unwrap()
-        }
+        let c_str = CStr::from_bytes_with_nul(
+            &wrapper.get::<Self>()?[..wrapper.buffer_size]
+        )
+            .expect("Malformed string in WrappedObject");
+        Ok(c_str.to_str().unwrap().to_string())
+    }
+
+    fn from_owned(owned: &'a Self::Owned) -> Self {
+        owned.as_str()
     }
 }
 
 impl<T: ScriptBound> ScriptBound for Vec<T> {
     fn get_object_type() -> ObjectType {
         ObjectType {
-            ty: IntegralType::Vec,
+            ty: FundamentalType::Vec,
             size: 0,
             is_const: true,
             is_refable: None,
             is_refable_getter: None,
-            type_id: None,
-            type_name: None,
+            base_type_id: None,
+            base_type_name: None,
             primary_type: Some(Box::new(T::get_object_type())),
             secondary_type: None,
+            synthetic_type: None,
             callback_info: None,
             copy_ctor: None,
             dtor: None,
@@ -466,14 +502,23 @@ impl<T: ScriptBound> ScriptBound for Vec<T> {
     }
 }
 
-impl<T: Wrappable> Wrappable for Vec<T> {
+impl<'a, T: Wrappable<'a>> Wrappable<'a> for Vec<T> {
     type InternalFormat = i32;
+    type Owned = Self;
 
-    fn wrap_into(self, _wrapper: &mut WrappedObject) {
+    fn write_into(self, _dst: &mut ManuallyDrop<Self::InternalFormat>) {
         todo!()
     }
 
-    fn unwrap_as_value(_wrapper: &WrappedObject) -> Self {
+    fn get_required_buffer_size(&self) -> usize {
+        todo!()
+    }
+
+    fn unwrap_as_value(_wrapper: &WrappedObject) -> Result<Self::Owned, ()> {
+        todo!()
+    }
+
+    fn from_owned(_owned: &Self::Owned) -> Self {
         todo!()
     }
 }
@@ -482,15 +527,16 @@ impl<T: ScriptBound> ScriptBound for &T {
     fn get_object_type() -> ObjectType {
         let base_type = T::get_object_type();
         ObjectType {
-            ty: IntegralType::Reference,
+            ty: FundamentalType::Reference,
             size: size_of::<*const ()>(),
             is_const: false, //TODO: this totally breaks safety in bound functions
             is_refable: None,
             is_refable_getter: None,
-            type_id: base_type.type_id,
-            type_name: base_type.type_name,
+            base_type_id: base_type.base_type_id,
+            base_type_name: base_type.base_type_name,
             primary_type: Some(Box::new(T::get_object_type())),
             secondary_type: None,
+            synthetic_type: None,
             callback_info: None,
             copy_ctor: None,
             dtor: None,
@@ -498,21 +544,30 @@ impl<T: ScriptBound> ScriptBound for &T {
     }
 }
 
-impl<T: ScriptBound> Wrappable for &T {
+impl<'a, T: ScriptBound + 'a> Wrappable<'a> for &'a T {
     type InternalFormat = *const T;
+    type Owned = Self;
 
-    fn wrap_into(self, wrapper: &mut WrappedObject) {
-        assert_eq!(wrapper.ty.ty, IntegralType::Reference, "Wrong object type");
-
-        unsafe { *wrapper.get_mut_ptr::<Self>() = self; }
-        wrapper.is_populated = true;
+    fn write_into(self, dst: &mut ManuallyDrop<Self::InternalFormat>) {
+        *dst = ManuallyDrop::new(self);
     }
 
-    fn unwrap_as_value(wrapper: &WrappedObject) -> Self {
-        assert_eq!(wrapper.ty.ty, IntegralType::Reference, "Wrong object type");
-        assert!(wrapper.is_populated);
+    fn get_required_buffer_size(&self) -> usize {
+        size_of::<Self::InternalFormat>()
+    }
 
-        unsafe { &**wrapper.get_ptr::<Self>() }
+    /// Unwraps the value stored by the passed wrapper object.
+    ///
+    /// # Safety
+    /// The
+    fn unwrap_as_value(wrapper: &WrappedObject) -> Result<Self, ()> {
+        assert_eq!(wrapper.ty.ty, FundamentalType::Reference, "Wrong object type");
+
+        unsafe { Ok(wrapper.get::<Self>()?.as_ref().unwrap()) }
+    }
+
+    fn from_owned(owned: &'a Self::Owned) -> Self {
+        *owned
     }
 }
 
@@ -520,15 +575,16 @@ impl<T: ScriptBound> ScriptBound for &mut T {
     fn get_object_type() -> ObjectType {
         let base_type = T::get_object_type();
         ObjectType {
-            ty: IntegralType::Reference,
+            ty: FundamentalType::Reference,
             size: size_of::<*const ()>(),
             is_const: false,
             is_refable: None,
             is_refable_getter: None,
-            type_id: base_type.type_id,
-            type_name: base_type.type_name,
+            base_type_id: base_type.base_type_id,
+            base_type_name: base_type.base_type_name,
             primary_type: Some(Box::new(T::get_object_type())),
             secondary_type: None,
+            synthetic_type: None,
             callback_info: None,
             copy_ctor: None,
             dtor: None,
@@ -536,23 +592,28 @@ impl<T: ScriptBound> ScriptBound for &mut T {
     }
 }
 
-impl<T: ScriptBound> Wrappable for &mut T {
+impl<'a, T: ScriptBound + 'a> Wrappable<'a> for &'a mut T {
     type InternalFormat = *mut T;
+    type Owned = &'a mut T;
 
-    fn wrap_into(self, wrapper: &mut WrappedObject) {
-        assert_eq!(wrapper.ty.ty, IntegralType::Reference, "Wrong object type");
-        assert!(!wrapper.ty.is_const);
-
-        unsafe { *wrapper.get_mut_ptr::<Self>() = self; }
-        wrapper.is_populated = true;
+    fn write_into(self, dst: &mut ManuallyDrop<Self::InternalFormat>) {
+        *dst = ManuallyDrop::new(self)
     }
 
-    fn unwrap_as_value(wrapper: &WrappedObject) -> Self {
-        assert_eq!(wrapper.ty.ty, IntegralType::Reference, "Wrong object type");
-        assert!(!wrapper.ty.is_const);
-        assert!(wrapper.is_populated);
+    fn get_required_buffer_size(&self) -> usize {
+        size_of::<Self::InternalFormat>()
+    }
 
-        unsafe { &mut **wrapper.get_ptr::<Self>() }
+    fn unwrap_as_value(wrapper: &WrappedObject) -> Result<Self::Owned, ()> {
+        assert_eq!(wrapper.ty.ty, FundamentalType::Reference, "Wrong object type");
+        assert!(!wrapper.ty.is_const);
+        assert!(wrapper.populated);
+
+        unsafe { Ok(wrapper.get::<Self>()?.as_mut().unwrap()) }
+    }
+
+    fn from_owned(owned: &'a Self::Owned) -> Self {
+        unsafe { *ptr::from_ref(owned).cast_mut() }
     }
 }
 
@@ -561,11 +622,13 @@ const WRAPPED_OBJ_BUF_CAP: usize = 64;
 pub type EnumValueGetter = fn() -> i64;
 
 pub struct WrappedObject {
-    pub ty: ObjectType,
-    pub data: [u8; WRAPPED_OBJ_BUF_CAP],
-    pub is_on_heap: bool,
-    pub buffer_size: usize,
-    is_populated: bool,
+    ty: ObjectType,
+    frontend_type_id: RefCell<Option<String>>,
+    synthetic_type_name: Option<String>,
+    data: ManuallyDrop<[u8; WRAPPED_OBJ_BUF_CAP]>,
+    is_on_heap: bool,
+    buffer_size: usize,
+    populated: bool,
     drop_fn: fn(&mut WrappedObject),
 }
 
@@ -575,7 +638,7 @@ impl Drop for WrappedObject {
         if self.is_on_heap {
             unsafe {
                 dealloc(
-                    self.get_raw_heap_ptr_mut(),
+                    self.get_raw_heap_ptr_mut().cast(),
                     Layout::from_size_align(self.buffer_size, 8).unwrap()
                 );
             }
@@ -584,114 +647,176 @@ impl Drop for WrappedObject {
 }
 
 impl WrappedObject {
-    pub const BUFFER_CAPACITY: usize = WRAPPED_OBJ_BUF_CAP;
-
-    pub fn from_ptr(ty: &ObjectType, ffi_buf: &[u8]) -> Self {
-        let mut wrapper = Self {
-            ty: ty.clone(),
-            data: unsafe { mem::zeroed() },
-            is_on_heap: false,
-            buffer_size: ffi_buf.len(),
-            is_populated: false,
-            drop_fn: |_| {},
-        };
-
-        wrapper.initialize_buffer(ffi_buf.len());
-
-        if let Some(copy_ctor) = ty.copy_ctor {
-            unsafe { (copy_ctor.fn_ptr)(wrapper.get_mut_ptr::<()>(), ffi_buf.as_ptr().cast()) }
-        } else {
-            unsafe { wrapper.copy_from_slice(ffi_buf) }
-        }
-
-        wrapper
+    /// Returns a representation of the type of object or primitive stored by
+    /// this wrapper.
+    pub fn get_type(&self) -> &ObjectType {
+        &self.ty
     }
 
-    pub fn wrap<T: Wrappable>(val: T) -> Self {
+    /// Returns the size in bytes of the underlying storage for the wrapped
+    /// object.
+    pub fn get_buffer_size(&self) -> usize {
+        self.buffer_size
+    }
+
+    /// Returns whether this wrapper is currently populated.
+    pub fn is_populated(&self) -> bool {
+        self.populated
+    }
+
+    /// Creates a new [ObjectWrapper] and stores the given parameter into it as
+    /// an initial value.
+    pub fn wrap<'a, T: Wrappable<'a>>(val: T) -> Self {
         let size = val.get_required_buffer_size();
 
-        let mut wrapper = WrappedObject {
-            ty: T::get_object_type(),
-            data: unsafe { mem::zeroed() },
-            is_on_heap: false,
-            buffer_size: size,
-            is_populated: false,
-            drop_fn: |wrapper: &mut WrappedObject| {
-                unsafe {
-                    if wrapper.is_populated {
-                        ptr::drop_in_place::<T::InternalFormat>(wrapper.get_mut_ptr::<T>())
-                    }
-                }
-            },
+        let mut wrapper = Self::new(T::get_object_type(), size);
+        wrapper.drop_fn = |wrapper: &mut WrappedObject| {
+            unsafe { ManuallyDrop::drop(wrapper.get_mut::<T>().unwrap()); }
         };
 
-        wrapper.initialize_buffer(size);
+        if wrapper.frontend_type_id.borrow().is_none() {
+            wrapper.frontend_type_id.replace(Some(format!("{:?}", typeid::of::<T>())));
+        }
 
-        val.wrap_into(&mut wrapper);
+        // SAFETY: We don't read from the returned reference
+        val.write_into(unsafe { wrapper.get_mut_maybe_uninit::<T>().unwrap() });
+
+        wrapper.populated = true;
 
         wrapper
     }
 
+    /// Creates a new unpopulated [ObjectWrapper].
     pub fn new(ty: ObjectType, size: usize) -> Self {
+        let synthetic_type_name = ty.synthetic_type.as_ref().cloned();
         let mut wrapper = WrappedObject {
             ty,
-            data: unsafe { mem::zeroed() },
+            frontend_type_id: RefCell::new(None),
+            synthetic_type_name,
+            data: ManuallyDrop::new([0; WRAPPED_OBJ_BUF_CAP]),
             is_on_heap: false,
             buffer_size: size,
-            is_populated: false,
+            populated: false,
             drop_fn: |_| {},
         };
 
-        wrapper.initialize_buffer(size);
-
-        wrapper
-    }
-
-    pub fn unwrap<T: Wrappable>(&self) -> T {
-        <T as Wrappable>::unwrap_as_value(self)
-    }
-
-    fn initialize_buffer(&mut self, size: usize) {
-        if size > WrappedObject::BUFFER_CAPACITY {
+        if size > WRAPPED_OBJ_BUF_CAP {
             let heap_ptr: *mut u8 =
                 unsafe {
-                    alloc_zeroed(Layout::from_size_align(self.buffer_size, 8).unwrap()).cast()
+                    alloc_zeroed(Layout::from_size_align(wrapper.buffer_size, 8).unwrap()).cast()
                 };
             unsafe {
                 // copy pointer address to internal buffer
-                *self.data.as_mut_ptr().cast() = heap_ptr;
+                *wrapper.data.as_mut_ptr().cast() = heap_ptr;
             }
-            self.is_on_heap = true;
+            wrapper.is_on_heap = true;
         } else {
-            self.is_on_heap = false;
+            wrapper.is_on_heap = false;
+        }
+
+        if wrapper.ty.ty == FundamentalType::Empty {
+            wrapper.populated = true;
+            assert!(wrapper.frontend_type_id.borrow().is_none());
+            wrapper.frontend_type_id.replace(Some(format!("{:?}", typeid::of::<()>())));
+        }
+
+        wrapper
+    }
+
+    /// Unwraps the value stored in this [ObjectWrapper] and returns it as a
+    /// caller-owned representation. See [ObjectWrapper::Owned] for more
+    /// information.
+    ///
+    /// # Safety
+    /// - The passed type parameter must be consistent across all calls to this
+    ///   object's functions which accept a type parameter. Making any sequence
+    ///   of calls against the same [WrappedObject] across its lifetime with
+    ///   different type parameters is UB.
+    pub fn unwrap<'a, T: Wrappable<'a>>(&self) -> Result<T::Owned, ()> {
+        if !self.populated {
+            return Err(());
+        }
+
+        self.validate_type::<T>()?;
+
+        <T as Wrappable<'a>>::unwrap_as_value(self)
+    }
+
+    /// Returns a reference to the wrapper's underlying buffer, or [None] if it
+    /// is not currently populated.
+    ///
+    /// # Safety
+    /// - The passed type parameter must be consistent across all calls to this
+    ///   object's functions which accept a type parameter. Making any sequence
+    ///   of calls against the same [WrappedObject] across its lifetime with
+    ///   different type parameters is UB.
+    pub fn get<'a, T: Wrappable<'a>>(&self) -> Result<&T::InternalFormat, ()> {
+        if !self.populated {
+            return Err(());
+        }
+
+        self.validate_type::<T>()?;
+
+        // SAFETY: The caller is responsible for ensuring that the same type
+        //         parameter is used across all calls, ensuring that the pointer
+        //         constructed here is consistent with the data stored in the
+        //         buffer.
+        unsafe {
+            Ok(&*T::InternalFormat::ptr_from_parts(self.get_raw_ptr().cast(), self.buffer_size))
         }
     }
 
-    pub fn get<T: Wrappable>(&self) -> &T::InternalFormat {
-        unsafe { &*self.get_ptr::<T>() }
+    /// Returns a mutable reference to the wrapper's underlying buffer, or
+    /// [None] if it is not currently populated.
+    ///
+    /// # Safety
+    /// - The passed type parameter must be consistent across all calls to this
+    ///   object's functions which accept a type parameter. Making any sequence
+    ///   of calls against the same [WrappedObject] across its lifetime with
+    ///   different type parameters is UB.
+    pub fn get_mut<'a, T: Wrappable<'a>>(&mut self)
+        -> Result<&mut ManuallyDrop<T::InternalFormat>, ()> {
+        if !self.populated {
+            return Err(());
+        }
+
+        self.validate_type::<T>()?;
+
+        // SAFETY: We just verified that the wrapper is populated
+        unsafe { self.get_mut_maybe_uninit::<T>() }
     }
 
-    pub fn get_mut<T: Wrappable>(&mut self) -> &mut T::InternalFormat {
-        unsafe { &mut *self.get_mut_ptr::<T>() }
-    }
+    /// Returns a mutable reference to the wrapper's underlying buffer.
+    ///
+    /// # Safety
+    /// - The passed type parameter must be consistent across all calls to this
+    ///   object's functions which accept a type parameter. Making any sequence
+    ///   of calls against the same [WrappedObject] across its lifetime with
+    ///   different type parameters is UB.
+    /// - The returned reference must not be read from if
+    ///   [WrappedObject::is_populated] returns `false`. Doing so is UB.
+    pub unsafe fn get_mut_maybe_uninit<'a, T: Wrappable<'a>>(&mut self)
+        -> Result<&mut ManuallyDrop<T::InternalFormat>, ()> {
+        self.validate_type::<T>()?;
 
-    pub fn get_ptr<T: Wrappable>(&self) -> *const T::InternalFormat {
-        if self.is_on_heap {
-            self.get_heap_ptr::<T>()
-        } else {
-            self.data.as_ptr().cast()
+        let p = self.get_raw_mut_ptr().cast();
+        // SAFETY: The caller is responsible for ensuring that the same type
+        //         parameter is used across all calls, ensuring that the pointer
+        //         constructed here is consistent with the data stored in the
+        //         buffer.
+        unsafe {
+            Ok((T::InternalFormat::ptr_from_parts_mut(p, self.buffer_size)
+                as *mut ManuallyDrop<T::InternalFormat>)
+                .as_mut().unwrap())
         }
     }
 
-    pub fn get_mut_ptr<T: Wrappable>(&mut self) -> *mut T::InternalFormat {
-        if self.is_on_heap {
-            self.get_heap_ptr_mut::<T>()
-        } else {
-            self.data.as_mut_ptr().cast()
-        }
-    }
-
-    pub fn get_raw_ptr(&self) -> *const () {
+    /// Returns a raw pointer to the wrapper's underlying buffer.
+    ///
+    /// Note that while calling this function is safe, dereferencing the
+    /// returned pointer is not and the caller is responsible for ensuring that
+    /// it is used in a consistent manner with respect to typing.
+    pub fn get_raw_ptr(&self) -> *const ManuallyDrop<()> {
         if self.is_on_heap {
             self.get_raw_heap_ptr().cast()
         } else {
@@ -699,7 +824,12 @@ impl WrappedObject {
         }
     }
 
-    pub fn get_raw_mut_ptr(&mut self) -> *mut () {
+    /// Returns a mutable raw pointer to the wrapper's underlying buffer.
+    ///
+    /// Note that while calling this function is safe, dereferencing the
+    /// returned pointer is not and the caller is responsible for ensuring that
+    /// it is used in a consistent manner with respect to typing.
+    pub fn get_raw_mut_ptr(&mut self) -> *mut ManuallyDrop<()> {
         if self.is_on_heap {
             self.get_raw_heap_ptr_mut().cast()
         } else {
@@ -707,62 +837,192 @@ impl WrappedObject {
         }
     }
 
-    pub fn get_data_as_slice(&self) -> &[u8] {
-        unsafe { &*slice_from_raw_parts(self.data.as_ptr().cast(), self.buffer_size) }
-    }
+    /// Stores a value into the wrapper, dropping the old value if applicable..
+    ///
+    /// # Safety
+    /// - The passed type parameter must be consistent across all calls to this
+    ///   object which accept a type parameter. Making any sequence of calls to
+    ///   the same [WrappedObject] across its lifetime with different type
+    ///   parameters is UB.
+    pub fn store_value<'a, T: Wrappable<'a>>(&mut self, val: T) -> Result<(), ()> {
+        self.validate_type::<T>()?;
 
-    pub fn get_data_as_mut_slice(&mut self) -> &mut [u8] {
-        unsafe { &mut *slice_from_raw_parts_mut(self.data.as_mut_ptr().cast(), self.buffer_size) }
-    }
-
-    pub unsafe fn store_value<T: Wrappable + Into<T::InternalFormat>>(&mut self, val: T) {
-        assert!(size_of::<T>() <= self.buffer_size);
-        *self.get_mut_ptr::<T>() = val.into();
-        self.is_populated = true;
-    }
-
-    pub unsafe fn store_internal<T>(&mut self, val: T) {
-        assert!(size_of::<T>() <= self.buffer_size);
-        if self.is_populated {
-            *self.get_raw_mut_ptr().cast() = val;
-        } else {
-            ptr::write(self.get_raw_mut_ptr().cast(), val);
+        if self.populated {
+            (self.drop_fn)(self)
         }
-        self.is_populated = true;
+
+        // SAFETY: We don't read from the returned pointer
+        val.write_into(unsafe { self.get_mut_maybe_uninit::<T>().unwrap() });
+        self.populated = true;
+
+        Ok(())
     }
 
+    /// Stores a value directly into the wrapper's underlying buffer. This
+    /// skips conversion from the wrapper's nominal type into its internal
+    /// format.
+    ///
+    /// # Safety
+    /// The passed object is consistent with other calls against this object to
+    /// functions which accept a type parameter.
+    pub unsafe fn store_raw<T>(&mut self, val: T) -> Result<(), ()> {
+        //assert!(self.frontend_type_id.is_some());
+
+        if size_of::<T>() > self.buffer_size {
+            return Err(());
+        }
+
+        if self.populated {
+            (self.drop_fn)(self);
+        }
+
+        // SAFETY: `get_mut` is guaranteed to return a valid pointer to at
+        //         least `buffer_size` bytes of memory.
+        unsafe { *self.get_raw_mut_ptr().cast() = ManuallyDrop::new(val); }
+        self.drop_fn = |_wrapper: &mut WrappedObject| {
+            //TODO
+        };
+        self.populated = true;
+
+        Ok(())
+    }
+
+    /// Copies the contents of the wrapper's underlying buffer directly into the
+    /// provided slice.
+    ///
+    /// Note that while calling this function is safe, any further operations on
+    /// on the passed slice must be consistent with the type of data stored by
+    /// the wrapper.
+    pub fn copy_to_slice(&self, dst: &mut [u8]) {
+        assert!(dst.len() <= self.buffer_size);
+
+        let src = unsafe {
+            &*slice_from_raw_parts(self.get_raw_ptr().cast(), self.buffer_size)
+        };
+        dst.copy_from_slice(src);
+    }
+
+    /// Copies the contents of the provided slice directly into the wrapper's
+    /// underlying buffer.
+    ///
+    /// # Safety
+    /// The passed slice must be consistent with other calls to this object
+    /// which accept a type parameter. Specifically, the copied bytes must
+    /// correspond to the internal format of the type being wrapped.
     pub unsafe fn copy_from_slice(&mut self, src: &[u8]) {
-        self.copy_from(src.as_ptr().cast(), src.len());
+        assert!(src.len() <= self.buffer_size);
+
+        // SAFETY: The caller is responsible for ensuring that the slice
+        //         contents are consistent with the type stored by the wrapper.
+        let dst = unsafe {
+            &mut *slice_from_raw_parts_mut(self.get_raw_mut_ptr().cast(), self.buffer_size)
+        };
+        dst.copy_from_slice(src);
+
+        self.populated = true;
     }
 
-    unsafe fn copy_from(&mut self, src: *const (), size: usize) {
-        assert!(size <= self.buffer_size);
-
-        let dst = self.get_mut_ptr::<u8>();
-        ptr::copy_nonoverlapping(src.cast(), dst, size);
-
-        self.is_populated = true;
-    }
-
-    fn get_heap_ptr<T: Wrappable>(&self) -> *const T::InternalFormat {
-        assert!(size_of::<*const T::InternalFormat>() <= self.buffer_size);
-        self.get_raw_heap_ptr().cast()
-    }
-
-    fn get_heap_ptr_mut<T: Wrappable>(&mut self) -> *mut T::InternalFormat {
-        assert!(size_of::<*mut T::InternalFormat>() <= self.buffer_size);
-        self.get_raw_heap_ptr_mut().cast()
-    }
-
-    fn get_raw_heap_ptr(&self) -> *const u8 {
+    fn get_raw_heap_ptr(&self) -> *const ManuallyDrop<[u8]> {
         assert!(self.is_on_heap);
+        // SAFETY: The contents of `data` are guaranteed to be a pointer to
+        //         valid heap memory when `is_on_heap` is true.
         unsafe { *self.data.as_ptr().cast() }
     }
 
-    fn get_raw_heap_ptr_mut(&mut self) -> *mut u8 {
+    fn get_raw_heap_ptr_mut(&mut self) -> *mut ManuallyDrop<[u8]> {
         assert!(self.is_on_heap);
+        // SAFETY: The contents of `data` are guaranteed to be a pointer to
+        //         valid heap memory when `is_on_heap` is true.
         unsafe { *self.data.as_ptr().cast() }
     }
+
+    fn validate_type<'a, T: Wrappable<'a>>(&self) -> Result<(), ()> {
+        let other_ty = T::get_object_type();
+
+        // Special cases where the TypeId shortcut doesn't work and a simple
+        // type-specific check suffices instead.
+
+        // Enum values can be stored/accessed as their underlying integral
+        // type. Integral types are essentially identical except for their size, so
+        // This does technically leave a gap in detecting signed vs.
+        // unsigned integer types, but that should be fairly benign in
+        // practice.
+        if self.ty.ty.is_integral() && other_ty.ty.is_integral() {
+            return if self.ty.size == other_ty.size {
+                Ok(())
+            } else {
+                Err(())
+            };
+        }
+
+        // Strings are slightly problematic because of String vs &str. As long
+        // as both are string types it should be safe to proceed.
+        if self.ty.ty == FundamentalType::String && other_ty.ty == FundamentalType::String {
+            return Ok(());
+        }
+
+        // Once we've already validated a particular type parameter for this
+        // object, we can just check against that to ensure that all subsequent
+        // accesses to the object are consistent. This saves us from having to
+        // do a relatively expensive manual comparison each time.
+        if self.frontend_type_id.borrow().is_some() {
+            return if self.frontend_type_id.borrow().as_ref().unwrap().as_str() ==
+                format!("{:?}", typeid::of::<T>()) {
+                Ok(())
+            } else {
+                Err(())
+            }
+        }
+
+        compare_types(&self.ty, &other_ty)?;
+
+        if self.ty.ty == FundamentalType::Callback {
+            if let Some(synthetic_type_name) = self.synthetic_type_name.as_ref() &&
+                synthetic_type_name.as_str() != type_name::<T>().split("::").last().unwrap()
+            {
+                return Err(())
+            }
+        }
+
+        self.frontend_type_id.replace(Some(format!("{:?}", typeid::of::<T>())));
+
+        Ok(())
+    }
+}
+
+fn compare_types(a: &ObjectType, b: &ObjectType) -> Result<(), ()> {
+    if a.size != b.size {
+        return Err(());
+    }
+
+    if a.ty != b.ty &&
+        !((a.ty.is_integral() && b.ty == FundamentalType::Enum) ||
+            (b.ty.is_integral() && a.ty == FundamentalType::Enum)) {
+        return Err(())
+    }
+
+    if a.primary_type.is_some() != b.primary_type.is_some() {
+        return Err(())
+    }
+    if a.primary_type.is_some() {
+        compare_types(a.primary_type.as_ref().unwrap(), b.primary_type.as_ref().unwrap())?;
+    }
+
+    if a.secondary_type.is_some() != b.secondary_type.is_some() {
+        return Err(());
+    }
+    if a.secondary_type.is_some() {
+        compare_types(a.secondary_type.as_ref().unwrap(), b.secondary_type.as_ref().unwrap())?;
+    }
+
+    if a.ty == FundamentalType::Object {
+        if a.base_type_id.is_none() || b.base_type_id.is_none() ||
+            a.base_type_id.as_ref().unwrap() != b.base_type_id.as_ref().unwrap() {
+            return Err(());
+        }
+    }
+
+    Ok(())
 }
 
 #[derive(Clone, Debug)]
@@ -822,21 +1082,23 @@ pub struct BoundEnumInfo {
 }
 
 pub unsafe extern "C" fn copy_string(dst: *mut (), src: *const ()) {
-    let len = CStr::from_ptr(src.cast()).count_bytes() + 1;
-    let src_slice = slice::from_raw_parts(src, len);
-    let dst_slice = slice::from_raw_parts_mut(dst, len);
-    dst_slice.copy_from_slice(src_slice);
+    unsafe {
+        let len = CStr::from_ptr(src.cast()).count_bytes() + 1;
+        let src_slice = slice::from_raw_parts(src, len);
+        let dst_slice = slice::from_raw_parts_mut(dst, len);
+        dst_slice.copy_from_slice(src_slice);
+    }
 }
 
 pub unsafe extern "C" fn move_string(dst: *mut (), src: *mut ()) {
-    copy_string(dst, src);
+    unsafe { copy_string(dst, src); }
 }
 
 pub unsafe extern "C" fn drop_string(target: *mut ()) {
-    ptr::drop_in_place(target.cast::<String>());
+    unsafe { ptr::drop_in_place(target.cast::<String>()); }
 }
 
-impl WrappedScriptCallback {
+/*impl WrappedScriptCallback {
     pub unsafe fn call(
         callback: WrappedScriptCallback,
         params: Vec<WrappedObject>,
@@ -846,4 +1108,4 @@ impl WrappedScriptCallback {
             callback.userdata,
         )
     }
-}
+}*/

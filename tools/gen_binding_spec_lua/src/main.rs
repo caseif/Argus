@@ -133,7 +133,7 @@ fn emit_function_comment(out: &mut impl Write, def: &BoundFunctionInfo) -> io::R
     }
 
     let return_ty: ObjectType = serde_json::de::from_str(def.return_type_serial)?;
-    if return_ty.ty != IntegralType::Empty {
+    if return_ty.ty != FundamentalType::Empty {
         out.write_all(format!("---@return {}\n", get_lua_type(&return_ty)).as_bytes())?;
     }
     Ok(())
@@ -173,27 +173,27 @@ fn get_function_name(fn_def: &BoundFunctionInfo, struct_def: Option<&BoundStruct
 
 fn get_lua_type(ty: &ObjectType) -> &str {
     match ty.ty {
-        IntegralType::Empty => "nil",
-        IntegralType::Int8 |
-        IntegralType::Int16 |
-        IntegralType::Int32 |
-        IntegralType::Int64 |
-        IntegralType::Int128 |
-        IntegralType::Uint8 |
-        IntegralType::Uint16 |
-        IntegralType::Uint32 |
-        IntegralType::Uint64 |
-        IntegralType::Uint128 |
-        IntegralType::Float32 |
-        IntegralType::Float64 => "number",
-        IntegralType::Boolean => "boolean",
-        IntegralType::String => "string",
-        IntegralType::Object => ty.type_name.as_ref().unwrap(),
-        IntegralType::Enum => ty.type_name.as_ref().unwrap(),
-        IntegralType::Reference => ty.primary_type.as_ref().unwrap().type_name.as_ref().unwrap(),
-        IntegralType::Vec |
-        IntegralType::VecRef => "table",
-        IntegralType::Result => "Result",
-        IntegralType::Callback => "function",
+        FundamentalType::Empty => "nil",
+        FundamentalType::Int8 |
+        FundamentalType::Int16 |
+        FundamentalType::Int32 |
+        FundamentalType::Int64 |
+        FundamentalType::Int128 |
+        FundamentalType::Uint8 |
+        FundamentalType::Uint16 |
+        FundamentalType::Uint32 |
+        FundamentalType::Uint64 |
+        FundamentalType::Uint128 |
+        FundamentalType::Float32 |
+        FundamentalType::Float64 => "number",
+        FundamentalType::Boolean => "boolean",
+        FundamentalType::String => "string",
+        FundamentalType::Object => ty.base_type_name.as_ref().unwrap(),
+        FundamentalType::Enum => ty.base_type_name.as_ref().unwrap(),
+        FundamentalType::Reference => ty.primary_type.as_ref().unwrap().base_type_name.as_ref().unwrap(),
+        FundamentalType::Vec |
+        FundamentalType::VecRef => "table",
+        FundamentalType::Result => "Result",
+        FundamentalType::Callback => "function",
     }
 }

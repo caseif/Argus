@@ -1,4 +1,4 @@
-use argus_scripting_bind::{FunctionType, IntegralType};
+use argus_scripting_bind::{FunctionType, FundamentalType};
 
 pub fn get_qualified_field_name(type_name: impl AsRef<str>, field_name: impl AsRef<str>) -> String {
     format!("{}::{}", type_name.as_ref(), field_name.as_ref())
@@ -19,8 +19,8 @@ pub fn get_qualified_function_name(
     }
 }
 
-pub fn is_bound_type(ty: IntegralType) -> bool{
-    ty == IntegralType::Reference ||
-        ty == IntegralType::Object ||
-        ty == IntegralType::Enum
+pub fn is_bound_type(ty: FundamentalType) -> bool{
+    ty == FundamentalType::Reference ||
+        ty == FundamentalType::Object ||
+        ty == FundamentalType::Enum
 }

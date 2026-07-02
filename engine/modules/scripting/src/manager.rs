@@ -5,7 +5,7 @@ use crate::plugin::ScriptLanguagePlugin;
 use crate::util::{get_qualified_field_name, get_qualified_function_name, is_bound_type};
 use crate::LOGGER;
 use argus_logging::debug;
-use argus_scripting_bind::{FunctionType, IntegralType, ObjectType};
+use argus_scripting_bind::{FunctionType, FundamentalType, ObjectType};
 use fragile::Fragile;
 use std::collections::{HashMap, HashSet};
 use std::ops::Deref;
@@ -538,7 +538,7 @@ impl ScriptBindings {
         param_def: &mut ObjectType,
         check_copyable: bool,
     ) -> Result<(), BindingError> {
-        if param_def.ty == IntegralType::Callback {
+        if param_def.ty == FundamentalType::Callback {
             for subparam in param_def
                 .callback_info
                 .as_mut()
@@ -553,12 +553,12 @@ impl ScriptBindings {
                 &mut param_def.callback_info.as_mut().unwrap().return_type,
                 true,
             );
-        } else if param_def.ty == IntegralType::Vec || param_def.ty == IntegralType::VecRef {
+        } else if param_def.ty == FundamentalType::Vec || param_def.ty == FundamentalType::VecRef {
             let Some(prim_type) = param_def.primary_type.as_mut() else {
                 panic!();
             };
             return self.resolve_type(prim_type.as_mut(), false);
-        } else if param_def.ty == IntegralType::Result {
+        } else if param_def.ty == FundamentalType::Result {
             let Some(prim_type) = param_def.primary_type.as_mut() else {
                 panic!();
             };
@@ -573,8 +573,8 @@ impl ScriptBindings {
         }
 
         let type_name: &str;
-        if param_def.ty == IntegralType::Enum {
-            let type_id = param_def.type_id.as_ref().unwrap();
+        if param_def.ty == FundamentalType::Enum {
+            let type_id = param_def.base_type_id.as_ref().unwrap();
             let bound_enum_res = self.get_enum_by_type_id(type_id);
             if bound_enum_res.is_err() {
                 return Err(BindingError::new(
@@ -585,15 +585,15 @@ impl ScriptBindings {
             }
             type_name = &bound_enum_res?.name;
         } else {
-            let type_id = if param_def.ty == IntegralType::Reference {
-                param_def.primary_type.as_ref().unwrap().type_id.as_ref().unwrap()
+            let type_id = if param_def.ty == FundamentalType::Reference {
+                param_def.primary_type.as_ref().unwrap().base_type_id.as_ref().unwrap()
             } else {
-                param_def.type_id.as_ref().unwrap()
+                param_def.base_type_id.as_ref().unwrap()
             };
 
             let bound_type_res = self.get_type_by_type_id(type_id);
             if let Ok(bound_type) = bound_type_res {
-                if param_def.ty == IntegralType::Object {
+                if param_def.ty == FundamentalType::Object {
                     if check_copyable {
                         if bound_type.cloner.is_none() {
                             return Err(BindingError::new(
@@ -629,7 +629,7 @@ impl ScriptBindings {
                 if bound_enum_res.is_ok() {
                     let bound_enum = bound_enum_res?;
                     type_name = &bound_enum.name;
-                    param_def.ty = IntegralType::Enum;
+                    param_def.ty = FundamentalType::Enum;
                     param_def.size = bound_enum.width;
                 } else {
                     return Err(bound_type_res.unwrap_err());
@@ -637,13 +637,13 @@ impl ScriptBindings {
             }
         }
 
-        param_def.type_name = Some(type_name.to_owned());
+        param_def.base_type_name = Some(type_name.to_owned());
 
         Ok(())
     }
 
     fn resolve_field(&self, field_def: &mut ObjectType) -> Result<(), BindingError> {
-        if field_def.ty == IntegralType::Vec || field_def.ty == IntegralType::VecRef {
+        if field_def.ty == FundamentalType::Vec || field_def.ty == FundamentalType::VecRef {
             return self.resolve_field(field_def.primary_type.as_mut().unwrap());
         } else if !is_bound_type(field_def.ty) {
             return Ok(());
@@ -651,10 +651,10 @@ impl ScriptBindings {
 
         //assert!(!field_def.type_name.has_value());
 
-        let type_id = field_def.type_id.as_ref().unwrap();
+        let type_id = field_def.base_type_id.as_ref().unwrap();
 
         let type_name: &str;
-        if field_def.ty == IntegralType::Enum {
+        if field_def.ty == FundamentalType::Enum {
             type_name = &self.get_enum_by_type_id(type_id)
                 .map_err(|err| {
                     BindingError::new(
@@ -700,7 +700,7 @@ impl ScriptBindings {
                 if bound_enum_res.is_ok() {
                     let bound_enum = bound_enum_res?;
                     type_name = &bound_enum.name;
-                    field_def.ty = IntegralType::Enum;
+                    field_def.ty = FundamentalType::Enum;
                     field_def.size = bound_enum.width;
                 } else {
                     return Err(bound_type_res.unwrap_err());
@@ -708,7 +708,7 @@ impl ScriptBindings {
             }
         }
 
-        field_def.type_name = Some(type_name.to_owned());
+        field_def.base_type_name = Some(type_name.to_owned());
 
         Ok(())
     }

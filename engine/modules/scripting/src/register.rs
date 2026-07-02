@@ -1,6 +1,6 @@
 use crate::*;
 use argus_logging::debug;
-use argus_scripting_bind::{FfiCopyCtor, FfiDtor, FunctionType, IntegralType, ObjectType, BOUND_ENUM_DEFS, BOUND_FIELD_DEFS, BOUND_FUNCTION_DEFS, BOUND_STRUCT_DEFS};
+use argus_scripting_bind::{FfiCopyCtor, FfiDtor, FunctionType, FundamentalType, ObjectType, BOUND_ENUM_DEFS, BOUND_FIELD_DEFS, BOUND_FUNCTION_DEFS, BOUND_STRUCT_DEFS};
 use std::any::TypeId;
 use std::collections::HashMap;
 use std::mem;
@@ -179,7 +179,7 @@ fn apply_type_ids(
         Ok(type_id)
     };
 
-    let has_type_id = ty.ty == IntegralType::Object || ty.ty == IntegralType::Enum;
+    let has_type_id = ty.ty == FundamentalType::Object || ty.ty == FundamentalType::Enum;
     let type_id_opt = if has_type_id {
         Some(format!(
             "{:?}",
@@ -188,7 +188,7 @@ fn apply_type_ids(
     } else {
         None
     };
-    ty.type_id = type_id_opt;
+    ty.base_type_id = type_id_opt;
 
     if let Some(prim_type) = ty.primary_type.as_mut() {
         apply_type_ids(prim_type, type_id_getters, next_type_id_index);

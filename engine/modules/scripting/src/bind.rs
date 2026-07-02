@@ -155,9 +155,9 @@ impl BoundTypeDef {
         -> Result<(), BindingError> {
         if fn_def.param_types.is_empty() ||
             !(
-                fn_def.param_types[0].ty == IntegralType::Object ||
-                    fn_def.param_types[0].ty == IntegralType::Reference ||
-                    fn_def.param_types[0].type_id
+                fn_def.param_types[0].ty == FundamentalType::Object ||
+                    fn_def.param_types[0].ty == FundamentalType::Reference ||
+                    fn_def.param_types[0].base_type_id
                         .as_ref()
                         .map(|id| id != &self.type_id)
                         .unwrap_or(false)
@@ -249,7 +249,7 @@ impl BoundFieldDef {
     }
     
     pub fn get_value(&self, instance: &mut WrappedObject) -> WrappedObject {
-        (self.access_proxy)(instance, &instance.ty)
+        (self.access_proxy)(instance, &instance.get_type())
     }
 
     pub fn set_value(&self, instance: &mut WrappedObject, value: &WrappedObject) {

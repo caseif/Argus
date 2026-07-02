@@ -22,6 +22,7 @@ use proc_macro2::TokenStream as TokenStream2;
 use quote::{format_ident, quote, quote_spanned, ToTokens};
 use syn::*;
 use core::result::Result;
+use std::any::TypeId;
 use argus_scripting_types::*;
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
@@ -143,16 +144,17 @@ fn handle_struct(item: &ItemStruct, args: Vec<&Meta>) -> Result<TokenStream2, Co
         impl ::argus_scripting_bind::ScriptBound for #struct_ident {
             fn get_object_type() -> ::argus_scripting_bind::ObjectType {
                 ::argus_scripting_bind::ObjectType {
-                    ty: ::argus_scripting_bind::IntegralType::Object,
+                    ty: ::argus_scripting_bind::FundamentalType::Object,
                     size: size_of::<#struct_ident>(),
                     is_const: false,
                     is_refable: None,
                     is_refable_getter: None,
-                    type_id: Some(format!("{:?}", ::std::any::TypeId::of::<#struct_ident>())),
-                    type_name: Some(#struct_name.to_string()),
+                    base_type_id: Some(format!("{:?}", ::std::any::TypeId::of::<#struct_ident>())),
+                    base_type_name: Some(#struct_name.to_string()),
                     callback_info: None,
                     primary_type: None,
                     secondary_type: None,
+                    synthetic_type: None,
                     #obj_type_ctor_dtor_field_init_tokens
                 }
             }
@@ -160,32 +162,30 @@ fn handle_struct(item: &ItemStruct, args: Vec<&Meta>) -> Result<TokenStream2, Co
     };
 
     let wrappable_impl_tokens = quote_spanned! {struct_span=>
-        impl ::argus_scripting_bind::Wrappable for #struct_ident {
+        impl<'a> ::argus_scripting_bind::Wrappable<'a> for #struct_ident {
             type InternalFormat = Self;
+            type Owned = Self;
 
-            fn wrap_into(self, wrapper: &mut ::argus_scripting_bind::WrappedObject)
-            where
-                Self: ::argus_scripting_bind::Wrappable<InternalFormat = Self> +
-                    ::std::clone::Clone {
-                if ::std::mem::size_of::<Self>() > 0 {
-                    unsafe { wrapper.store_value::<Self>(self) }
-                }
+            fn write_into(self, dst: &mut ::core::mem::ManuallyDrop<Self::InternalFormat>) {
+                *dst = ::core::mem::ManuallyDrop::new(self);
             }
 
             fn get_required_buffer_size(&self) -> usize
             where
-                Self: ::argus_scripting_bind::Wrappable<InternalFormat = Self> +
+                Self: ::argus_scripting_bind::Wrappable<'a, InternalFormat = Self> +
                     ::std::clone::Clone {
                 ::std::mem::size_of::<Self>()
             }
 
-            fn unwrap_as_value(wrapper: &::argus_scripting_bind::WrappedObject) -> Self
+            fn unwrap_as_value(wrapper: &::argus_scripting_bind::WrappedObject) -> Result<Self, ()>
             where
-                Self: ::argus_scripting_bind::Wrappable<InternalFormat = Self> +
+                Self: ::argus_scripting_bind::Wrappable<'a, InternalFormat = Self> +
                     ::std::clone::Clone {
-                // SAFETY: the implementation provided by this macro guarantees
-                //         that Self::InternalFormat == Self
-                unsafe { <Self::InternalFormat as Clone>::clone(&*wrapper.get_ptr::<Self>()) }
+                Ok(<Self::InternalFormat as Clone>::clone(wrapper.get::<Self>()?))
+            }
+
+            fn from_owned(owned: &'a Self::Owned) -> Self {
+                (*owned).clone()
             }
         }
     };
@@ -269,13 +269,13 @@ fn handle_struct(item: &ItemStruct, args: Vec<&Meta>) -> Result<TokenStream2, Co
 
         let field_accessor_tokens = quote_spanned! {field_span=>
             |inst, ty| {
-                if ty.ty == ::argus_scripting_bind::IntegralType::Object {
+                if ty.ty == ::argus_scripting_bind::FundamentalType::Object {
                     ::argus_scripting_bind::WrappedObject::wrap(
-                        &(unsafe { &**inst.get::<&#struct_ident>() }).#field_ident
+                        &(unsafe { &**(inst.get::<&#struct_ident>().unwrap()) }).#field_ident
                     )
                 } else {
                     ::argus_scripting_bind::WrappedObject::wrap(
-                        (unsafe { &**inst.get::<&#struct_ident>() }).#field_ident.clone()
+                        (unsafe { &**(inst.get::<&#struct_ident>().unwrap()) }).#field_ident.clone()
                     )
                 }
             }
@@ -283,8 +283,8 @@ fn handle_struct(item: &ItemStruct, args: Vec<&Meta>) -> Result<TokenStream2, Co
         let field_mutator_tokens = quote_spanned! {field_span=>
             |inst, val| {
                 unsafe {
-                    (&mut *inst.get_mut::<&#struct_ident>().cast_mut())
-                }.#field_ident = val.unwrap::<#field_type>().clone();
+                    (&mut *inst.get_mut::<&#struct_ident>().unwrap().cast_mut())
+                }.#field_ident = val.unwrap::<#field_type>().unwrap().clone();
             }
         };
 
@@ -456,15 +456,16 @@ fn handle_enum(item: &ItemEnum, args: Vec<&Meta>) -> Result<TokenStream2, Compil
         impl ::argus_scripting_bind::ScriptBound for #enum_ident {
             fn get_object_type() -> ::argus_scripting_bind::ObjectType {
                 ::argus_scripting_bind::ObjectType {
-                    ty: ::argus_scripting_bind::IntegralType::Enum,
+                    ty: ::argus_scripting_bind::FundamentalType::Enum,
                     size: size_of::<#enum_ident>(),
                     is_const: false,
                     is_refable: None,
                     is_refable_getter: None,
-                    type_id: Some(format!("{:?}", ::std::any::TypeId::of::<#enum_ident>())),
-                    type_name: Some(#enum_name.to_string()),
+                    base_type_id: Some(format!("{:?}", ::std::any::TypeId::of::<#enum_ident>())),
+                    base_type_name: Some(#enum_name.to_string()),
                     primary_type: None,
                     secondary_type: None,
+                    synthetic_type: None,
                     callback_info: None,
                     copy_ctor: None,
                     dtor: None,
@@ -474,32 +475,30 @@ fn handle_enum(item: &ItemEnum, args: Vec<&Meta>) -> Result<TokenStream2, Compil
     };
 
     let wrappable_impl_tokens = quote_spanned! {enum_span=>
-        impl ::argus_scripting_bind::Wrappable for #enum_ident {
+        impl<'a> ::argus_scripting_bind::Wrappable<'a> for #enum_ident {
             type InternalFormat = Self;
+            type Owned = Self;
 
-            fn wrap_into(self, wrapper: &mut ::argus_scripting_bind::WrappedObject)
-            where
-                Self: ::argus_scripting_bind::Wrappable<InternalFormat = Self> +
-                    ::std::marker::Copy {
-                if ::std::mem::size_of::<Self>() > 0 {
-                    unsafe { wrapper.store_value::<Self>(self) }
-                }
+            fn write_into(self, dst: &mut ::core::mem::ManuallyDrop<Self::InternalFormat>) {
+                *dst = ::core::mem::ManuallyDrop::new(self);
             }
 
             fn get_required_buffer_size(&self) -> usize
             where
-                Self: ::argus_scripting_bind::Wrappable<InternalFormat = Self> +
+                Self: ::argus_scripting_bind::Wrappable<'a, InternalFormat = Self> +
                     ::std::marker::Copy {
                 ::std::mem::size_of::<Self>()
             }
 
-            fn unwrap_as_value(wrapper: &::argus_scripting_bind::WrappedObject) -> Self
+            fn unwrap_as_value(wrapper: &::argus_scripting_bind::WrappedObject) -> Result<Self, ()>
             where
-                Self: ::argus_scripting_bind::Wrappable<InternalFormat = Self> +
+                Self: ::argus_scripting_bind::Wrappable<'a, InternalFormat = Self> +
                     ::std::marker::Copy {
-                // SAFETY: the implementation provided by this macro guarantees
-                //         that Self::InternalFormat == Self
-                unsafe { <Self::InternalFormat as Clone>::clone(&*wrapper.get_ptr::<Self>()) }
+                Ok(<Self::InternalFormat as Clone>::clone(&*(wrapper.get::<Self>()?)))
+            }
+
+            fn from_owned(owned: &'a Self::Owned) -> Self {
+                *owned
             }
         }
     };
@@ -671,9 +670,15 @@ fn gen_fn_binding_code(
 
     let param_obj_types:
         Vec<(ObjectType, Vec<Type>)> =
-        param_types.iter()
-            .map(|ty| {
-                parse_type(ty, ValueFlowDirection::FromScript)
+        param_types.iter().enumerate()
+            .map(|(i, ty)| {
+                let res = parse_type(ty, ValueFlowDirection::FromScript);
+                if let Ok((mut obj_type, inner_types)) = res {
+                    obj_type.synthetic_type = Some(format!("__script_bind_{fn_name}_param_{i}_wrapper"));
+                    Ok((obj_type, inner_types))
+                } else {
+                    res
+                }
             })
             .collect::<Result<_, _>>()?;
 
@@ -682,7 +687,7 @@ fn gen_fn_binding_code(
         .collect();
 
     let (ret_obj_type, ret_syn_types) = match &sig.output {
-        ReturnType::Default => (EMPTY_TYPE.clone(), vec![]),
+        ReturnType::Default => (ObjectType::empty().clone(), vec![]),
         ReturnType::Type(_, ty) => {
             let mut effective_type = None;
             if let Type::Path(path) = ty.as_ref() {
@@ -777,17 +782,31 @@ fn gen_fn_binding_code(
                     })
                     .unzip();
 
-            let wrappable_type_ident = format_ident!("__script_bind_{fn_name}_param_{i}_wrapper");
+            let synthetic_type_ident = format_ident!("__script_bind_{fn_name}_param_{i}_wrapper");
 
             callback_impls_tokens.push(quote_spanned! {call_site_span=>
-                //#[derive(::std::clone::Clone, ::std::marker::Copy)]
                 #[derive(::std::clone::Clone)]
-                struct #wrappable_type_ident {
+                struct #synthetic_type_ident {
                     entry_point: ::argus_scripting_bind::ScriptCallbackEntryPoint,
                     userdata: ::std::sync::Arc<::std::sync::Mutex<dyn ::argus_scripting_bind::ScriptCallbackRef>>,
                 }
 
-                impl ::std::convert::Into<#syn_type> for #wrappable_type_ident {
+                impl ::std::convert::From<::argus_scripting_bind::WrappedScriptCallback> for #synthetic_type_ident {
+                    fn from(other: ::argus_scripting_bind::WrappedScriptCallback) -> Self {
+                        Self { entry_point: other.entry_point, userdata: other.userdata }
+                    }
+                }
+
+                impl ::std::convert::Into<::argus_scripting_bind::WrappedScriptCallback> for #synthetic_type_ident {
+                    fn into(self) -> ::argus_scripting_bind::WrappedScriptCallback {
+                        ::argus_scripting_bind::WrappedScriptCallback {
+                            entry_point: self.entry_point,
+                            userdata: self.userdata,
+                        }
+                    }
+                }
+
+                impl ::std::convert::Into<#syn_type> for #synthetic_type_ident {
                     fn into(self) -> #syn_type {
                         Box::new(move |#(#proxy_signature_param_tokens),*| {
                             let params_wrapped = vec![#(#callback_invoke_tokens),*];
@@ -796,24 +815,28 @@ fn gen_fn_binding_code(
                                 ::std::sync::Arc::clone(&self.userdata)
                             )
                                 .expect("Failed to invoke script callback");
-                            <#cb_ret_type_tokens as ::argus_scripting_bind::Wrappable>::
-                            unwrap_as_value(wrapped_result);
+                            <#cb_ret_type_tokens as ::argus_scripting_bind::Wrappable<'_>>::
+                            unwrap_as_value(wrapped_result).unwrap()
                         })
                     }
                 }
 
-                impl ::argus_scripting_bind::ScriptBound for #wrappable_type_ident {
+                impl ::argus_scripting_bind::ScriptBound for #synthetic_type_ident {
                     fn get_object_type() -> ::argus_scripting_bind::ObjectType {
                         ::argus_scripting_bind::ObjectType {
-                            ty: ::argus_scripting_bind::IntegralType::Callback,
-                            size: ::std::mem::size_of::<#wrappable_type_ident>(),
+                            ty: ::argus_scripting_bind::FundamentalType::Callback,
+                            size: ::std::mem::size_of::<#synthetic_type_ident>(),
                             is_const: false,
                             is_refable: None,
                             is_refable_getter: None,
-                            type_id: Some(format!("{:?}", ::std::any::TypeId::of::<#syn_type>())),
-                            type_name: None,
+                            base_type_id: Some(format!("{:?}", ::std::any::TypeId::of::<#syn_type>())),
+                            base_type_name: None,
                             primary_type: None,
                             secondary_type: None,
+                            synthetic_type: Some(
+                                ::core::any::type_name::<#synthetic_type_ident>()
+                                .split("::").last().unwrap().to_string()
+                            ),
                             callback_info: Some(Box::new(::argus_scripting_bind::CallbackInfo {
                                 param_types: vec![#(#cb_param_obj_type_tokens),*],
                                 return_type: #cb_ret_obj_type_tokens,
@@ -824,20 +847,22 @@ fn gen_fn_binding_code(
                     }
                 }
 
-                impl ::argus_scripting_bind::Wrappable for #wrappable_type_ident {
+                impl<'a> ::argus_scripting_bind::Wrappable<'a> for #synthetic_type_ident {
                     type InternalFormat = ::argus_scripting_bind::WrappedScriptCallback;
+                    type Owned = Self;
 
-                    fn wrap_into(self, wrapper: &mut ::argus_scripting_bind::WrappedObject) {
-                        panic!("Cannot wrap callback");
+                    fn write_into(self, dst: &mut ::core::mem::ManuallyDrop<Self::InternalFormat>) {
+                        *dst = ::core::mem::ManuallyDrop::new(self.into());
                     }
 
                     fn get_required_buffer_size(&self) -> usize {
-                        ::std::mem::size_of::<#wrappable_type_ident>()
+                        ::std::mem::size_of::<#synthetic_type_ident>()
                     }
 
-                    fn unwrap_as_value(wrapper: &::argus_scripting_bind::WrappedObject) -> Self {
+                    fn unwrap_as_value(wrapper: &::argus_scripting_bind::WrappedObject)
+                        -> Result<Self, ()> {
                         assert!(
-                            wrapper.ty.ty == ::argus_scripting_bind::IntegralType::Callback,
+                            wrapper.get_type().ty == ::argus_scripting_bind::FundamentalType::Callback,
                             "Wrong object type"
                         );
                         unsafe {
@@ -846,17 +871,21 @@ fn gen_fn_binding_code(
                                     ::argus_scripting_bind::WrappedScriptCallback
                                     as
                                     ::std::clone::Clone
-                                >::clone(&*wrapper.get_ptr::<Self>())
+                                >::clone(&*(wrapper.get::<Self>()?))
                             };
-                            #wrappable_type_ident {
+                            Ok(#synthetic_type_ident {
                                 entry_point: proxied.entry_point,
                                 userdata: proxied.userdata,
-                            }.into()
+                            }.into())
                         }
+                    }
+
+                    fn from_owned(owned: &'a Self::Owned) -> Self {
+                        (*owned).clone()
                     }
                 }
             });
-            param_type_tokens = wrappable_type_ident.into_token_stream();
+            param_type_tokens = synthetic_type_ident.into_token_stream();
         } else {
             param_type_tokens = syn_type.to_token_stream();
         }
@@ -872,11 +901,13 @@ fn gen_fn_binding_code(
     let ret_type_serial = serde_json::to_string(&ret_obj_type)
         .expect("Failed to serialize function return type");
 
-    let param_tokens: Vec<_> = param_types.iter().enumerate().map(|(param_index, param_type)| {
+    let params_owned_tokens: Vec<_> = param_types.iter().enumerate().map(|(param_index, param_type)| {
         let param_type_tokens = &param_type_each_tokens[param_index];
         let param_type_span = param_type.span();
+        let param_owned_ident = format_ident!("param_owned_{param_index}");
         quote_spanned! {param_type_span=>
-            params[#param_index].unwrap::<#param_type_tokens>().into()
+            let mut #param_owned_ident = params[#param_index].unwrap::<#param_type_tokens>()
+                .unwrap();
         }
     }).collect();
 
@@ -922,20 +953,16 @@ fn gen_fn_binding_code(
         })
         .collect();
 
-    let fn_call = match fn_type {
+    let fn_ident_tokens = match fn_type {
         FunctionType::MemberInstance | FunctionType::MemberStatic => {
             let ty = assoc_type.expect("Associated type was missing");
             quote_spanned! {invocation_span=>
-                <#ty>::#fn_ident(
-                    #(#param_tokens),*
-                )
+                <#ty>::#fn_ident
             }
         }
         FunctionType::Global => {
             quote_spanned! {invocation_span=>
-                #fn_ident(
-                    #(#param_tokens),*
-                )
+                #fn_ident
             }
         }
         FunctionType::Extension => {
@@ -945,6 +972,15 @@ fn gen_fn_binding_code(
             ));
         }
     };
+
+    let params_owned_refs_tokens: Vec<_> = param_types.iter().enumerate().map(|(param_index, param_type)| {
+        let param_type_span = param_type.span();
+        let param_owned_ident = format_ident!("param_owned_{param_index}");
+        let param_type_tokens = &param_type_each_tokens[param_index];
+        quote_spanned! {param_type_span=>
+            <#param_type_tokens as ::argus_scripting_bind::Wrappable<'_>>::from_owned(&mut #param_owned_ident).into()
+        }
+    }).collect();
 
     let wrap_invoke_tokens = quote_spanned! {invocation_span=>
         ::argus_scripting_bind::WrappedObject::wrap
@@ -963,7 +999,11 @@ fn gen_fn_binding_code(
                     ::argus_scripting_bind::WrappedObject,
                     ::argus_scripting_bind::ReflectiveArgumentsError,
                 > {
-                Ok(#wrap_invoke_tokens(#fn_call))
+                #(#params_owned_tokens)*
+                let rv = #fn_ident_tokens(
+                    #(#params_owned_refs_tokens),*
+                );
+                Ok(#wrap_invoke_tokens(rv))
             }
 
             #[::argus_scripting_bind::linkme::distributed_slice(
@@ -1186,7 +1226,7 @@ fn build_wrappable_assertion(ty: &Type) -> TokenStream2 {
         struct _AssertWrappable<#lifetime>
         where #transformed_type:
             ::argus_scripting_bind::ScriptBound +
-            ::argus_scripting_bind::Wrappable {
+            ::argus_scripting_bind::Wrappable<#lifetime> {
             _marker: ::std::marker::PhantomData<&#lifetime ()>,
         }
     }
@@ -1297,15 +1337,16 @@ fn parse_type_internal(
 
         Ok((
             ObjectType {
-                ty: IntegralType::Callback,
-                size: 16, //TODO: don't hardcode
+                ty: FundamentalType::Callback,
+                size: size_of::<WrappedScriptCallback>(),
                 is_const: false,
                 is_refable: None,
                 is_refable_getter: None,
-                type_id: None,
-                type_name: None,
+                base_type_id: None,
+                base_type_name: None,
                 primary_type: None,
                 secondary_type: None,
+                synthetic_type: None,
                 callback_info: Some(Box::new(CallbackInfo {
                     param_types: in_types,
                     return_type: out_type,
@@ -1377,15 +1418,16 @@ fn parse_type_internal(
 
         Ok((
             ObjectType {
-                ty: IntegralType::Object,
+                ty: FundamentalType::Object,
                 size: 0,
                 is_const: false,
                 is_refable: None,
                 is_refable_getter: None,
-                type_id: None,
-                type_name: Some(type_name),
+                base_type_id: None,
+                base_type_name: Some(type_name),
                 primary_type: None,
                 secondary_type: None,
+                synthetic_type: None,
                 callback_info: None,
                 copy_ctor: None,
                 dtor: None,
@@ -1416,29 +1458,30 @@ fn parse_type_internal(
         let (inner_obj_type, inner_types) =
             parse_type_internal(&reference.elem, flow_direction, OuterTypeType::Reference)?;
 
-        if inner_obj_type.ty != IntegralType::Object &&
-            inner_obj_type.ty != IntegralType::Callback {
+        if inner_obj_type.ty != FundamentalType::Object &&
+            inner_obj_type.ty != FundamentalType::Callback {
             return Err(CompileError::new(
                 reference.span(),
                 "Only struct or callback reference types are allowed in bound symbols"
             ));
         }
 
-        if inner_obj_type.ty == IntegralType::Callback {
+        if inner_obj_type.ty == FundamentalType::Callback {
             return Ok((inner_obj_type, inner_types));
         }
 
         Ok((
             ObjectType {
-                ty: IntegralType::Reference,
+                ty: FundamentalType::Reference,
                 size: size_of::<*const ()>(),
                 is_const: false,
                 is_refable: None,
                 is_refable_getter: None,
-                type_id: None,
-                type_name: None,
+                base_type_id: None,
+                base_type_name: None,
                 primary_type: Some(Box::new(inner_obj_type)),
                 secondary_type: None,
+                synthetic_type: None,
                 callback_info: None,
                 copy_ctor: None,
                 dtor: None,
@@ -1480,15 +1523,16 @@ macro_rules! resolve_basic_type {
         fn $func(path: &TypePath) -> Option<ObjectType> {
             (&path.path.segments[0].ident == stringify!($ty)).then_some(
                 ObjectType {
-                    ty: IntegralType::$enum_var,
+                    ty: FundamentalType::$enum_var,
                     size: size_of::<$ty>(),
                     is_const: false,
                     is_refable: None,
                     is_refable_getter: None,
-                    type_id: None,
-                    type_name: None,
+                    base_type_id: None,
+                    base_type_name: None,
                     primary_type: None,
                     secondary_type: None,
+                    synthetic_type: None,
                     callback_info: None,
                     copy_ctor: None,
                     dtor: None,
@@ -1518,15 +1562,16 @@ fn resolve_string(ty: &TypePath) -> Option<ObjectType> {
     }
 
     Some(ObjectType {
-        ty: IntegralType::String,
+        ty: FundamentalType::String,
         size: 0,
         is_const: false,
         is_refable: None,
         is_refable_getter: None,
-        type_id: None,
-        type_name: None,
+        base_type_id: None,
+        base_type_name: None,
         primary_type: None,
         secondary_type: None,
+        synthetic_type: None,
         callback_info: None,
         copy_ctor: Some(CopyCtorWrapper::of(copy_string)),
         dtor: Some(DtorWrapper::of(drop_string)),
@@ -1555,15 +1600,16 @@ fn resolve_vec(ty: &TypePath, flow_direction: ValueFlowDirection)
 
     Ok(Some((
         ObjectType {
-            ty: IntegralType::Vec,
+            ty: FundamentalType::Vec,
             size: 0,
             is_const: false,
             is_refable: None,
             is_refable_getter: None,
-            type_id: None,
-            type_name: None,
+            base_type_id: None,
+            base_type_name: None,
             primary_type: Some(Box::new(inner_obj_type)),
             secondary_type: None,
+            synthetic_type: None,
             callback_info: None,
             copy_ctor: None,
             dtor: None,
@@ -1606,15 +1652,16 @@ fn resolve_result(ty: &TypePath, flow_direction: ValueFlowDirection)
 
     Ok(Some((
         ObjectType {
-            ty: IntegralType::Result,
+            ty: FundamentalType::Result,
             size: 0,
             is_const: false,
             is_refable: None,
             is_refable_getter: None,
-            type_id: None,
-            type_name: None,
+            base_type_id: None,
+            base_type_name: None,
             primary_type: Some(Box::new(val_obj_type)),
             secondary_type: Some(Box::new(err_obj_type)),
+            synthetic_type: None,
             callback_info: None,
             copy_ctor: None,
             dtor: None,

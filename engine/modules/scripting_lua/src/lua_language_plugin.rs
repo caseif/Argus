@@ -1,8 +1,9 @@
 use std::any::Any;
 use std::ffi::{CStr, CString};
 use std::ops::{Deref, DerefMut};
-use std::ptr::{addr_of, copy_nonoverlapping};
+use std::ptr::addr_of;
 use std::rc::Rc;
+use std::slice;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 use argus_logging::{debug, warn};
@@ -100,6 +101,7 @@ impl DerefMut for UserDataBlob {
 #[repr(C)]
 struct UserData {
     is_handle: bool,
+    size: usize,
     data: UserDataBlob,
 }
 
@@ -368,20 +370,36 @@ unsafe fn wrap_instance_ref(
 
     //TODO
     let obj_type = ObjectType {
-        ty: IntegralType::Reference,
+        ty: FundamentalType::Reference,
         size: size_of::<*const ()>(),
         is_const,
         is_refable: None,
         is_refable_getter: None,
-        type_id: Some(type_def.type_id.clone()),
-        type_name: Some(type_def.name.clone()),
-        primary_type: None,
+        base_type_id: Some(type_def.type_id.clone()),
+        base_type_name: Some(type_def.name.clone()),
+        primary_type: Some(Box::new(ObjectType {
+            ty: FundamentalType::Object,
+            size: type_def.size,
+            is_const,
+            is_refable: None,
+            is_refable_getter: None,
+            base_type_id: Some(type_def.type_id.clone()),
+            base_type_name: Some(type_def.name.clone()),
+            primary_type: None,
+            secondary_type: None,
+            synthetic_type: None,
+            callback_info: None,
+            copy_ctor: None,
+            dtor: None,
+        })),
         secondary_type: None,
+        synthetic_type: None,
         callback_info: None,
         copy_ctor: None,
         dtor: None,
     };
-    let wrapper_res = create_object_wrapper(obj_type, addr_of!(instance_ptr).cast());
+    let wrapper_res =
+        create_ref_object_wrapper(obj_type, instance_ptr.as_ref_unchecked(), type_def.size);
     wrapper_res.map_err(|err|
         lua_error!(
             context.state,
@@ -405,7 +423,7 @@ unsafe fn wrap_param(
                      (expected integer{}, actual {})",
                 param_index,
                 qual_fn_name,
-                if param_def.ty == IntegralType::Enum { "(enum) " } else { "" },
+                if param_def.ty == FundamentalType::Enum { "(enum) " } else { "" },
                 luaL_typename(state.state, param_index),
             ));
         }
@@ -425,7 +443,7 @@ unsafe fn wrap_param(
         create_float_object_wrapper(param_def, lua_tonumber(state.state, param_index))
     } else {
         match param_def.ty {
-            IntegralType::Boolean => {
+            FundamentalType::Boolean => {
                 if !lua_isboolean(state.state, param_index) {
                     return Err(format!(
                         "Incorrect type provided for parameter {} of function {} \
@@ -441,7 +459,7 @@ unsafe fn wrap_param(
                     lua_toboolean(state.state, param_index) != 0,
                 )
             }
-            IntegralType::String => {
+            FundamentalType::String => {
                 if lua_isstring(state.state, param_index) == 0 {
                     return Err(format!(
                         "Incorrect type provided for parameter {} of function {} \
@@ -452,21 +470,22 @@ unsafe fn wrap_param(
                     ));
                 }
 
+                let s = lua_tostring(state.state, param_index).unwrap();
                 create_string_object_wrapper(
                     param_def,
-                    &lua_tostring(state.state, param_index).unwrap()
+                    s.as_str()
                 )
             }
-            IntegralType::Object |
-            IntegralType::Reference => {
-                let underlying_type = if param_def.ty == IntegralType::Reference {
+            FundamentalType::Object |
+            FundamentalType::Reference => {
+                let underlying_type = if param_def.ty == FundamentalType::Reference {
                     param_def.primary_type.as_ref().unwrap()
                 } else {
                     &param_def
                 };
 
-                assert!(underlying_type.type_name.is_some());
-                assert!(underlying_type.type_id.is_some());
+                assert!(underlying_type.base_type_name.is_some());
+                assert!(underlying_type.base_type_id.is_some());
 
                 if lua_isuserdata(state.state, param_index) == 0 {
                     return Err(format!(
@@ -480,11 +499,11 @@ unsafe fn wrap_param(
 
                 let cur_mt_name = get_metatable_name(state, param_index);
 
-                let expected_mt_name = param_def.type_name.as_ref().unwrap();
+                let expected_mt_name = param_def.base_type_name.as_ref().unwrap();
                 let expected_mt_name_const = format!(
                     "{}{}",
                     LUA_CUSTOM_CONST_PREFIX,
-                    param_def.type_name.as_ref().unwrap(),
+                    param_def.base_type_name.as_ref().unwrap(),
                 );
                 let is_correct_mt = cur_mt_name.as_ref().map(|mt| {
                     mt == expected_mt_name ||
@@ -499,7 +518,7 @@ unsafe fn wrap_param(
                         param_index,
                         qual_fn_name,
                         if param_def.is_const { LUA_CUSTOM_CONST_PREFIX } else { "" },
-                        underlying_type.type_name.as_ref().unwrap(),
+                        underlying_type.base_type_name.as_ref().unwrap(),
                         cur_mt_name.as_deref().unwrap_or(LUA_CUSTOM_EMPTY_REPL),
                     ));
                 }
@@ -509,7 +528,7 @@ unsafe fn wrap_param(
                     // userdata is storing handle of pointer to struct data
                     let ptr = state.handle_map.borrow_mut().deref_sv_handle(
                         *addr_of!(udata.data).cast::<ScriptBindableHandle>(),
-                        underlying_type.type_id.as_ref().unwrap()
+                        underlying_type.base_type_id.as_ref().unwrap()
                     );
 
                     if ptr.is_none() {
@@ -525,17 +544,17 @@ unsafe fn wrap_param(
                     udata.data.as_mut_ptr().cast()
                 };
 
-                if param_def.ty == IntegralType::Object {
+                if param_def.ty == FundamentalType::Object {
                     // pass direct pointer so that the struct data is copied
                     // into the WrappedObject
-                    create_object_wrapper(param_def, ptr)
+                    let obj_data = slice::from_raw_parts(ptr.cast::<u8>(), param_def.size);
+                    create_struct_object_wrapper(param_def, obj_data)
                 } else {
-                    // pass indirect pointer so that the pointer itself is
-                    // copied into the WrappedObject
-                    create_object_wrapper(param_def, addr_of!(ptr).cast())
+                    // copy the pointer itself into the WrappedObject
+                    create_ref_object_wrapper(param_def, &*ptr, udata.size)
                 }
             }
-            IntegralType::Callback => {
+            FundamentalType::Callback => {
                 /*if (!lua_isfunction(state, param_index)) {
                     return _set_lua_error(state, "Incorrect type provided for parameter "
                                                  + std::to_string(param_index) + " of function " + qual_fn_name
@@ -552,13 +571,10 @@ unsafe fn wrap_param(
                     data.lock().unwrap().call(params)
                 };
 
-                create_callback_object_wrapper(
-                    param_def,
-                    WrappedScriptCallback { entry_point: f, userdata: handle }
-                )
+                create_callback_object_wrapper(param_def, f, handle)
             }
-            IntegralType::Vec |
-            IntegralType::VecRef => {
+            FundamentalType::Vec |
+            FundamentalType::VecRef => {
                 todo!();
             }
             _ => panic!()
@@ -574,47 +590,77 @@ unsafe fn wrap_param(
 }
 
 unsafe fn unwrap_int_wrapper(wrapper: WrappedObject) -> i64 {
-    assert!(wrapper.ty.ty.is_integral());
+    assert!(wrapper.get_type().ty.is_integral());
 
-    match wrapper.ty.size {
-        1 => {
-            *wrapper.get::<i8>() as i64
+    if wrapper.get_type().ty == FundamentalType::Enum {
+        return match wrapper.get_type().size {
+            1 => *wrapper.get::<i8>().unwrap() as i64,
+            2 => *wrapper.get::<i16>().unwrap() as i64,
+            4 => *wrapper.get::<i32>().unwrap() as i64,
+            8 => *wrapper.get::<i64>().unwrap(),
+            _ => panic!("Bad enum width {} (must be 1, 2, 4, or 8)", wrapper.get_type().size),
+        };
+    }
+
+    match wrapper.get_type().ty {
+        FundamentalType::Int8 => {
+            assert_eq!(wrapper.get_type().size, size_of::<i8>());
+            *wrapper.get::<i8>().unwrap() as i64
         }
-        2 => {
-            *wrapper.get::<i16>() as i64
+        FundamentalType::Int16 => {
+            assert_eq!(wrapper.get_type().size, size_of::<i16>());
+            *wrapper.get::<i16>().unwrap() as i64
         }
-        4 => {
-            *wrapper.get::<i32>() as i64
+        FundamentalType::Int32 => {
+            assert_eq!(wrapper.get_type().size, size_of::<i32>());
+            *wrapper.get::<i32>().unwrap() as i64
         }
-        8 => {
-            *wrapper.get::<i64>()
+        FundamentalType::Int64 => {
+            assert_eq!(wrapper.get_type().size, size_of::<i64>());
+            *wrapper.get::<i64>().unwrap()
+        }
+        FundamentalType::Uint8 => {
+            assert_eq!(wrapper.get_type().size, size_of::<u8>());
+            *wrapper.get::<u8>().unwrap() as i64
+        }
+        FundamentalType::Uint16 => {
+            assert_eq!(wrapper.get_type().size, size_of::<u16>());
+            *wrapper.get::<u16>().unwrap() as i64
+        }
+        FundamentalType::Uint32 => {
+            assert_eq!(wrapper.get_type().size, size_of::<u32>());
+            *wrapper.get::<u32>().unwrap() as i64
+        }
+        FundamentalType::Uint64 => {
+            assert_eq!(wrapper.get_type().size, size_of::<u64>());
+            *wrapper.get::<u64>().unwrap() as i64
         }
         _ => {
-            panic!("Bad integer width {} (must be 1, 2, 4, or 8)", wrapper.ty.size);
+            panic!("Bad integer width {} (must be 1, 2, 4, or 8)", wrapper.get_type().size);
         }
     }
 }
 
 unsafe fn unwrap_float_wrapper(wrapper: WrappedObject) -> f64 {
-    assert!(wrapper.ty.ty.is_float());
+    assert!(wrapper.get_type().ty.is_float());
 
-    match wrapper.ty.size {
+    match wrapper.get_type().size {
         4 => {
-            *wrapper.get::<f32>() as f64
+            *wrapper.get::<f32>().unwrap() as f64
         }
         8 => {
-            *wrapper.get::<f64>()
+            *wrapper.get::<f64>().unwrap()
         }
         _ => {
-            panic!("Bad floating-point width {} (must be 4 or 8)", wrapper.ty.size);
+            panic!("Bad floating-point width {} (must be 4 or 8)", wrapper.get_type().size);
         }
     }
 }
 
 unsafe fn unwrap_boolean_wrapper(wrapper: WrappedObject) -> bool {
-    assert_eq!(wrapper.ty.ty, IntegralType::Boolean);
+    assert_eq!(wrapper.get_type().ty, FundamentalType::Boolean);
 
-    *wrapper.get::<bool>()
+    *wrapper.get::<bool>().unwrap()
 }
 
 unsafe fn set_metatable(state: impl Into<*mut lua_State>, ty: &ObjectType) {
@@ -622,7 +668,7 @@ unsafe fn set_metatable(state: impl Into<*mut lua_State>, ty: &ObjectType) {
     let mt_name_c = CString::new(format!(
         "{}{}",
         if ty.is_const { LUA_CUSTOM_CONST_PREFIX } else { "" },
-        ty.type_name.as_ref().unwrap(),
+        ty.base_type_name.as_ref().unwrap(),
     )).unwrap();
     let mt = luaL_getmetatable(
         raw_state,
@@ -634,56 +680,52 @@ unsafe fn set_metatable(state: impl Into<*mut lua_State>, ty: &ObjectType) {
 }
 
 unsafe fn push_value(state: &ManagedLuaState, mut wrapper: WrappedObject) {
-    assert_ne!(wrapper.ty.ty, IntegralType::Empty);
+    assert_ne!(wrapper.get_type().ty, FundamentalType::Empty);
 
     let raw_state = state.state;
 
-    if wrapper.ty.ty.is_integral() {
+    if wrapper.get_type().ty.is_integral() {
         lua_pushinteger(raw_state, unwrap_int_wrapper(wrapper));
-    } else if wrapper.ty.ty.is_float() {
+    } else if wrapper.get_type().ty.is_float() {
         lua_pushnumber(raw_state, unwrap_float_wrapper(wrapper));
     } else {
-        match wrapper.ty.ty {
-            IntegralType::Boolean => {
+        match wrapper.get_type().ty {
+            FundamentalType::Boolean => {
                 lua_pushboolean(raw_state, unwrap_boolean_wrapper(wrapper).into());
             }
-            IntegralType::String => {
-                lua_pushstring(raw_state, wrapper.get_ptr::<String>());
+            FundamentalType::String => {
+                lua_pushstring(raw_state, wrapper.get::<String>().unwrap().as_ptr().cast());
             }
-            IntegralType::Object => {
-                assert!(wrapper.ty.type_name.is_some());
+            FundamentalType::Object => {
+                assert!(wrapper.get_type().base_type_name.is_some());
 
                 let udata = &mut *lua_newuserdata(
                     raw_state,
-                    size_of::<UserData>() + wrapper.ty.size
+                    size_of::<UserData>() + wrapper.get_type().size
                 ).cast::<UserData>();
                 udata.is_handle = false;
-                if let Some(cloner) = wrapper.ty.copy_ctor {
+                udata.size = wrapper.get_type().size;
+                if let Some(cloner) = wrapper.get_type().copy_ctor {
                     (cloner.fn_ptr)(
                         udata.data.as_mut_ptr().cast(),
-                        wrapper.get_raw_ptr(),
+                        wrapper.get_raw_ptr().cast(),
                     );
                 } else {
-                    copy_nonoverlapping(
-                        wrapper.get_raw_ptr(),
-                        udata.data.as_mut_ptr().cast(),
-                        wrapper.ty.size,
-                    );
+                    wrapper.copy_to_slice(udata.data.as_mut_slice());
                 }
-                set_metatable(raw_state, &wrapper.ty);
+                set_metatable(raw_state, &wrapper.get_type());
             }
-            IntegralType::Reference => {
-                assert!(wrapper.ty.type_id.is_some());
-                assert!(wrapper.ty.type_name.is_some());
+            FundamentalType::Reference => {
+                assert!(wrapper.get_type().base_type_id.is_some());
+                assert!(wrapper.get_type().base_type_name.is_some());
 
-                let indirect_ptr: *mut *mut () = wrapper.get_mut_ptr::<&mut ()>();
-                let obj_ref_ptr = *indirect_ptr;
+                let obj_ref_ptr: *mut () = *wrapper.get_raw_mut_ptr().cast();
 
                 if !obj_ref_ptr.is_null() {
                     let state_mutex = to_managed_state(raw_state);
                     let state = state_mutex.lock();
 
-                    let type_id = wrapper.ty.type_id.as_ref().unwrap();
+                    let type_id = wrapper.get_type().base_type_id.as_ref().unwrap();
                     let handle = state.handle_map.borrow_mut()
                         .get_or_create_sv_handle(type_id, obj_ref_ptr.cast());
                     let udata = &mut *lua_newuserdata(
@@ -691,15 +733,16 @@ unsafe fn push_value(state: &ManagedLuaState, mut wrapper: WrappedObject) {
                         size_of::<UserData>() + size_of::<ScriptBindableHandle>()
                     ).cast::<UserData>();
                     udata.is_handle = true;
+                    udata.size = wrapper.get_type().primary_type.as_ref().unwrap().size;
                     *udata.data.as_mut_ptr().cast::<ScriptBindableHandle>() = handle;
-                    set_metatable(raw_state, &wrapper.ty);
+                    set_metatable(raw_state, &wrapper.get_type());
                 } else {
                     lua_pushnil(raw_state);
                 }
             }
-            IntegralType::Vec |
-            IntegralType::VecRef |
-            IntegralType::Result => {
+            FundamentalType::Vec |
+            FundamentalType::VecRef |
+            FundamentalType::Result => {
                 todo!();
             }
             _ => {
@@ -730,15 +773,16 @@ unsafe fn invoke_lua_function_from_stack(
     }
 
     let ty = ObjectType {
-        ty: IntegralType::Empty,
+        ty: FundamentalType::Empty,
         size: 0,
         is_const: false,
         is_refable: None,
         is_refable_getter: None,
-        type_id: None,
-        type_name: None,
+        base_type_id: None,
+        base_type_name: None,
         primary_type: None,
         secondary_type: None,
+        synthetic_type: None,
         callback_info: None,
         copy_ctor: None,
         dtor: None,
@@ -885,7 +929,7 @@ unsafe extern "C" fn lua_trampoline(raw_state: *mut lua_State) -> i32 {
 
     let retval = retval_res.unwrap();
 
-    if retval.ty.ty != IntegralType::Empty {
+    if retval.get_type().ty != FundamentalType::Empty {
         push_value(state.deref(), retval);
         guard.increment();
 
@@ -1094,6 +1138,7 @@ unsafe extern "C" fn lua_clone_object(raw_state: *mut lua_State) -> i32 {
         size_of::<UserData>() + type_def.size
     ).cast::<UserData>();
     dest.is_handle = false;
+    dest.size = type_def.size;
     guard.increment();
     let type_name_c = CString::new(type_def.name.as_str()).unwrap();
     let mt = luaL_getmetatable(raw_state, type_name_c.as_ptr());
