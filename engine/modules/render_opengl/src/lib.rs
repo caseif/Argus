@@ -85,7 +85,7 @@ fn test_opengl_support() -> Result<(), ()> {
         return Err(());
     }
 
-    if let Err(e) = agletLoadCapabilities(GlManager::load_proc_ffi) {
+    if let Err(e) = agletLoadCapabilities(GlManager::load_proc_callback) {
         let err_msg = match e {
             AgletError::Unspecified => "Aglet failed to load OpenGL bindings (unspecified error)",
             AgletError::ProcLoad => "Aglet failed to load required OpenGL procs",

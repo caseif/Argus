@@ -64,7 +64,7 @@ impl GlRenderer {
         self.state.gl_context.as_ref().unwrap().make_current(window)
             .expect("Failed to make GL context current");
 
-        if let Err(e) = agletLoad(GlManager::load_proc_ffi) {
+        if let Err(e) = agletLoad(GlManager::load_proc_callback) {
             panic!(
                 "Failed to load OpenGL bindings (Aglet returned error {:?})",
                 e

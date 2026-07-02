@@ -124,8 +124,8 @@ impl GlManager {
         Ok(GlContext::of(ctx))
     }
 
-    pub fn load_proc(&self, name: impl AsRef<str>) -> Option<GlProc> {
-        let proc = self.video_subsystem.gl_get_proc_address(name.as_ref())?;
+    pub fn load_proc(&self, name: &str) -> Option<GlProc> {
+        let proc = self.video_subsystem.gl_get_proc_address(name)?;
         // SAFETY: Transmuting to a void pointer is safe in and of itself. The
         // caller is responsible for safe handling of the pointer. Notably, the
         // type of `proc` at this point is not correct in the first place for
@@ -135,11 +135,8 @@ impl GlManager {
         Some(GlProc { handle: fn_addr })
     }
 
-    pub unsafe extern "C" fn load_proc_ffi(name: *const ffi::c_char) -> *mut ffi::c_void {
-        let s = CStr::from_ptr(name as *mut _);
-        let proc = WindowManager::instance().get_gl_manager().unwrap()
-            .load_proc(s.to_str().unwrap())
-            .unwrap();
+    pub fn load_proc_callback(name: &str) -> *mut ffi::c_void {
+        let proc = WindowManager::instance().get_gl_manager().unwrap().load_proc(name).unwrap();
         proc.handle
     }
 
