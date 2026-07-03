@@ -63,6 +63,7 @@ fn generate_opengl_bindings(profile_path: &Path) {
 
     let output = Command::new(bundler_exe)
         .arg("exec")
+        .arg(RUBY_EXE)
         .arg(format!("{AGLET_SUBMODULE_PATH}/aglet.rb"))
         .arg("--lang=rust")
         .args(["-p", profile_path.to_str().unwrap()])
