@@ -3,7 +3,6 @@ use bitflags::bitflags;
 use fragile::Fragile;
 use sdl3::video::{GLProfile, SwapInterval};
 use sdl3::VideoSubsystem;
-use std::ffi::CStr;
 use std::{ffi, mem};
 
 use sdl3::video::GLContext as SdlGlContext;

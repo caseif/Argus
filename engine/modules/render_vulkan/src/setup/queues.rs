@@ -11,6 +11,7 @@ pub(crate) struct QueueFamilyIndices {
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct QueueFamilies {
     pub(crate) graphics_family: Queue,
+    #[allow(dead_code)]
     pub(crate) transfer_family: Queue,
     pub(crate) present_family: Queue,
 }
@@ -18,6 +19,7 @@ pub(crate) struct QueueFamilies {
 #[derive(Clone, Debug, Default)]
 pub(crate) struct QueueMutexes {
     pub(crate) graphics_family: Arc<Mutex<()>>,
+    #[allow(dead_code)]
     pub(crate) transfer_family: Arc<Mutex<()>>,
     pub(crate) present_family: Arc<Mutex<()>>,
 }

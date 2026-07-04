@@ -11,7 +11,7 @@ use argus_scripting_bind::script_bind;
 use argus_util::math::Vector2d;
 use argus_wm::WindowManager;
 use crate::controller::Controller;
-use crate::gamepad::{DeadzoneShape, GamepadAxis, HidDeviceInstanceId};
+use crate::gamepad::{DeadzoneShape, GamepadAxis};
 use crate::mouse::MouseButtonMask;
 
 const MAX_CONTROLLERS: u32 = 8;

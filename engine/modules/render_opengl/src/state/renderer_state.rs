@@ -28,6 +28,7 @@ use crate::util::gl_util::*;
 #[derive(Default)]
 pub(crate) struct RendererState {
     pub gl_context: Option<GlContext>,
+    #[allow(dead_code)]
     pub intrinsic_resources: Vec<Resource>,
     pub scene_states_2d: HashMap<String, Scene2dState>,
     pub viewport_states_2d: HashMap<u32, ViewportState>,
@@ -39,7 +40,6 @@ pub(crate) struct RendererState {
     pub std_program: Option<LinkedProgram>,
     pub shadowmap_program: Option<LinkedProgram>,
     pub lighting_program: Option<LinkedProgram>,
-    pub lightmap_composite_program: Option<LinkedProgram>,
     pub postfx_programs: HashMap<String, LinkedProgram>,
     pub frame_vbo: Option<GlBufferHandle>,
     pub frame_vao: Option<GlArrayHandle>,
@@ -52,6 +52,7 @@ impl<'a> RendererState {
         self.scene_states_2d.get(scene_id.as_ref()).expect("Scene state is missing")
     }
 
+    #[allow(dead_code)]
     pub fn get_scene_2d_state_mut(&'a mut self, scene_id: impl AsRef<str>) -> &'a mut Scene2dState {
         self.scene_states_2d.get_mut(scene_id.as_ref()).expect("Scene state is missing")
     }
@@ -67,6 +68,7 @@ impl<'a> RendererState {
             .expect("Viewport state is missing")
     }
 
+    #[allow(dead_code)]
     pub fn get_viewport_2d_state_mut(&'a mut self, viewport_id: u32) -> &'a mut ViewportState {
         self.viewport_states_2d.get_mut(&viewport_id)
             .expect("Viewport state is missing")

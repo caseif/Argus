@@ -6,6 +6,7 @@ use crate::util::{find_memory_type, CommandBufferInfo, MEM_CLASS_DEVICE_RO};
 
 pub(crate) struct VulkanImage {
     size: Vector2u,
+    #[allow(dead_code)]
     format: vk::Format,
     vk_mem: vk::DeviceMemory,
     vk_image: vk::Image,

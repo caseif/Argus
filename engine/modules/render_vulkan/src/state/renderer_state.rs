@@ -3,7 +3,7 @@ use std::sync::{mpsc, Arc, Mutex};
 use std::sync::atomic::AtomicUsize;
 use std::thread::JoinHandle;
 use ash::vk;
-use argus_resman::{Resource, ResourceIdentifier};
+use argus_resman::ResourceIdentifier;
 use argus_util::math::Vector2u;
 use argus_util::semaphore::Semaphore;
 use crate::setup::swapchain::VulkanSwapchain;
@@ -78,13 +78,9 @@ pub(crate) struct RendererState {
 
     pub(crate) dirty_viewports: bool,
 
-    pub(crate) material_resources: HashMap<String, Resource>,
     pub(crate) material_pipelines: HashMap<ResourceIdentifier, PipelineInfo>,
     pub(crate) prepared_textures: HashMap<ResourceIdentifier, PreparedTexture>,
     pub(crate) material_textures: HashMap<ResourceIdentifier, ResourceIdentifier>,
-    pub(crate) texture_bufs_to_free: Vec<VulkanBuffer>,
-
-    pub(crate) composite_semaphore: vk::Semaphore,
 
     pub(crate) submit_thread: Option<JoinHandle<()>>,
     pub(crate) submit_sender: Option<mpsc::Sender<SubmitMessage>>,

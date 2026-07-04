@@ -317,7 +317,6 @@ fn process_glsl(
     let mut ubos = HashMap::<String, BlockInfo>::new();
 
     // first pass: enumerate declarations of all shaders
-    let mut i = 0;
     for kv in &sorted_sources {
         let stage = kv.0;
         let source = &kv.1;
@@ -405,16 +404,13 @@ fn process_glsl(
         pending_asts.insert(stage, ast);
 
         struct_sizes.insert(stage, struct_visitor.struct_sizes);
-
-        i += 1;
     }
 
     let mut all_assigned_inputs = HashMap::<glslang::ShaderStage, HashMap<String, DeclarationInfo>>::new();
     let mut all_assigned_outputs = HashMap::<glslang::ShaderStage, HashMap<String, DeclarationInfo>>::new();
     let mut all_assigned_buffers = HashMap::<glslang::ShaderStage, HashMap<String, DeclarationInfo>>::new();
 
-    i = 0;
-    for stage in sorted_sources.iter().map(|kv| kv.0) {
+    for (i, stage) in sorted_sources.iter().map(|kv| kv.0).enumerate() {
         let prev_stage_opt = if i > 0 {
             Some(sorted_sources[i - 1].0)
         } else {
@@ -507,8 +503,6 @@ fn process_glsl(
         all_assigned_inputs.insert(stage, inputs[&stage].clone());
         all_assigned_outputs.insert(stage, outputs[&stage].clone());
         all_assigned_buffers.insert(stage, buffers[&stage].clone());
-
-        i += 1;
     }
 
     // handle uniforms
@@ -893,7 +887,7 @@ fn get_decl_info(
             }
         } else {
             return Err(GlslCompileError::new(
-                std::format!(
+                format!(
                     "Unknown type name {} \
                 referenced in declaration '{}'",
                     &tn.0,

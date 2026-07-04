@@ -9,6 +9,7 @@ pub(crate) const MEM_CLASS_DEVICE_RW: vk::MemoryPropertyFlags = vk::MemoryProper
     vk::MemoryPropertyFlags::DEVICE_LOCAL.as_raw() |
     vk::MemoryPropertyFlags::HOST_VISIBLE.as_raw()
 );
+#[allow(dead_code)]
 pub(crate) const MEM_CLASS_DEVICE_LAZY: vk::MemoryPropertyFlags = vk::MemoryPropertyFlags::from_raw(
     vk::MemoryPropertyFlags::DEVICE_LOCAL.as_raw() |
     vk::MemoryPropertyFlags::LAZILY_ALLOCATED.as_raw()

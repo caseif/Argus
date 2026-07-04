@@ -103,14 +103,16 @@ impl VulkanInstance {
         })
     }
 
+    #[allow(dead_code)]
     pub(crate) fn get_entry(&self) -> &ash::Entry {
         &self.entry
     }
 
+    #[allow(dead_code)]
     pub(crate) fn get_entry_mut(&mut self) -> &mut ash::Entry {
         &mut self.entry
     }
-    
+
     pub(crate) fn get_underlying(&self) -> &Instance {
         &self.underlying
     }
@@ -119,6 +121,7 @@ impl VulkanInstance {
         &self.ext_khr_surface
     }
 
+    #[allow(dead_code)]
     pub(crate) fn khr_swapchain(&self) -> &khr::swapchain::Instance {
         &self.ext_khr_swapchain
     }

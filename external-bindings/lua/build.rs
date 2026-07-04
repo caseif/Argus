@@ -49,7 +49,7 @@ fn generate_bindings() {
         .allowlist_file("^.*[/\\\\](lua|lauxlib|lualib)\\.h?$")
         .allowlist_recursively(true)
         .clang_arg("-std=c11")
-        .rust_edition(RustEdition::Edition2021)
+        .rust_edition(RustEdition::Edition2024)
         .generate()
         .expect("Failed to generate bindings");
 

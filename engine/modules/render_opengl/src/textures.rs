@@ -95,10 +95,12 @@ pub(crate) fn get_or_load_texture(state: &mut RendererState, material_res: &Reso
     Ok(())
 }
 
+#[allow(dead_code)]
 pub(crate) fn deinit_texture(texture: GlTextureHandle) {
     glDeleteTextures(1, &texture);
 }
 
+#[allow(dead_code)]
 pub(crate) fn release_texture(state: &mut RendererState, texture_uid: &str) {
     // deinit the texture if this is the last reference to it
     if let Some(tex_rc) = state.prepared_textures.remove(texture_uid) {

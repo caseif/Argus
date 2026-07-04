@@ -64,7 +64,8 @@ impl MappedBuffer<'_> {
             )
         }
     }
-    
+
+    #[allow(dead_code)]
     pub(crate) fn offset(&self, offset: impl Into<vk::DeviceSize>) -> &[u8] {
         &self.map[offset.into() as usize..]
     }

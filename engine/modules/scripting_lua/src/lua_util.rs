@@ -19,6 +19,7 @@ pub(crate) unsafe fn create_lua_state(_plugin: &LuaLanguagePlugin)
     state
 }
 
+#[allow(dead_code)]
 pub(crate) fn destroy_lua_state(state: *mut lua_State) {
     unsafe { lua_close(state); }
 }

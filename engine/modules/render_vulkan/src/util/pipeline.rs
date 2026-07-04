@@ -14,7 +14,6 @@ pub(crate) struct PipelineInfo {
     pub(crate) vertex_len: u32,
 
     ds_layout: vk::DescriptorSetLayout,
-    desc_sets: Option<Vec<vk::DescriptorSet>>,
 }
 
 impl PipelineInfo {
@@ -246,7 +245,6 @@ pub(crate) fn create_pipeline_for_shaders(
         ds_layout,
         reflection: shader_refl,
         vertex_len: offset,
-        desc_sets: None,
     })
 }
 

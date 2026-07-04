@@ -41,8 +41,10 @@ const LAYER_PREFIX: &str = "_worldlayer_";
 pub struct World2dLayer {
     world_id: String,
 
+    #[allow(dead_code)]
     z_index: u32,
     parallax_coeff: f32,
+    #[allow(dead_code)]
     repeat_interval: Option<Vector2f>,
 
     scene_id: String,
@@ -331,7 +333,6 @@ impl World2dLayer {
         let uuid = Uuid::new_v4();
 
         // get the position from the light's transform
-        let position = light.transform.peek().value.translation;
         self.point_lights.insert(uuid, light);
 
         Ok(uuid)
@@ -678,12 +679,6 @@ impl World2dLayer {
     ) {
         let context = get_render_context_2d();
 
-        let layer_camera_transform = Self::get_scaled_transform(
-            &camera_transform.value,
-            &Vector2f::default(),
-            1.0,
-            self.parallax_coeff,
-        );
         let layer_render_transform = Self::get_scaled_transform(
             &camera_transform.value,
             &Vector2f::default(),

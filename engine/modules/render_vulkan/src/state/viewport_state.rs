@@ -46,7 +46,9 @@ pub(crate) struct PerFrameData {
 }
 
 pub(crate) struct ViewportState {
+    #[allow(dead_code)]
     pub(crate) viewport_id: u32,
+    #[allow(dead_code)]
     pub(crate) ty: SceneType,
     pub(crate) visited: bool,
     pub(crate) per_frame: [PerFrameData; MAX_FRAMES_IN_FLIGHT],

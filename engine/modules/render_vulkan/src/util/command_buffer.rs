@@ -57,6 +57,7 @@ pub(crate) fn alloc_command_buffers(
         .collect()
 }
 
+#[allow(dead_code)]
 pub(crate) fn free_command_buffers(device: &VulkanDevice, buffers: Vec<CommandBufferInfo>) {
     if buffers.is_empty() {
         return;

@@ -108,6 +108,7 @@ impl VulkanDevice {
         &self.ext_khr_swapchain
     }
 
+    #[allow(dead_code)]
     pub(crate) fn destroy(self) {
         unsafe { self.logical_device.destroy_device(None); }
     }

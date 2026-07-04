@@ -37,10 +37,13 @@ use crate::LOGGER;
 #[derive(Default)]
 pub(crate) struct ShaderReflectionInfo {
     pub(crate) inputs: HashMap<String, u32>,
+    #[allow(dead_code)]
     pub(crate) outputs: HashMap<String, u32>,
     pub(crate) uniforms: HashMap<String, u32>,
+    #[allow(dead_code)]
     pub(crate) buffers: HashMap<String, u32>,
     pub(crate) ubo_bindings: HashMap<String, u32>,
+    #[allow(dead_code)]
     pub(crate) ubo_names: HashMap<String, String>,
 }
 
@@ -391,10 +394,12 @@ pub(crate) fn get_material_program<'a>(
         })
 }
 
+#[allow(dead_code)]
 pub(crate) fn deinit_shader(shader: GlShaderHandle) {
     glDeleteShader(shader);
 }
 
+#[allow(dead_code)]
 pub(crate) fn remove_shader(state: &mut RendererState, shader_uid: &str) {
     debug!(LOGGER, "De-initializing shader {shader_uid}");
     if let Some(shader) = state.compiled_shaders.remove(shader_uid) {
@@ -402,6 +407,7 @@ pub(crate) fn remove_shader(state: &mut RendererState, shader_uid: &str) {
     }
 }
 
+#[allow(dead_code)]
 pub(crate) fn deinit_program(program: GlProgramHandle) {
     glDeleteProgram(program);
 }
@@ -416,12 +422,6 @@ pub(crate) fn get_shadowmap_program(storage: &mut Option<LinkedProgram>) -> &Lin
 
 pub(crate) fn get_lighting_program(storage: &mut Option<LinkedProgram>) -> &LinkedProgram {
     storage.get_or_insert_with(|| link_program([SHADER_LIGHTING_VERT, SHADER_LIGHTING_FRAG]))
-}
-
-pub(crate) fn get_lightmap_composite_program(storage: &mut Option<LinkedProgram>) -> &LinkedProgram {
-    storage.get_or_insert_with(|| {
-        link_program([SHADER_LIGHTMAP_COMPOSITE_VERT, SHADER_LIGHTMAP_COMPOSITE_FRAG])
-    })
 }
 
 fn to_shadertools_stage(stage: ShaderStage) -> glslang::ShaderStage {

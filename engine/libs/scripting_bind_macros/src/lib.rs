@@ -22,7 +22,6 @@ use proc_macro2::TokenStream as TokenStream2;
 use quote::{format_ident, quote, quote_spanned, ToTokens};
 use syn::*;
 use core::result::Result;
-use std::any::TypeId;
 use argus_scripting_types::*;
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;

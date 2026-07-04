@@ -55,6 +55,7 @@ impl HandleMap {
         Some(*ptr as *mut ())
     }
 
+    #[allow(dead_code)]
     pub fn invalidate_sv_handle(&mut self, type_id: impl AsRef<str>, ptr: *mut ()) {
         let Some(handle_map) = self.ptr_to_handle_maps.get_mut(type_id.as_ref()) else { return; };
         if let Some(handle) = handle_map.get(&(ptr as usize)).cloned() {

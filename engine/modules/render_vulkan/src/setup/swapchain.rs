@@ -18,6 +18,7 @@ pub(crate) struct VulkanSwapchain {
     handle: vk::SwapchainKHR,
     pub(crate) resolution: Vector2u,
     surface: vk::SurfaceKHR,
+    #[allow(dead_code)]
     images: Vec<vk::Image>,
     image_views: Vec<vk::ImageView>,
     pub(crate) framebuffers: Vec<vk::Framebuffer>,
@@ -168,9 +169,6 @@ pub(crate) fn create_swapchain(
             create_vk_image_view(device, *sc_image, format.format, vk::ImageAspectFlags::COLOR)?
         };
         image_views.push(vk_image_view);
-
-        //auto light_opac_image = create_image_and_image_view(device, VK_FORMAT_R32_SFLOAT,
-        //        { extent.width, extent.height }, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
 
         let framebuffer = create_framebuffer_from_views(
             device,

@@ -35,6 +35,7 @@ impl RenderBucketKey {
 pub(crate) struct RenderBucket {
     pub(crate) material_res: Resource,
     pub(crate) atlas_stride: Vector2f,
+    #[allow(dead_code)]
     pub(crate) z_index: u32,
     pub(crate) light_opacity: f32,
 

@@ -23,6 +23,7 @@ use crate::state::RendererState;
 use crate::textures::release_texture;
 use crate::util::gl_util::{try_delete_buffer, try_delete_vertex_array};
 
+#[allow(dead_code)]
 pub(crate) fn deinit_material(state: &mut RendererState, material: ResourceIdentifier) {
     debug!(LOGGER, "De-initializing material {material}");
 

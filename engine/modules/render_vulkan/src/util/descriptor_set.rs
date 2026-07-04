@@ -2,12 +2,6 @@ use ash::vk;
 use argus_render::common::ShaderReflectionInfo;
 use crate::setup::device::VulkanDevice;
 use crate::util::defines::MAX_FRAMES_IN_FLIGHT;
-use crate::util::VulkanBuffer;
-
-pub(crate) struct DescriptorSetInfo {
-    handle: vk::DescriptorSet,
-    buffer: VulkanBuffer,
-}
 
 const INITIAL_VIEWPORT_CAP: u32 = 2;
 const INITIAL_BUCKET_CAP: u32 = 64;
