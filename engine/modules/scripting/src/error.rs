@@ -54,12 +54,12 @@ impl SymbolNotBoundError {
 #[derive(Debug)]
 pub struct ScriptLoadError {
     pub resource_uid: String,
-    pub msg: String,
+    pub message: String,
 }
 
 impl Display for ScriptLoadError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Failed to load script {}: {}", self.resource_uid, self.msg)
+        write!(f, "Failed to load script {}: {}", self.resource_uid, self.message)
     }
 }
 
@@ -67,6 +67,6 @@ impl Error for ScriptLoadError {}
 
 impl ScriptLoadError {
     pub fn new(resource_uid: impl Into<String>, msg: impl Into<String>) -> Self {
-        Self { resource_uid: resource_uid.into(), msg: msg.into() }
+        Self { resource_uid: resource_uid.into(), message: msg.into() }
     }
 }

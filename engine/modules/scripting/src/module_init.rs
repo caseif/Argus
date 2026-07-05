@@ -51,7 +51,7 @@ fn run_init_script(uid: impl AsRef<str>) {
     let context_handle = match load_script_with_new_context(uid) {
         Ok(handle) => handle,
         Err(err) => {
-            panic!("Failed to run init script: {}", err.msg);
+            panic!("Failed to run init script: {}", err.message);
         }
     };
 

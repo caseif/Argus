@@ -9,6 +9,10 @@ name = "lua"
 crate-type = ["rlib"]
 
 [dependencies]
+fragile = { workspace = true }
+num_enum = { workspace = true }
+num-traits = "0.2.19"
+parking_lot = { workspace = true }
 
 [build-dependencies]
 bindgen = { workspace = true }

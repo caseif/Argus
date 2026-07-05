@@ -16,7 +16,7 @@ pub trait ScriptLanguagePlugin: Send + Sync {
     where
         Self: Sized;
 
-    fn create_context_data(&mut self) -> Rc<ReentrantMutex<dyn Any>>;
+    fn create_context_data(&mut self, ) -> Rc<ReentrantMutex<dyn Any>>;
 
     fn load_script(
         &mut self,

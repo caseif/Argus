@@ -1,7 +1,7 @@
 use std::any::Any;
 use std::rc::Rc;
 use argus_scripting_bind::{ScriptInvocationError, WrappedObject};
-use parking_lot::{ReentrantMutex, ReentrantMutexGuard};
+use parking_lot::ReentrantMutex;
 use argus_resman::{Resource, ResourceManager};
 use crate::error::ScriptLoadError;
 use crate::manager::ScriptManager;
@@ -19,8 +19,8 @@ impl ScriptContext {
         self.language.as_str()
     }
 
-    pub fn get_plugin_data(&self) -> ReentrantMutexGuard<'_, dyn Any> {
-        self.plugin_data.as_ref().expect("Language plugin data is missing").lock()
+    pub fn get_plugin_data(&self) -> Rc<ReentrantMutex<dyn Any>> {
+        self.plugin_data.as_ref().expect("Language plugin data is missing").clone()
     }
 
     pub fn load_script_by_uid(&mut self, uid: impl AsRef<str>) -> Result<(), ScriptLoadError> {
