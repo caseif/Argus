@@ -652,14 +652,16 @@ fn gen_fn_binding_code(
 
                     let assoc_type_path =
                         Type::Path(assoc_type.expect("Associated type was missing").clone());
-                    match &self_type.reference {
-                        Some((and_token, lifetime)) => Ok(Type::Reference(TypeReference {
-                            and_token: *and_token,
-                            lifetime: lifetime.clone(),
-                            mutability: self_type.mutability,
-                            elem: Box::new(assoc_type_path),
-                        })),
-                        None => Ok(assoc_type_path),
+                    match &self_type.kind {
+                        ReceiverKind::Reference(and_token, lifetime, mut_token) =>
+                            Ok(Type::Reference(TypeReference {
+                                attrs: vec![],
+                                and_token: *and_token,
+                                lifetime: lifetime.clone(),
+                                mutability: *mut_token,
+                                elem: Box::new(assoc_type_path),
+                            })),
+                        _ => Ok(assoc_type_path),
                     }
                 },
                 FnArg::Typed(ty) => Ok(ty.ty.as_ref().clone()),
@@ -1325,7 +1327,7 @@ fn parse_type_internal(
         };
         let (in_types, in_syn_types) = paren_args.inputs.iter()
             .map(|arg| {
-                parse_type_internal(arg, arg_flow_dir, OuterTypeType::None)
+                parse_type_internal(&arg.ty, arg_flow_dir, OuterTypeType::None)
             })
             .collect::<Result<(_, Vec<_>), _>>()?;
         let in_syn_types = in_syn_types.into_iter().flatten().collect::<Vec<_>>();
