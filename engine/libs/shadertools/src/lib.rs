@@ -21,4 +21,8 @@ extern crate glsl;
 extern crate libc;
 pub extern crate glslang;
 
-pub mod shadertools;
+mod reflection;
+mod shadertools;
+
+pub use reflection::*;
+pub use shadertools::*;

@@ -2,27 +2,29 @@ use std::cell::RefCell;
 use std::slice;
 use std::sync::atomic::{AtomicU64, Ordering};
 use ash::prelude::VkResult;
-use ash::vk;
 use ash::vk::Handle;
-use crate::setup::device::VulkanDevice;
-use crate::setup::instance::VulkanInstance;
-use crate::util::{find_memory_type, CommandBufferInfo};
+use crate::vk;
+use crate::vk::{find_memory_type, Wrapper};
+
+pub use ash::vk::BufferUsageFlags;
+pub use ash::vk::MemoryMapFlags;
 
 static ALLOCATION_COUNT: AtomicU64 = AtomicU64::new(0);
 
-pub(crate) struct VulkanBuffer {
-    handle: vk::Buffer,
-    mem: vk::DeviceMemory,
-    size: vk::DeviceSize,
-    usage_flags: vk::BufferUsageFlags,
+pub struct Buffer<'ctx> {
+    device: &'ctx vk::Device<'ctx>,
+    underlying: ash::vk::Buffer,
+    mem: ash::vk::DeviceMemory,
+    size: ash::vk::DeviceSize,
+    usage_flags: ash::vk::BufferUsageFlags,
     is_map_in_use: RefCell<bool>,
     persistent_map: Option<*mut u8>,
     is_destroyed: bool,
 }
 
-pub(crate) struct MappedBuffer<'a> {
-    buffer: &'a VulkanBuffer,
-    pub(crate) map: &'a mut [u8],
+pub struct MappedBuffer<'buf> {
+    buffer: &'buf Buffer<'buf>,
+    pub map: &'buf mut [u8],
 }
 
 impl Drop for MappedBuffer<'_> {
@@ -37,7 +39,7 @@ impl Drop for MappedBuffer<'_> {
 
 impl MappedBuffer<'_> {
     #[allow(unused)]
-    pub(crate) fn as_slice<T>(&self) -> &[T] {
+    pub fn as_slice<T>(&self) -> &[T] {
         assert_eq!(
             self.map.len() % size_of::<T>(),
             0,
@@ -51,7 +53,7 @@ impl MappedBuffer<'_> {
         }
     }
 
-    pub(crate) fn as_slice_mut<T>(&mut self) -> &mut [T] {
+    pub fn as_slice_mut<T>(&mut self) -> &mut [T] {
         assert_eq!(
             self.map.len() % size_of::<T>(),
             0,
@@ -66,29 +68,36 @@ impl MappedBuffer<'_> {
     }
 
     #[allow(dead_code)]
-    pub(crate) fn offset(&self, offset: impl Into<vk::DeviceSize>) -> &[u8] {
+    pub fn offset(&self, offset: impl Into<vk::DeviceSize>) -> &[u8] {
         &self.map[offset.into() as usize..]
     }
 
-    pub(crate) fn offset_mut(&mut self, offset: impl Into<vk::DeviceSize>) -> &mut [u8] {
+    pub fn offset_mut(&mut self, offset: impl Into<vk::DeviceSize>) -> &mut [u8] {
         &mut self.map[offset.into() as usize..]
     }
 }
 
-impl VulkanBuffer {
-    pub(crate) fn new(
-        instance: &VulkanInstance,
-        device: &VulkanDevice,
+impl<'ctx> Wrapper for Buffer<'ctx> {
+    type Underlying = ash::vk::Buffer;
+
+    unsafe fn get_underlying(&self) -> ash::vk::Buffer {
+        self.underlying
+    }
+}
+
+impl<'ctx> Buffer<'ctx> {
+    pub fn new(
+        device: &'ctx vk::Device<'ctx>,
         size: vk::DeviceSize,
         usage: vk::BufferUsageFlags,
-        props: vk::MemoryPropertyFlags,
+        props: ash::vk::MemoryPropertyFlags,
     ) -> Result<Self, String> {
         assert!(size > 0);
 
-        let buffer_info = vk::BufferCreateInfo::default()
+        let buffer_info = ash::vk::BufferCreateInfo::default()
             .size(size)
             .usage(usage)
-            .sharing_mode(vk::SharingMode::EXCLUSIVE);
+            .sharing_mode(ash::vk::SharingMode::EXCLUSIVE);
 
         // SAFETY:
         // UID-vkCreateBuffer-device-parameter:
@@ -103,20 +112,20 @@ impl VulkanBuffer {
         // VUID-vkCreateBuffer-pNext-06387:
         //   We do not use FUCHSIA extensions.
         let buffer = unsafe {
-            device.logical_device.create_buffer(&buffer_info, None)
+            device.get_underlying().create_buffer(&buffer_info, None)
                 .map_err(|err| err.to_string())?
         };
 
         // SAFETY: We just created the buffer handle so we know it's valid and
         // was created on the same device.
-        let mem_reqs = unsafe { device.logical_device.get_buffer_memory_requirements(buffer) };
+        let mem_reqs = unsafe { device.get_underlying().get_buffer_memory_requirements(buffer) };
 
         let Some(mem_type_index) =
-            find_memory_type(instance, device, mem_reqs.memory_type_bits, mem_reqs.size, props)
+            find_memory_type(device, mem_reqs.memory_type_bits, mem_reqs.size, props)
         else {
             return Err("Failed to find suitable memory type for buffer".to_owned());
         };
-        let alloc_info = vk::MemoryAllocateInfo::default()
+        let alloc_info = ash::vk::MemoryAllocateInfo::default()
             .allocation_size(mem_reqs.size)
             .memory_type_index(mem_type_index);
 
@@ -139,7 +148,7 @@ impl VulkanBuffer {
         //   We check total allocations above and return an error if the device
         //   limit would otherwise be exceeded.
         let buffer_mem = unsafe {
-            device.logical_device.allocate_memory(&alloc_info, None)
+            device.get_underlying().allocate_memory(&alloc_info, None)
                 .map_err(|err| err.to_string())?
         };
 
@@ -158,12 +167,13 @@ impl VulkanBuffer {
         //   Offset is zero and therefore satisfies all possible alignments.
         // All other constraints are related to extensions that are not in use.
         unsafe {
-            device.logical_device.bind_buffer_memory(buffer, buffer_mem, 0)
+            device.get_underlying().bind_buffer_memory(buffer, buffer_mem, 0)
                 .map_err(|err| err.to_string())?;
         }
 
         let mut buf = Self {
-            handle: buffer,
+            device,
+            underlying: buffer,
             mem: buffer_mem,
             size,
             usage_flags: usage,
@@ -171,7 +181,7 @@ impl VulkanBuffer {
             persistent_map: None,
             is_destroyed: false,
         };
-        if props.contains(vk::MemoryPropertyFlags::HOST_VISIBLE) {
+        if props.contains(ash::vk::MemoryPropertyFlags::HOST_VISIBLE) {
             // SAFETY:
             // VUID-vkMapMemory-memory-00678:
             //   We just created the buffer so it cannot yet have been mapped.
@@ -188,7 +198,7 @@ impl VulkanBuffer {
             // VUID-vkMapMemory-flags-09568:
             //   We do not pass any flags.
             let buffer_ptr = unsafe {
-                device.logical_device.map_memory(
+                device.get_underlying().map_memory(
                     buf.mem,
                     0,
                     vk::WHOLE_SIZE,
@@ -201,24 +211,19 @@ impl VulkanBuffer {
 
         Ok(buf)
     }
-
-    /// SAFETY: The returned handle must not outlive `self`.
-    pub(crate) unsafe fn get_handle(&self) -> vk::Buffer {
-        self.handle
-    }
     
-    pub(crate) fn len(&self) -> vk::DeviceSize {
+    pub fn len(&self) -> vk::DeviceSize {
         self.size
     }
 
-    pub(crate) fn map(
+    pub fn map(
         &mut self,
-        device: &VulkanDevice,
+        device: &vk::Device,
         offset: vk::DeviceSize,
         size: vk::DeviceSize,
         flags: vk::MemoryMapFlags,
     ) -> VkResult<MappedBuffer<'_>> {
-        assert!(!self.handle.is_null());
+        assert!(!self.underlying.is_null());
         assert!(!*self.is_map_in_use.borrow(), "Buffer is already mapped elsewhere");
         assert!(offset < self.size);
         assert!(!flags.contains(vk::MemoryMapFlags::PLACED_EXT));
@@ -259,7 +264,7 @@ impl VulkanBuffer {
             // VUID-vkMapMemory-flags-09568:
             //   We assert above that flags does not contain PLACED_BIT_EXT.
             unsafe {
-                device.logical_device.map_memory(self.mem, offset, size, flags)?.cast()
+                device.get_underlying().map_memory(self.mem, offset, size, flags)?.cast()
             }
         };
 
@@ -276,19 +281,19 @@ impl VulkanBuffer {
         }
     }
 
-    pub(crate) fn copy_from(
+    pub fn copy_from(
         &mut self,
-        device: &VulkanDevice,
-        src_buf: &VulkanBuffer,
+        device: &vk::Device,
+        src_buf: &Buffer,
         src_off: vk::DeviceSize,
-        cmd_buf: &CommandBufferInfo,
+        cmd_buf: &vk::CommandBuffer,
         dst_off: vk::DeviceSize,
         size: vk::DeviceSize,
     ) {
-        assert!(!src_buf.handle.is_null());
-        assert!(!self.handle.is_null());
+        assert!(!src_buf.underlying.is_null());
+        assert!(!self.underlying.is_null());
         //TODO: ensure we don't try to copy between devices
-        assert_ne!(src_buf.handle, self.handle, "Cannot copy buffer into itself");
+        assert_ne!(src_buf.underlying, self.underlying, "Cannot copy buffer into itself");
         assert!(src_buf.usage_flags.contains(vk::BufferUsageFlags::TRANSFER_SRC));
         assert!(self.usage_flags.contains(vk::BufferUsageFlags::TRANSFER_DST));
         assert!(src_off <= src_buf.size);
@@ -301,7 +306,7 @@ impl VulkanBuffer {
         assert!(real_size <= src_buf.size);
         assert!(real_size <= self.size);
 
-        let copy_region = vk::BufferCopy::default()
+        let copy_region = ash::vk::BufferCopy::default()
             .src_offset(src_off)
             .dst_offset(dst_off)
             .size(real_size);
@@ -320,14 +325,14 @@ impl VulkanBuffer {
         //   We only ever bind to a single memory object.
         // All other constraints are related to extensions that are not in use.
         unsafe {
-            device.logical_device
-                .cmd_copy_buffer(cmd_buf.get_handle(), src_buf.handle, self.handle, &[copy_region]);
+            device.get_underlying()
+                .cmd_copy_buffer(cmd_buf.get_underlying(), src_buf.underlying, self.underlying, &[copy_region]);
         }
     }
 
-    pub(crate) fn write<T: Copy>(
+    pub fn write<T: Copy>(
         &mut self,
-        device: &VulkanDevice,
+        device: &vk::Device,
         src: &[T],
         dst_offset: vk::DeviceSize,
     ) -> VkResult<()> {
@@ -353,19 +358,19 @@ impl VulkanBuffer {
         Ok(())
     }
 
-    pub(crate) fn destroy(mut self, device: &VulkanDevice) {
-        assert!(!self.handle.is_null());
+    pub fn destroy(mut self) {
+        assert!(!self.underlying.is_null());
         assert!(!*self.is_map_in_use.borrow());
 
         if self.persistent_map.is_some() {
             self.persistent_map = None;
-            unsafe { device.logical_device.unmap_memory(self.mem) };
+            unsafe { self.device.get_underlying().unmap_memory(self.mem) };
         }
 
         // SAFETY:
         // VUID-vkFreeMemory-memory-00677:
         //   TODO: Not provable at this time.
-        unsafe { device.logical_device.free_memory(self.mem, None); }
+        unsafe { self.device.get_underlying().free_memory(self.mem, None); }
         // SAFETY:
         // VUID-vkDestroyBuffer-buffer-00922:
         //   TODO: Not provable at this time.
@@ -373,14 +378,14 @@ impl VulkanBuffer {
         //   We do not use explicit allocation callbacks.
         // VUID-vkDestroyBuffer-buffer-00924:
         //   We do not use explicit allocation callbacks and we pass None here.
-        unsafe { device.logical_device.destroy_buffer(self.handle, None); }
+        unsafe { self.device.get_underlying().destroy_buffer(self.underlying, None); }
         ALLOCATION_COUNT.fetch_sub(1, Ordering::Relaxed);
         
         self.is_destroyed = true;
     }
 }
 
-impl Drop for VulkanBuffer {
+impl<'ctx> Drop for Buffer<'ctx> {
     fn drop(&mut self) {
         if cfg!(debug_assertions) && !self.is_destroyed {
             //panic!("Vulkan buffer was dropped without being destroyed!");

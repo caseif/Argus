@@ -16,51 +16,81 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 use std::collections::HashMap;
-use ash::vk;
 use argus_render::common::SceneType;
 use argus_resman::ResourceIdentifier;
-use crate::util::{CommandBufferInfo, FramebufferGrouping, VulkanBuffer};
-use crate::util::defines::MAX_FRAMES_IN_FLIGHT;
+use vk_wrapper::*;
 
 #[derive(Default)]
-pub(crate) struct PerFrameData {
+pub(crate) struct PerFrameData<'ctx> {
     pub(crate) view_matrix_dirty: bool,
 
-    pub(crate) command_buf: Option<CommandBufferInfo>,
+    pub(crate) command_buf: Option<vk::CommandBuffer<'ctx>>,
 
-    pub(crate) composite_fence: vk::Fence,
+    pub(crate) composite_fence: Option<vk::Fence<'ctx>>,
 
-    pub(crate) front_fb: Option<FramebufferGrouping>,
-    pub(crate) back_fb: Option<FramebufferGrouping>,
+    pub(crate) front_fb: Option<vk::Framebuffer<'ctx>>,
+    pub(crate) back_fb: Option<vk::Framebuffer<'ctx>>,
 
-    pub(crate) scene_ubo: Option<VulkanBuffer>,
+    pub(crate) scene_ubo: Option<vk::Buffer<'ctx>>,
     pub(crate) scene_ubo_dirty: bool,
 
-    pub(crate) viewport_ubo: Option<VulkanBuffer>,
+    pub(crate) viewport_ubo: Option<vk::Buffer<'ctx>>,
 
-    pub(crate) rebuild_semaphore: vk::Semaphore,
-    pub(crate) draw_semaphore: vk::Semaphore,
+    pub(crate) rebuild_semaphore: Option<vk::Semaphore<'ctx>>,
+    pub(crate) draw_semaphore: Option<vk::Semaphore<'ctx>>,
 
-    pub(crate) material_desc_sets: HashMap<ResourceIdentifier, Vec<vk::DescriptorSet>>,
-    pub(crate) composite_desc_sets: Vec<vk::DescriptorSet>,
+    pub(crate) material_desc_sets: HashMap<ResourceIdentifier, vk::DescriptorSetGroup<'ctx>>,
+    pub(crate) composite_desc_sets: Option<vk::DescriptorSetGroup<'ctx>>,
 }
 
-pub(crate) struct ViewportState {
+pub(crate) struct ViewportState<'ctx> {
     #[allow(dead_code)]
     pub(crate) viewport_id: u32,
     #[allow(dead_code)]
     pub(crate) ty: SceneType,
     pub(crate) visited: bool,
-    pub(crate) per_frame: [PerFrameData; MAX_FRAMES_IN_FLIGHT],
+    pub(crate) per_frame: [PerFrameData<'ctx>; vk::MAX_FRAMES_IN_FLIGHT],
 }
 
-impl ViewportState {
-    pub(crate) fn new(viewport_id: u32) -> Self {
+impl<'ctx> ViewportState<'ctx> {
+    pub(crate) fn new(
+        viewport_id: u32
+    ) -> Self {
         Self {
             viewport_id,
             ty: SceneType::TwoDim,
             visited: false,
             per_frame: Default::default(),
+        }
+    }
+
+    pub fn destroy(self, desc_pool: &vk::DescriptorPool, cmd_pool: &vk::CommandPool) {
+        for mut frame_state in self.per_frame {
+            frame_state.composite_fence.unwrap().destroy();
+            if let Some(fb) = frame_state.front_fb.take() {
+                fb.destroy();
+            }
+            if let Some(fb) = frame_state.back_fb.take() {
+                fb.destroy();
+            }
+
+            if let Some(buf) = frame_state.viewport_ubo {
+                buf.destroy();
+            }
+            if let Some(buf) = frame_state.scene_ubo {
+                buf.destroy();
+            }
+
+            if let Some(composite_ds_group) = frame_state.composite_desc_sets {
+                composite_ds_group.destroy(desc_pool).unwrap();
+            }
+            for (_, ds) in frame_state.material_desc_sets {
+                ds.destroy(desc_pool).unwrap();
+            }
+
+            if let Some(cmd_buf) = frame_state.command_buf.take() {
+                cmd_buf.destroy(cmd_pool);
+            }
         }
     }
 }

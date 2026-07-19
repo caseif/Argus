@@ -18,6 +18,7 @@ edition = "2024"
 
 [workspace.dependencies]
 arp = { git = "https://github.com/caseif/libarp-rs", rev = "e435b0e", default-features = false }
+ash = "0.38.0"
 bindgen = "0.72.1"
 bitflags = "2.13.0"
 boxdd = "0.4.0"

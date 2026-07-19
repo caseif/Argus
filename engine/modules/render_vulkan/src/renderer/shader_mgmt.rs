@@ -1,26 +1,24 @@
 use std::collections::HashMap;
-use std::slice;
-use ash::vk;
 use glslang::{SpirvVersion, VulkanVersion};
 use argus_logging::debug;
-use argus_render::common::{Shader, ShaderReflectionInfo, ShaderStage};
+use argus_render::common::{Shader, ShaderStage};
 use argus_render::constants::*;
 use argus_resman::{Resource, ResourceManager};
-use argus_shadertools::shadertools::{compile_glsl_to_spirv, GlslCompileError};
-use crate::setup::device::VulkanDevice;
-use crate::setup::LOGGER;
+use argus_shadertools::{compile_glsl_to_spirv, GlslCompileError, ShaderReflectionInfo};
+use vk_wrapper::vk;
+use crate::LOGGER;
 
-pub(crate) struct PreparedShaderSet<'a> {
-    pub(crate) stages: Vec<vk::PipelineShaderStageCreateInfo<'a>>,
+pub(crate) struct PreparedShaderSet<'ctx> {
+    pub(crate) stages: Vec<vk::PipelineShaderStageCreateInfo<'ctx>>,
     pub(crate) reflection: ShaderReflectionInfo,
 }
 
 struct ShaderCompilationResult {
-    shaders: Vec<Shader>,
+    shaders: Vec<Shader<u32>>,
     reflection: ShaderReflectionInfo,
 }
 
-fn compile_glsl_shaders(shaders: &[Shader])
+fn compile_glsl_shaders(shaders: &[Shader<u8>])
     -> Result<ShaderCompilationResult, GlslCompileError> {
     if shaders.is_empty() {
         return Ok(ShaderCompilationResult {
@@ -62,18 +60,14 @@ fn compile_glsl_shaders(shaders: &[Shader])
         ubo_instance_names: compile_res.ubo_names,
     };
 
-    let mut spirv_shaders: Vec<Shader> = Vec::new();
+    let mut spirv_shaders: Vec<Shader<u32>> = Vec::new();
+    let mut bytecode = compile_res.bytecode;
     for (stage, orig) in &orig_shaders_map {
-        let spirv_src = compile_res.bytecode.get(&to_shadertools_stage(stage)).unwrap();
+        let spirv_src = bytecode.remove(&to_shadertools_stage(stage)).unwrap();
         let spirv_shader = Shader::new(
             orig.get_uid(),
             orig.get_stage(),
-            unsafe {
-                slice::from_raw_parts(
-                    spirv_src.as_ptr().cast::<u8>(),
-                    spirv_src.len() * size_of::<u32>(),
-                )
-            },
+            spirv_src,
         );
         spirv_shaders.push(spirv_shader);
     }
@@ -84,17 +78,17 @@ fn compile_glsl_shaders(shaders: &[Shader])
     })
 }
 
-pub(crate) fn prepare_shaders<'a>(device: &VulkanDevice, shader_uids: &[impl AsRef<str>])
-    -> Result<PreparedShaderSet<'a>, String> {
+pub(crate) fn prepare_shaders<'ctx>(device: &'ctx vk::Device, shader_uids: &[impl AsRef<str>])
+                                    -> Result<PreparedShaderSet<'ctx>, String> {
     let mut shader_resources: Vec<Resource> = Vec::with_capacity(shader_uids.len());
-    let mut loaded_shaders: Vec<Shader> = Vec::with_capacity(shader_uids.len());
+    let mut loaded_shaders: Vec<Shader<u8>> = Vec::with_capacity(shader_uids.len());
     let mut have_vert = false;
     let mut have_frag = false;
     for shader_uid in shader_uids {
         let Ok(shader_res) = ResourceManager::instance().get_resource(shader_uid) else {
             return Err(format!("Failed to load shader {}", shader_uid.as_ref()));
         };
-        let Some(shader) = shader_res.get::<Shader>() else {
+        let Some(shader) = shader_res.get::<Shader<u8>>() else {
             return Err("Resource UID does not refer to shader".to_string());
         };
 
@@ -112,7 +106,7 @@ pub(crate) fn prepare_shaders<'a>(device: &VulkanDevice, shader_uids: &[impl AsR
         let Ok(vert_res) = ResourceManager::instance().get_resource(SHADER_STD_VERT) else {
             return Err(format!("Failed to load built-in shader {SHADER_STD_VERT}"));
         };
-        let Some(vert) = vert_res.get::<Shader>() else {
+        let Some(vert) = vert_res.get::<Shader<u8>>() else {
             return Err(format!(
                 "Resource UID '{}' does not refer to a shader",
                 vert_res.get_prototype().uid,
@@ -125,7 +119,7 @@ pub(crate) fn prepare_shaders<'a>(device: &VulkanDevice, shader_uids: &[impl AsR
         let Ok(frag_res) = ResourceManager::instance().get_resource(SHADER_STD_FRAG) else {
             return Err(format!("Failed to load built-in shader {}", SHADER_STD_FRAG));
         };
-        let Some(frag) = frag_res.get::<Shader>() else {
+        let Some(frag) = frag_res.get::<Shader<u8>>() else {
             return Err(format!(
                 "Resource UID '{}' does not refer to a shader",
                 frag_res.get_prototype().uid,
@@ -143,7 +137,7 @@ pub(crate) fn prepare_shaders<'a>(device: &VulkanDevice, shader_uids: &[impl AsR
 
     for shader in comp_res.shaders {
         let stage = shader.get_stage();
-        let spirv_src = shader.get_source_u32();
+        let spirv_src = shader.get_source();
 
         let vk_shader_stage = match stage {
             ShaderStage::Vertex => vk::ShaderStageFlags::VERTEX,
@@ -153,10 +147,8 @@ pub(crate) fn prepare_shaders<'a>(device: &VulkanDevice, shader_uids: &[impl AsR
         let stage_create_info = vk::ShaderModuleCreateInfo::default()
             .code(spirv_src);
 
-        let shader_module = unsafe {
-            device.logical_device.create_shader_module(&stage_create_info, None)
-                .map_err(|err| err.to_string())?
-        };
+        let shader_module = vk::ShaderModule::create(device, stage_create_info)
+            .map_err(|err| err.to_string())?;
 
         let pipeline_stage_create_info = vk::PipelineShaderStageCreateInfo::default()
             .stage(vk_shader_stage)
@@ -170,14 +162,6 @@ pub(crate) fn prepare_shaders<'a>(device: &VulkanDevice, shader_uids: &[impl AsR
         stages: compiled_shaders,
         reflection: comp_res.reflection,
     })
-}
-
-pub(crate) fn destroy_shaders(device: &VulkanDevice, shaders: PreparedShaderSet) {
-    for shader in shaders.stages {
-        unsafe {
-            device.logical_device.destroy_shader_module(shader.module, None);
-        }
-    }
 }
 
 fn to_shadertools_stage(stage: &ShaderStage) -> glslang::ShaderStage {

@@ -1,0 +1,15 @@
+[package]
+name = "vk_wrapper"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+name = "vk_wrapper"
+crate-type = ["rlib"]
+
+[dependencies]
+argus_logging = { path = "../../libs/logging" }
+argus_shadertools = { path = "../../libs/shadertools" }
+argus_util = { path = "../../libs/argus_util" }
+ash = { workspace = true }
+itertools = { workspace = true }

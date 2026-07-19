@@ -1,30 +1,25 @@
 use std::collections::HashMap;
-use ash::vk;
 use argus_render::constants::*;
 use argus_resman::ResourceIdentifier;
-use crate::setup::device::VulkanDevice;
-use crate::setup::instance::VulkanInstance;
+use vk_wrapper::vk;
 use crate::state::Scene2dState;
-use crate::util::{CommandBufferInfo, PipelineInfo, VulkanBuffer, MEM_CLASS_DEVICE_RO, MEM_CLASS_DEVICE_RW};
-use crate::util::defines::*;
+use crate::defines::*;
 
-pub(crate) fn fill_buckets(
-    instance: &VulkanInstance,
-    device: &VulkanDevice,
-    scene_state: &mut Scene2dState,
-    copy_cmd_buf: &CommandBufferInfo,
-    material_pipelines: &HashMap<ResourceIdentifier, PipelineInfo>,
+pub(crate) fn fill_buckets<'ctx>(
+    device: &'ctx vk::Device<'ctx>,
+    scene_state: &mut Scene2dState<'ctx>,
+    copy_cmd_buf: &vk::CommandBuffer,
+    material_pipelines: &HashMap<ResourceIdentifier, vk::Pipeline>,
 ) {
     scene_state.render_buckets.retain(|_, bucket| !bucket.objects.is_empty());
 
     for bucket in scene_state.render_buckets.values_mut() {
         if bucket.ubo_buffer.is_none() {
-            bucket.ubo_buffer = Some(VulkanBuffer::new(
-                instance,
+            bucket.ubo_buffer = Some(vk::Buffer::new(
                 device,
                 SHADER_UBO_OBJ_LEN as vk::DeviceSize,
                 vk::BufferUsageFlags::UNIFORM_BUFFER,
-                MEM_CLASS_DEVICE_RW,
+                vk::MEM_CLASS_DEVICE_RW,
             ).unwrap());
             let ubo_buffer = bucket.ubo_buffer.as_mut().unwrap();
 
@@ -75,23 +70,21 @@ pub(crate) fn fill_buckets(
             assert!(vertex_buf_len <= i32::MAX as vk::DeviceSize, "Buffer length is too big");
 
             if let Some(buf) = bucket.vertex_buffer.take() {
-                buf.destroy(device);
+                buf.destroy();
             }
-            bucket.vertex_buffer.replace(VulkanBuffer::new(
-                instance,
+            bucket.vertex_buffer.replace(vk::Buffer::new(
                 device,
                 vertex_buf_len,
                 {
                     vk::BufferUsageFlags::TRANSFER_DST |
                     vk::BufferUsageFlags::VERTEX_BUFFER
                 },
-                MEM_CLASS_DEVICE_RO,
+                vk::MEM_CLASS_DEVICE_RO,
             ).unwrap());
             if let Some(buf) = bucket.staging_vertex_buffer.take() {
-                buf.destroy(device);
+                buf.destroy();
             }
-            bucket.staging_vertex_buffer.replace(VulkanBuffer::new(
-                instance,
+            bucket.staging_vertex_buffer.replace(vk::Buffer::new(
                 device,
                 vertex_buf_len,
                 {
@@ -99,7 +92,7 @@ pub(crate) fn fill_buckets(
                     vk::BufferUsageFlags::TRANSFER_DST |
                     vk::BufferUsageFlags::VERTEX_BUFFER
                 },
-                MEM_CLASS_DEVICE_RO,
+                vk::MEM_CLASS_DEVICE_RO,
             ).unwrap());
 
             let stride = vertex_comps * size_of::<f32>() as u32;
@@ -110,30 +103,28 @@ pub(crate) fn fill_buckets(
                 "Animation frame buffer length is too big",
             );
             if let Some(buf) = bucket.anim_frame_buffer.take() {
-                buf.destroy(device);
+                buf.destroy();
             }
-            bucket.anim_frame_buffer.replace(VulkanBuffer::new(
-                instance,
+            bucket.anim_frame_buffer.replace(vk::Buffer::new(
                 device,
                 anim_frame_buf_len,
                 {
                     vk::BufferUsageFlags::TRANSFER_DST |
                     vk::BufferUsageFlags::VERTEX_BUFFER
                 },
-                MEM_CLASS_DEVICE_RO,
+                vk::MEM_CLASS_DEVICE_RO,
             ).unwrap());
             if let Some(buf) = bucket.staging_anim_frame_buffer.take() {
-                buf.destroy(device);
+                buf.destroy();
             }
-            bucket.staging_anim_frame_buffer.replace(VulkanBuffer::new(
-                instance,
+            bucket.staging_anim_frame_buffer.replace(vk::Buffer::new(
                 device,
                 anim_frame_buf_len,
                 {
                     vk::BufferUsageFlags::TRANSFER_SRC |
                     vk::BufferUsageFlags::VERTEX_BUFFER
                 },
-                MEM_CLASS_DEVICE_RW,
+                vk::MEM_CLASS_DEVICE_RW,
             ).unwrap());
         } else {
             anim_frame_buf_len = (
@@ -159,9 +150,9 @@ pub(crate) fn fill_buckets(
             .unwrap();
         let anim_frame_buf_map = anim_frame_buf.as_slice_mut::<f32>();
 
-        for obj_handle in &mut bucket.objects {
+        for obj_handle in &bucket.objects {
             let obj = scene_state.processed_objs.get_mut(obj_handle).unwrap();
-            
+
             let staging_buffer = obj.staging_buffer.as_mut().unwrap();
 
             if bucket.needs_rebuild || obj.updated {

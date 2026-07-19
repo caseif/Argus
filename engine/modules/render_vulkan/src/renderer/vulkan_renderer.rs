@@ -1,29 +1,23 @@
 use crate::renderer::bucket_proc::fill_buckets;
 use crate::renderer::compositing::{draw_framebuffer_to_swapchain, draw_scene_to_framebuffer};
 use crate::renderer::scene_compiler::compile_scene_2d;
-use crate::setup::device::VulkanDevice;
-use crate::setup::instance::VulkanInstance;
-use crate::setup::swapchain::{create_swapchain, destroy_swapchain, recreate_swapchain, VulkanSwapchain};
-use crate::setup::LOGGER;
-use crate::state::{NotifyCreatedSwapchainParams, NotifyDestroyedSwapchainParams, NotifyHaltingParams, PresentImageParams, RendererState, Scene2dState, SubmitMessage, ViewportState};
-use crate::util::defines::*;
-use crate::util::*;
+use crate::LOGGER;
+use crate::state::{RendererState, Scene2dState, ViewportState};
+use crate::defines::*;
 use argus_logging::debug;
-use argus_render::common::{AttachedViewport, Material, RenderCanvas, SceneType};
+use argus_render::common::{AttachedViewport, Material, RenderCanvas, SceneType, TextureData};
 use argus_render::constants::{SHADER_UBO_GLOBAL_LEN, SHADER_UBO_SCENE_LEN};
 use argus_render::twod::{get_render_context_2d, ViewportYAxisConvention};
 use argus_resman::{ResourceIdentifier, ResourceManager};
 use argus_util::math::Vector2u;
 use argus_util::semaphore::Semaphore;
 use argus_wm::{vk_create_surface, VkInstance, Window};
-use ash::vk::Handle;
-use ash::{khr, vk};
 use std::collections::HashSet;
 use std::sync::atomic::Ordering;
-use std::sync::{mpsc, Arc, Mutex};
-use std::thread;
-use std::thread::JoinHandle;
+use std::sync::mpsc;
 use std::time::Duration;
+use vk_wrapper::*;
+use crate::renderer::pipelines::create_pipeline_for_shaders;
 
 const FRAME_QUAD_VERTEX_DATA: &[f32] = &[
     -1.0, -1.0, 0.0, 0.0,
@@ -34,19 +28,24 @@ const FRAME_QUAD_VERTEX_DATA: &[f32] = &[
     1.0, -1.0, 1.0, 0.0,
 ];
 
-pub(crate) struct VulkanRenderer {
-    vk_instance: VulkanInstance,
-    vk_device: VulkanDevice,
-    state: RendererState,
+pub(crate) struct VulkanRenderer<'dev, 'inst: 'dev> {
+    vk_instance: &'inst vk::Instance,
+    vk_device: &'dev vk::Device<'inst>,
+    state: RendererState<'dev>,
     is_initted: bool,
 }
 
-impl VulkanRenderer {
-    pub(crate) fn new(vk_instance: VulkanInstance, vk_device: VulkanDevice, window: &Window) -> Self {
+impl<'dev, 'inst> VulkanRenderer<'dev, 'inst> {
+    pub(crate) fn new(
+        vk_instance: &'inst vk::Instance,
+        vk_device: &'dev vk::Device<'inst>,
+        window: &Window,
+    )
+        -> Self {
         let mut renderer = Self {
             vk_instance,
             vk_device,
-            state: RendererState::default(),
+            state: RendererState::new(vk_device),
             is_initted: false,
         };
         renderer.init(window);
@@ -58,36 +57,37 @@ impl VulkanRenderer {
     }
 
     pub(crate) fn init(&mut self, window: &Window) {
-        let ash_instance = self.vk_instance.get_underlying().handle();
-        // SAFETY: The struct is only created via ::new which accepts a VK
-        //         instance via a safe VulkanInstance object.
-        let wm_instance = unsafe { VkInstance::from_raw(ash_instance.as_raw()) };
-        let wm_surface = vk_create_surface(window, &wm_instance)
-            .expect("Failed to create Vulkan surface");
-        let ash_surface = vk::SurfaceKHR::from_raw(wm_surface.as_raw());
-        self.state.surface = Some(ash_surface);
-        let surface = self.state.surface.as_ref().unwrap();
+        let surface = {
+            // SAFETY: `self` can only be created via ::new which accepts a
+            // Vulkan instance via a safe vk::Instance object, and the returned
+            // wm object only lives to the end of this scope and thus can only
+            // be used by the `vk_create_surface` call and nothing else.
+            let wm_instance = unsafe { VkInstance::from_raw(self.vk_instance.get_handle()) };
+
+            let wm_surface = vk_create_surface(window, &wm_instance)
+                .expect("Failed to create Vulkan surface");
+
+            // SAFETY: We just created the surface handle, and it is consumed by the
+            // wrapper object thus guaranteeing all future interaction will be done
+            // through the wrapper.
+            unsafe { vk::Surface::from_handle(self.vk_instance, wm_surface.into_raw()) }
+        };
         debug!(LOGGER, "Created surface for new window");
 
-        self.state.graphics_command_pool = Some(create_command_pool(
-            &self.vk_device,
+        self.state.graphics_command_pool = Some(vk::CommandPool::create(
+            self.vk_device,
             self.vk_device.queue_indices.graphics_family,
         ));
         debug!(LOGGER, "Created command pools for new window");
         let gfx_command_pool = self.state.graphics_command_pool.as_ref().unwrap();
 
-        self.state.desc_pool = Some(create_descriptor_pool(&self.vk_device).unwrap());
+        self.state.desc_pool = Some(vk::DescriptorPool::create(&self.vk_device).unwrap());
         debug!(LOGGER, "Created descriptor pool for new window");
 
-        let copy_cmd_bufs = alloc_command_buffers(
-            &self.vk_device,
-            *gfx_command_pool,
-            MAX_FRAMES_IN_FLIGHT as u32,
-        );
-        #[allow(clippy::needless_range_loop)]
-        for i in 0..MAX_FRAMES_IN_FLIGHT {
-            self.state.copy_cmd_buf[i] = Some(copy_cmd_bufs[i].clone());
-        }
+        gfx_command_pool.alloc_buffers(vk::MAX_FRAMES_IN_FLIGHT as u32).into_iter().enumerate()
+            .for_each(|(i, buf)| {
+                self.state.copy_cmd_buf[i] = Some(buf);
+            });
         debug!(LOGGER, "Created command buffers for new window");
 
         /*VkSemaphoreCreateInfo sem_info{};
@@ -98,19 +98,18 @@ impl VulkanRenderer {
         }
         debug!(LOGGER, "Created semaphores for new window");*/
 
-        self.state.global_ubo = Some(VulkanBuffer::new(
-            &self.vk_instance,
+        self.state.global_ubo = Some(vk::Buffer::new(
             &self.vk_device,
             SHADER_UBO_GLOBAL_LEN as vk::DeviceSize,
             vk::BufferUsageFlags::UNIFORM_BUFFER,
-            MEM_CLASS_DEVICE_RW,
+            vk::MEM_CLASS_DEVICE_RW,
         ).unwrap());
 
-        self.state.swapchain = Some(create_swapchain(
-            &self.vk_instance,
+        self.state.swapchain = Some(vk::Swapchain::create(
             &self.vk_device,
-            *surface,
+            surface,
             window.peek_resolution(),
+            SHADER_OUT_COLOR_LOC,
         ).unwrap());
         debug!(LOGGER, "Created swapchain for new window");
         let swapchain = self.state.swapchain.as_ref().unwrap();
@@ -123,12 +122,11 @@ impl VulkanRenderer {
                 None
             };
 
-        let submit_thread_handle = start_submit_queues_thread(
-            self.vk_device.logical_device.clone(),
-            self.vk_device.ext_khr_swapchain.clone(),
+        let submit_thread_handle = vk::start_submit_queues_thread(
+            self.vk_device,
             swapchain,
             self.state.submit_mutex.clone(),
-            self.vk_device.queues.graphics_family,
+            &self.vk_device.queues.graphics_family,
             self.vk_device.queue_mutexes.graphics_family.clone(),
             present_queue_mutex_opt,
             submit_rx,
@@ -140,16 +138,15 @@ impl VulkanRenderer {
             &self.vk_device,
             &[&FB_SHADER_VERT_PATH, &FB_SHADER_FRAG_PATH],
             &self.state.viewport_size,
-            swapchain.composite_render_pass,
+            &swapchain.composite_render_pass,
         ).unwrap());
         debug!(LOGGER, "Created composite pipeline");
 
-        let mut composite_vbo = VulkanBuffer::new(
-            &self.vk_instance,
+        let mut composite_vbo = vk::Buffer::new(
             &self.vk_device,
             size_of_val(FRAME_QUAD_VERTEX_DATA) as vk::DeviceSize,
             vk::BufferUsageFlags::VERTEX_BUFFER,
-            MEM_CLASS_DEVICE_RW,
+            vk::MEM_CLASS_DEVICE_RW,
         ).unwrap();
         {
             let mut composite_vbo_mapped = composite_vbo.map(
@@ -163,15 +160,16 @@ impl VulkanRenderer {
         self.state.composite_vbo = Some(composite_vbo);
         debug!(LOGGER, "Created composite VBO");
 
-        self.state.fb_render_pass = Some(create_render_pass(
+        self.state.fb_render_pass = Some(vk::RenderPass::create_basic(
             &self.vk_device,
             swapchain.image_format,
             vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
-            true,
+            SHADER_OUT_COLOR_LOC,
+            Some(SHADER_OUT_LIGHT_OPACITY_LOC),
         ).unwrap());
         debug!(LOGGER, "Created framebuffer render pass for new window");
 
-        for i in 0..MAX_FRAMES_IN_FLIGHT {
+        for i in 0..vk::MAX_FRAMES_IN_FLIGHT {
             self.state.present_submitted_sem[i].notify();
             self.state.command_buffer_submitted_sem[i].notify();
         }
@@ -180,7 +178,7 @@ impl VulkanRenderer {
     }
 
     pub(crate) fn destroy(mut self) {
-        let device: &VulkanDevice = &self.vk_device;
+        let device: &vk::Device = &self.vk_device;
 
         if !self.is_initted {
             return;
@@ -189,8 +187,8 @@ impl VulkanRenderer {
         self.state.submit_halt = true;
         if let Some(submit_thread) = self.state.submit_thread.take() {
             self.state.submit_sender.unwrap().send(
-                SubmitMessage::NotifyHalting(
-                    NotifyHaltingParams {
+                vk::SubmitMessage::NotifyHalting(
+                    vk::NotifyHaltingParams {
                         ack_sem: self.state.submit_halt_acked.clone()
                     }
                 )
@@ -204,69 +202,63 @@ impl VulkanRenderer {
                 sem.wait();
             }
             let _queue_lock = self.vk_device.queue_mutexes.graphics_family.lock().unwrap();
-            unsafe {
-                device.logical_device.queue_wait_idle(device.queues.graphics_family).unwrap();
-            }
+            device.queues.graphics_family.wait_idle().unwrap();
         }
 
         for (_, viewport_state) in self.state.viewport_states_2d.drain() {
-            destroy_viewport(&self.vk_device, self.state.desc_pool.unwrap(), viewport_state);
+            viewport_state.destroy(
+                self.state.desc_pool.as_ref().unwrap(),
+                self.state.graphics_command_pool.as_ref().unwrap(),
+            );
         }
 
         for (_, scene_state) in self.state.scene_states_2d.drain() {
-            destroy_scene(&self.vk_device, scene_state);
+            scene_state.destroy();
         }
 
         for cb in self.state.copy_cmd_buf.into_iter().flatten() {
-            destroy_command_buffer(device, cb);
+            cb.destroy(self.state.graphics_command_pool.as_ref().unwrap());
         }
 
         for (_, (comp_cmd_buf, _)) in self.state.composite_cmd_bufs {
-            destroy_command_buffer(device, comp_cmd_buf);
+            comp_cmd_buf.destroy(self.state.graphics_command_pool.as_ref().unwrap());
         }
 
         if let Some(pool) = self.state.desc_pool {
-            destroy_descriptor_pool(device, pool);
+            pool.destroy();
         }
 
         if let Some(vbo) = self.state.composite_vbo {
-            vbo.destroy(device);
+            vbo.destroy();
         }
 
         if let Some(pipeline) = self.state.composite_pipeline {
-            destroy_pipeline(device, pipeline);
+            pipeline.destroy();
         }
 
         for (_, pipeline) in self.state.material_pipelines {
-            destroy_pipeline(device, pipeline);
+            pipeline.destroy();
         }
 
         if let Some(pass) = self.state.fb_render_pass {
-            destroy_render_pass(device, pass);
+            pass.destroy();
         }
 
         if let Some(pool) = self.state.graphics_command_pool {
-            destroy_command_pool(device, pool);
+            pool.destroy();
         }
 
         for (_, texture) in self.state.prepared_textures {
-            destroy_texture(device, texture);
+            texture.destroy();
         }
 
         if let Some(swapchain) = self.state.swapchain {
-            unsafe {
-                destroy_swapchain(device, swapchain).unwrap();
-            }
+            let surface = swapchain.destroy().unwrap();
+            surface.destroy();
         }
 
         if let Some(ubo) = self.state.global_ubo {
-            ubo.destroy(device);
-        }
-
-        if let Some(surface) = self.state.surface {
-            unsafe {
-                self.vk_instance.khr_surface().destroy_surface(surface, None);
-            }
+            ubo.destroy();
         }
     }
 
@@ -301,7 +293,7 @@ impl VulkanRenderer {
             //glfwSwapInterval(vsync ? 1 : 0);
         }
 
-        add_remove_state_objects(&self.vk_instance, &self.vk_device, window, &mut self.state);
+        add_remove_state_objects(window, &mut self.state);
 
         let resolution = window.get_resolution();
 
@@ -313,7 +305,7 @@ impl VulkanRenderer {
         self.update_view_states(window, &resolution.value, false);
 
         //timer_start = std::chrono::high_resolution_clock::now();
-        compile_scenes(&self.vk_instance, &self.vk_device, window, &mut self.state);
+        compile_scenes(window, &mut self.state);
         //timer_end = std::chrono::high_resolution_clock::now();
         //compile_time += (timer_end - timer_start);
 
@@ -325,8 +317,6 @@ impl VulkanRenderer {
 
         //timer_start = std::chrono::high_resolution_clock::now();
         record_scene_rebuild(
-            &self.vk_instance,
-            &self.vk_device,
             window,
             &mut self.state,
             cur_frame,
@@ -342,8 +332,6 @@ impl VulkanRenderer {
         //timer_start = std::chrono::high_resolution_clock::now();
         for viewport_id in viewport_ids {
             draw_scene_to_framebuffer(
-                &self.vk_instance,
-                &self.vk_device,
                 &mut self.state,
                 viewport_id,
                 resolution,
@@ -370,7 +358,6 @@ impl VulkanRenderer {
         }
 
         composite_framebuffers(
-            &self.vk_device,
             &mut self.state,
             &viewports,
             sc_image_index,
@@ -384,7 +371,7 @@ impl VulkanRenderer {
         present_image(&mut self.state, sc_image_index, cur_frame);
 
         if self.state.cur_frame.compare_exchange(
-            MAX_FRAMES_IN_FLIGHT - 1,
+            vk::MAX_FRAMES_IN_FLIGHT - 1,
             0,
             Ordering::Relaxed,
             Ordering::Relaxed,
@@ -401,39 +388,33 @@ impl VulkanRenderer {
 
         let submit_ack_sem = Semaphore::default();
         self.state.submit_sender.as_ref().unwrap().send(
-            SubmitMessage::NotifyDestroyedSwapchain(NotifyDestroyedSwapchainParams {
-                swapchain: unsafe { self.state.swapchain.as_ref().unwrap().get_handle() },
-                ack_sem: submit_ack_sem.clone(),
-            })
+            vk::SubmitMessage::NotifyDestroyedSwapchain(vk::NotifyDestroyedSwapchainParams::new(
+                self.state.swapchain.as_ref().unwrap(),
+                submit_ack_sem.clone(),
+            ))
         ).unwrap();
         submit_ack_sem.wait();
 
         let _submit_lock = self.state.submit_mutex.lock().unwrap();
         let _gfx_queue_lock = self.vk_device.queue_mutexes.graphics_family.lock().unwrap();
-        let _present_queue_lock = if self.vk_device.queues.present_family != self.vk_device.queues.graphics_family {
-            Some(self.vk_device.queue_mutexes.present_family.lock().unwrap())
-        } else {
-            None
-        };
+        let _present_queue_lock =
+            if self.vk_device.queues.present_family != self.vk_device.queues.graphics_family {
+                Some(self.vk_device.queue_mutexes.present_family.lock().unwrap())
+            } else {
+                None
+            };
 
-        unsafe {
-            self.state.swapchain = Some(
-                recreate_swapchain(
-                    &self.vk_instance,
-                    &self.vk_device,
-                    self.state.swapchain.take().unwrap(),
-                    resolution,
-                    _submit_lock,
-                    _gfx_queue_lock,
-                    _present_queue_lock,
-                ).unwrap()
-            );
-            self.state.submit_sender.as_ref().unwrap().send(
-                SubmitMessage::NotifyCreatedSwapchain(NotifyCreatedSwapchainParams {
-                    swapchain: self.state.swapchain.as_ref().unwrap().get_handle()
-                })
-            ).unwrap();
-        }
+        self.state.swapchain = Some(
+            self.state.swapchain.take().unwrap().recreate(
+                resolution,
+                _submit_lock,
+                _gfx_queue_lock,
+                _present_queue_lock,
+            ).unwrap()
+        );
+        self.state.submit_sender.as_ref().unwrap().send(vk::SubmitMessage::NotifyCreatedSwapchain(
+            vk::NotifyCreatedSwapchainParams::new(self.state.swapchain.as_ref().unwrap())
+        )).unwrap();
     }
 
     fn update_view_states(&mut self, window: &mut Window, resolution: &Vector2u, force: bool) {
@@ -467,137 +448,67 @@ fn get_associated_scenes_for_canvas(canvas: &RenderCanvas) -> HashSet<String> {
         .collect()
 }
 
-fn create_viewport_2d_state(
-    instance: &VulkanInstance,
-    device: &VulkanDevice,
-    command_pool: vk::CommandPool,
+fn create_viewport_2d_state<'ctx>(
+    device: &'ctx vk::Device<'ctx>,
+    command_pool: &vk::CommandPool<'ctx>,
     viewport_id: u32,
-) -> ViewportState {
+) -> ViewportState<'ctx> {
     let mut viewport_state = ViewportState::new(viewport_id);
 
     let sem_info = vk::SemaphoreCreateInfo::default();
 
     for frame_state in &mut viewport_state.per_frame {
-        unsafe {
-            frame_state.rebuild_semaphore = device.logical_device
-                .create_semaphore(&sem_info, None)
-                .expect("Failed to create semaphores for viewport");
+        frame_state.rebuild_semaphore = Some(vk::Semaphore::create(device, &sem_info)
+            .expect("Failed to create semaphores for viewport"));
 
-            frame_state.draw_semaphore = device.logical_device
-                .create_semaphore(&sem_info, None)
-                .expect("Failed to create semaphores for viewport");
+        frame_state.draw_semaphore = Some(vk::Semaphore::create(device, &sem_info)
+            .expect("Failed to create semaphores for viewport"));
 
-            let fence_info = vk::FenceCreateInfo::default()
-                .flags(vk::FenceCreateFlags::empty());
-            frame_state.composite_fence = device.logical_device
-                .create_fence(&fence_info, None)
-                .expect("Failed to create fences for viewport");
-        }
+        let fence_info = vk::FenceCreateInfo::default()
+            .flags(vk::FenceCreateFlags::empty());
+        frame_state.composite_fence = Some(vk::Fence::create(device, &fence_info)
+            .expect("Failed to create fences for viewport"));
 
-        frame_state.command_buf = Some(alloc_command_buffers(
-            device,
-            command_pool,
-            1,
-        ).into_iter().next().unwrap());
+        frame_state.command_buf = Some(command_pool.alloc_buffers(1).into_iter().next().unwrap());
 
-        frame_state.scene_ubo = Some(VulkanBuffer::new(
-            instance,
+        frame_state.scene_ubo = Some(vk::Buffer::new(
             device,
             SHADER_UBO_SCENE_LEN as vk::DeviceSize,
             vk::BufferUsageFlags::UNIFORM_BUFFER,
-            MEM_CLASS_HOST_RW,
+            vk::MEM_CLASS_HOST_RW,
         ).unwrap());
     }
 
     viewport_state
 }
 
-fn create_scene_state(
-    instance: &VulkanInstance,
-    device: &VulkanDevice,
+fn create_scene_state<'ctx>(
+    device: &'ctx vk::Device,
     scene_id: impl Into<String>,
-) -> Scene2dState {
+) -> Scene2dState<'ctx> {
     let mut scene_state = Scene2dState::new(scene_id.into());
 
-    scene_state.ubo = Some(VulkanBuffer::new(
-        instance,
+    scene_state.ubo = Some(vk::Buffer::new(
         device,
         SHADER_UBO_SCENE_LEN as vk::DeviceSize,
         vk::BufferUsageFlags::UNIFORM_BUFFER,
-        MEM_CLASS_HOST_RW,
+        vk::MEM_CLASS_HOST_RW,
     ).unwrap());
 
     scene_state
 }
 
-fn destroy_viewport(device: &VulkanDevice, desc_pool: vk::DescriptorPool, viewport_state: ViewportState) {
-    for frame_state in viewport_state.per_frame {
-        unsafe {
-            device.logical_device.destroy_fence(frame_state.composite_fence, None);
-            if let Some(fb) = frame_state.front_fb {
-                if let Some(sampler) = fb.sampler {
-                    device.logical_device.destroy_sampler(sampler, None);
-                }
-                for image in fb.images {
-                    image.destroy(device);
-                }
-                destroy_framebuffer(device, fb.handle);
-            }
-            if let Some(fb) = frame_state.back_fb {
-                if let Some(sampler) = fb.sampler {
-                    device.logical_device.destroy_sampler(sampler, None);
-                }
-                for image in fb.images {
-                    image.destroy(device);
-                }
-                destroy_framebuffer(device, fb.handle);
-            }
-        }
-
-        if let Some(buf) = frame_state.viewport_ubo {
-            buf.destroy(device);
-        }
-        if let Some(buf) = frame_state.scene_ubo {
-            buf.destroy(device);
-        }
-
-        destroy_descriptor_sets(device, desc_pool, &frame_state.composite_desc_sets).unwrap();
-        for (_, ds) in frame_state.material_desc_sets {
-            destroy_descriptor_sets(device, desc_pool, &ds).unwrap();
-        }
-
-        destroy_command_buffer(device, frame_state.command_buf.unwrap());
-    }
-}
-
-fn destroy_scene(device: &VulkanDevice, scene_state: Scene2dState) {
-    for (_, bucket) in scene_state.render_buckets {
-        bucket.destroy(device);
-    }
-
-    for (_, obj) in scene_state.processed_objs {
-        obj.destroy(device);
-    }
-
-    if let Some(buf) = scene_state.ubo {
-        buf.destroy(device);
-    }
-}
-
-fn add_remove_state_objects(
-    instance: &VulkanInstance,
-    device: &VulkanDevice,
+fn add_remove_state_objects<'ctx>(
     window: &Window,
-    state: &mut RendererState,
+    state: &mut RendererState<'ctx>,
 ) {
     let canvas = window.get_canvas().unwrap().as_any().downcast_ref::<RenderCanvas>().unwrap();
 
     for viewport_id in canvas.get_viewports_2d() {
         let vp_state = state.viewport_states_2d.entry(viewport_id)
             .or_insert_with(|| create_viewport_2d_state(
-                instance,
-                device,
-                state.graphics_command_pool.unwrap(),
+                state.device,
+                state.graphics_command_pool.as_ref().unwrap(),
                 viewport_id,
             ));
 
@@ -609,7 +520,7 @@ fn add_remove_state_objects(
                 .get_scene_id().to_string()
         };
         let scene_state = state.scene_states_2d.entry(scene_id.to_owned())
-            .or_insert_with(|| create_scene_state(instance, device, scene_id));
+            .or_insert_with(|| create_scene_state(state.device, scene_id));
         scene_state.visited = true;
     }
 
@@ -617,7 +528,7 @@ fn add_remove_state_objects(
     let stale_scene_states = state.scene_states_2d
         .extract_if(|_, scene_state| !scene_state.visited);
     for (_, scene_state) in stale_scene_states {
-        destroy_scene(device, scene_state);
+        scene_state.destroy();
     }
     // clear visited flag for all remaining states
     for scene_state in state.scene_states_2d.values_mut() {
@@ -628,7 +539,10 @@ fn add_remove_state_objects(
     let stale_viewport_states = state.viewport_states_2d
         .extract_if(|_, viewport_state| !viewport_state.visited);
     for (_, viewport_state) in stale_viewport_states {
-        destroy_viewport(device, state.desc_pool.unwrap(), viewport_state);
+        viewport_state.destroy(
+            state.desc_pool.as_ref().unwrap(),
+            state.graphics_command_pool.as_ref().unwrap(),
+        );
 
         state.dirty_viewports = true;
     }
@@ -639,15 +553,13 @@ fn add_remove_state_objects(
 }
 
 fn compile_scenes(
-    instance: &VulkanInstance,
-    device: &VulkanDevice,
     window: &Window,
     state: &mut RendererState,
 ) {
     let canvas = window.get_canvas().unwrap().as_any().downcast_ref::<RenderCanvas>().unwrap();
 
     for scene_id in get_associated_scenes_for_canvas(canvas) {
-        compile_scene_2d(instance, device, state, &scene_id);
+        compile_scene_2d(state, &scene_id);
     }
 }
 
@@ -683,15 +595,15 @@ fn check_scene_ubo_dirty(state: &mut RendererState, scene_id: &str) {
 }
 
 fn record_scene_rebuild(
-    instance: &VulkanInstance,
-    device: &VulkanDevice,
     window: &Window,
     state: &mut RendererState,
     cur_frame: usize,
 ) {
+    let device = state.device;
+
     let canvas = window.get_canvas().unwrap().as_any().downcast_ref::<RenderCanvas>().unwrap();
 
-    begin_oneshot_commands(device, state.copy_cmd_buf[cur_frame].as_ref().unwrap());
+    state.copy_cmd_buf[cur_frame].as_ref().unwrap().begin_oneshot_commands();
 
     for scene_id in get_associated_scenes_for_canvas(canvas) {
         check_scene_ubo_dirty(state, &scene_id);
@@ -699,7 +611,6 @@ fn record_scene_rebuild(
         let scene_state = state.scene_states_2d.get_mut(&scene_id).unwrap();
 
         fill_buckets(
-            instance,
             device,
             scene_state,
             state.copy_cmd_buf[cur_frame].as_ref().unwrap(),
@@ -727,11 +638,13 @@ fn record_scene_rebuild(
             let texture_res = ResourceManager::instance().get_resource(texture_uid.to_string())
                 .expect("Failed to load texture"); //TODO
 
-            let prepared = prepare_texture(
-                instance,
+            let texture_obj = texture_res.get::<TextureData>().unwrap();
+            let prepared = vk::prepare_texture(
                 device,
                 copy_cmd_buf,
-                texture_res,
+                texture_obj.get_width(),
+                texture_obj.get_height(),
+                texture_obj.get_pixel_data(),
             )
                 .expect("Failed to prepare texture");
 
@@ -743,19 +656,18 @@ fn record_scene_rebuild(
         }
     }
 
-    end_command_buffer(device, state.copy_cmd_buf[cur_frame].as_ref().unwrap());
+    state.copy_cmd_buf[cur_frame].as_ref().unwrap().end_commands();
 }
 
-fn submit_scene_rebuild(device: &VulkanDevice, state: &mut RendererState, cur_frame: usize) {
+fn submit_scene_rebuild(device: &vk::Device, state: &mut RendererState, cur_frame: usize) {
     let rebuild_sems = state.viewport_states_2d.values()
-        .map(|vp_state| vp_state.per_frame[cur_frame].rebuild_semaphore)
+        .filter_map(|vp_state| vp_state.per_frame[cur_frame].rebuild_semaphore)
         .collect();
-    queue_command_buffer_submit(
+    state.copy_cmd_buf[cur_frame].as_ref().unwrap().queue_submit(
         state.submit_sender.as_ref().unwrap(),
         state.submit_mutex.as_ref(),
-        state.copy_cmd_buf[cur_frame].as_ref().unwrap().clone(),
         state.swapchain.as_ref().unwrap(),
-        device.queues.graphics_family,
+        &device.queues.graphics_family,
         vec![],
         vec![],
         rebuild_sems,
@@ -770,40 +682,31 @@ fn submit_scene_rebuild(device: &VulkanDevice, state: &mut RendererState, cur_fr
     state.texture_bufs_to_free.clear();*/
 }
 
-fn get_next_image(device: &VulkanDevice, state: &mut RendererState, cur_frame: usize) -> u32 {
+fn get_next_image(device: &vk::Device, state: &mut RendererState, cur_frame: usize) -> u32 {
     let swapchain = &state.swapchain.as_ref().expect("Swapchain is not initialized");
 
     state.command_buffer_submitted_sem[cur_frame].wait();
-    unsafe {
-        device.logical_device.wait_for_fences(
-            &[swapchain.in_flight_fence[cur_frame]],
-            true,
-            u64::MAX,
-        )
-            .expect("vkWaitForFences failed");
-        device.logical_device.reset_fences(
-            &[swapchain.in_flight_fence[cur_frame]],
-        )
-            .expect("vkResetFences failed");
-    }
+    device.wait_for_fences(
+        &[&swapchain.in_flight_fence[cur_frame]],
+        true,
+        u64::MAX,
+    )
+        .expect("vkWaitForFences failed");
+    device.reset_fences(
+        &[&swapchain.in_flight_fence[cur_frame]],
+    )
+        .expect("vkResetFences failed");
 
     let _submit_guard = state.submit_mutex.lock().unwrap();
 
-    let (image_index, _) = unsafe {
-        device.khr_swapchain().acquire_next_image(
-            swapchain.get_handle(),
-            u64::MAX,
-            swapchain.image_avail_sem[cur_frame],
-            vk::Fence::null(),
-        ).expect("vkAcquireNextImageKHR failed")
-    };
+    let (image_index, _) = swapchain.acquire_next_image(cur_frame, u64::MAX)
+        .expect("vkAcquireNextImageKHR failed");
 
     image_index
 }
 
-fn composite_framebuffers(
-    device: &VulkanDevice,
-    state: &mut RendererState,
+fn composite_framebuffers<'ctx>(
+    state: &mut RendererState<'ctx>,
     viewports: &Vec<u32>,
     sc_image_index: u32,
     cur_frame: usize,
@@ -817,29 +720,18 @@ fn composite_framebuffers(
 
         buf
     } else {
-        let new_cmd_buf = alloc_command_buffers(
-            device,
-            *state.graphics_command_pool.as_ref().unwrap(),
-            1,
-        ).into_iter().next().unwrap();
+        let new_cmd_buf =
+            state.graphics_command_pool.as_ref().unwrap()
+                .alloc_buffers(1).into_iter().next().unwrap();
         state.composite_cmd_bufs.insert(sc_image_index, (new_cmd_buf, false));
         &state.composite_cmd_bufs.get(&sc_image_index).unwrap().0
     };
 
-    let vk_cmd_buf = unsafe { cmd_buf.get_handle() };
-
-    unsafe {
-        device.logical_device.reset_command_buffer(
-            vk_cmd_buf,
-            vk::CommandBufferResetFlags::empty(),
-        ).unwrap();
-    }
+    cmd_buf.reset(vk::CommandBufferResetFlags::empty());
 
     let cmd_begin_info = vk::CommandBufferBeginInfo::default()
         .flags(vk::CommandBufferUsageFlags::empty());
-    unsafe {
-        device.logical_device.begin_command_buffer(vk_cmd_buf, &cmd_begin_info).unwrap();
-    }
+    cmd_buf.begin_commands(&cmd_begin_info).unwrap();
 
     let swapchain = state.swapchain.as_ref().expect("Swapchain is not initialized");
 
@@ -852,34 +744,25 @@ fn composite_framebuffers(
     let clear_vals = [clear_val];
 
     let rp_info = vk::RenderPassBeginInfo::default()
-        .framebuffer(swapchain.framebuffers[sc_image_index as usize])
+        .framebuffer(&swapchain.framebuffers[sc_image_index as usize])
         .clear_values(&clear_vals)
-        .render_pass(swapchain.composite_render_pass)
+        .render_pass(&swapchain.composite_render_pass)
         .render_area(vk::Rect2D {
             extent: vk::Extent2D { width: fb_width, height: fb_height },
             offset: vk::Offset2D { x: 0, y: 0 },
         });
-    unsafe {
-        device.logical_device
-            .cmd_begin_render_pass(vk_cmd_buf, &rp_info, vk::SubpassContents::INLINE);
-    }
+    cmd_buf.cmd_begin_render_pass(&rp_info, vk::SubpassContents::INLINE);
 
-    unsafe {
-        device.logical_device.cmd_bind_pipeline(
-            vk_cmd_buf,
-            vk::PipelineBindPoint::GRAPHICS,
-            state.composite_pipeline.as_ref().unwrap().get_handle(),
-        );
-    }
+    cmd_buf.cmd_bind_pipeline(
+        vk::PipelineBindPoint::GRAPHICS,
+        state.composite_pipeline.as_ref().unwrap(),
+    );
 
-    unsafe {
-        device.logical_device.cmd_bind_vertex_buffers(
-            vk_cmd_buf,
-            0,
-            &[state.composite_vbo.as_ref().unwrap().get_handle()],
-            &[0],
-        );
-    }
+    cmd_buf.cmd_bind_vertex_buffers(
+        0,
+        &[state.composite_vbo.as_ref().unwrap()],
+        &[0],
+    );
 
     for &viewport_id in viewports {
         let viewport_state = state.viewport_states_2d.get_mut(&viewport_id).unwrap();
@@ -888,26 +771,21 @@ fn composite_framebuffers(
             .get_viewport().clone();
 
         draw_framebuffer_to_swapchain(
-            device,
             &mut viewport_state.per_frame[cur_frame],
             &viewport,
             state.swapchain.as_ref().unwrap(),
             state.composite_pipeline.as_ref().unwrap(),
-            state.composite_cmd_bufs.get(&sc_image_index).unwrap().0.clone(),
+            cmd_buf,
         );
     }
 
-    unsafe {
-        device.logical_device.cmd_end_render_pass(vk_cmd_buf);
-    }
+    cmd_buf.cmd_end_render_pass();
 
-    unsafe {
-        device.logical_device.end_command_buffer(vk_cmd_buf).unwrap();
-    }
+    cmd_buf.end_commands();
 }
 
 fn submit_composite(
-    device: &VulkanDevice,
+    device: &vk::Device,
     state: &mut RendererState,
     sc_image_index: u32,
     cur_frame: usize,
@@ -919,19 +797,20 @@ fn submit_composite(
     wait_sems.push(swapchain.image_avail_sem[cur_frame]);
     wait_stages.push(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT);
     for viewport_state in state.viewport_states_2d.values() {
-        wait_sems.push(viewport_state.per_frame[cur_frame].draw_semaphore);
-        wait_stages.push(vk::PipelineStageFlags::ALL_COMMANDS);
+        if let Some(draw_sem) = viewport_state.per_frame[cur_frame].draw_semaphore {
+            wait_sems.push(draw_sem);
+            wait_stages.push(vk::PipelineStageFlags::ALL_COMMANDS);
+        }
     }
 
-    queue_command_buffer_submit(
+    state.composite_cmd_bufs.get(&sc_image_index).unwrap().0.queue_submit(
         state.submit_sender.as_ref().unwrap(),
         state.submit_mutex.as_ref(),
-        state.composite_cmd_bufs.get(&sc_image_index).unwrap().0.clone(),
         state.swapchain.as_ref().unwrap(),
-        device.queues.graphics_family,
+        &device.queues.graphics_family,
         wait_sems,
         wait_stages,
-        vec![swapchain.render_done_sem[cur_frame]],
+        vec![swapchain.render_done_sem[sc_image_index as usize]],
         Some(swapchain.in_flight_fence[cur_frame]),
         Some(state.command_buffer_submitted_sem[cur_frame].clone()),
     )
@@ -940,97 +819,14 @@ fn submit_composite(
 
 fn present_image(state: &mut RendererState, image_index: u32, cur_frame: usize) {
     let swapchain = state.swapchain.as_ref().unwrap();
-    state.submit_sender.as_ref().unwrap().send(SubmitMessage::PresentImage(PresentImageParams {
-        swapchain: unsafe { swapchain.get_handle() },
-        wait_sems: vec![
-            swapchain.render_done_sem[cur_frame],
-        ],
-        present_image_index: image_index,
-        present_sem: state.present_submitted_sem[cur_frame].clone(),
-    })).unwrap();
-}
-
-fn start_submit_queues_thread(
-    device: ash::Device,
-    ext_khr_swapchain: khr::swapchain::Device,
-    initial_swapchain: &VulkanSwapchain,
-    submit_mutex: Arc<Mutex<()>>,
-    graphics_queue: vk::Queue,
-    graphics_queue_mutex: Arc<Mutex<()>>,
-    present_queue_mutex: Option<Arc<Mutex<()>>>,
-    receiver: mpsc::Receiver<SubmitMessage>,
-) -> JoinHandle<()> {
-    let initial_swapchain_handle = unsafe { initial_swapchain.get_handle() };
-    thread::spawn(move || {
-        // We track which swapchain is currently active based on notifications
-        // sent from the main thread. This allows ignoring submit/present
-        // requests associated with a stale swapchain.
-        let mut cur_swapchain = Some(initial_swapchain_handle);
-
-        'outer: loop {
-
-            while let Ok(message) = receiver.recv() {
-                let _submit_lock = submit_mutex.lock().unwrap();
-                let _gfx_queue_lock = graphics_queue_mutex.lock().unwrap();
-                let _present_queue_lock = present_queue_mutex.as_ref()
-                    .map(|present_queue_mutex| present_queue_mutex.lock().unwrap());
-
-                match message {
-                    SubmitMessage::PresentImage(present_params) => {
-                        if cur_swapchain.is_none_or(|sc| sc != present_params.swapchain) {
-                            continue;
-                        }
-
-                        let swapchains = [present_params.swapchain];
-                        let image_indices = [present_params.present_image_index];
-
-                        let present_info = vk::PresentInfoKHR::default()
-                            .wait_semaphores(&present_params.wait_sems)
-                            .swapchains(&swapchains)
-                            .image_indices(&image_indices);
-
-                        unsafe {
-                            ext_khr_swapchain
-                                .queue_present(graphics_queue, &present_info)
-                                .unwrap();
-                        }
-
-                        present_params.present_sem.notify();
-                    }
-                    SubmitMessage::SubmitCommandBuffer(buf_params) => {
-                        if cur_swapchain.is_none_or(|sc| sc != buf_params.swapchain) {
-                            continue;
-                        }
-
-                        submit_command_buffer(
-                            &device,
-                            &buf_params.buffer,
-                            buf_params.queue,
-                            buf_params.fence.unwrap_or(vk::Fence::null()),
-                            buf_params.wait_sems,
-                            buf_params.wait_stages,
-                            buf_params.signal_sems,
-                        );
-
-                        if let Some(submit_sem) = buf_params.in_flight_sem {
-                            submit_sem.notify();
-                        }
-                    }
-                    SubmitMessage::NotifyCreatedSwapchain(sc_params) => {
-                        assert!(cur_swapchain.is_none());
-                        cur_swapchain = Some(sc_params.swapchain);
-                    }
-                    SubmitMessage::NotifyDestroyedSwapchain(sc_params) => {
-                        assert!(cur_swapchain.is_some_and(|sc| sc == sc_params.swapchain));
-                        cur_swapchain = None;
-                        sc_params.ack_sem.notify();
-                    }
-                    SubmitMessage::NotifyHalting(halting_params) => {
-                        halting_params.ack_sem.notify();
-                        break 'outer;
-                    }
-                }
-            }
-        }
-    })
+    state.submit_sender.as_ref().unwrap()
+        .send(vk::SubmitMessage::PresentImage(vk::PresentImageParams::new(
+            swapchain,
+            vec![
+                swapchain.render_done_sem[image_index as usize],
+            ],
+            image_index,
+            state.present_submitted_sem[cur_frame].clone(),
+        )))
+        .unwrap();
 }

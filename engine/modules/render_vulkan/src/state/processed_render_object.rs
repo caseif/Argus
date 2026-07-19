@@ -1,9 +1,8 @@
 use argus_resman::Resource;
 use argus_util::math::{Vector2f, Vector2u};
-use crate::setup::device::VulkanDevice;
-use crate::util::VulkanBuffer;
+use vk_wrapper::vk;
 
-pub(crate) struct ProcessedObject {
+pub(crate) struct ProcessedObject<'ctx> {
     pub(crate) material_res: Resource,
     pub(crate) atlas_stride: Vector2f,
     pub(crate) z_index: u32,
@@ -12,14 +11,14 @@ pub(crate) struct ProcessedObject {
 
     pub(crate) anim_frame: Vector2u,
 
-    pub(crate) staging_buffer: Option<VulkanBuffer>,
+    pub(crate) staging_buffer: Option<vk::Buffer<'ctx>>,
     pub(crate) newly_created: bool,
     pub(crate) visited: bool,
     pub(crate) updated: bool,
     pub(crate) anim_frame_updated: bool,
 }
 
-impl ProcessedObject {
+impl<'ctx> ProcessedObject<'ctx> {
     pub(crate) fn new(
         material_res: Resource,
         atlas_stride: Vector2f,
@@ -42,9 +41,9 @@ impl ProcessedObject {
         }
     }
     
-    pub(crate) fn destroy(self, device: &VulkanDevice) {
+    pub(crate) fn destroy(self) {
         if let Some(buf) = self.staging_buffer {
-            buf.destroy(device);
+            buf.destroy();
         }
     }
 }

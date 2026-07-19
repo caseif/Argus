@@ -1,7 +1,5 @@
 use argus_render::util::process_objects_2d;
 use crate::renderer::object_proc_impl::process_object;
-use crate::setup::device::VulkanDevice;
-use crate::setup::instance::VulkanInstance;
 use crate::state::{ProcessedObject, RenderBucket, RenderBucketKey, RendererState};
 
 fn get_bucket_key(processed_obj: &ProcessedObject) -> RenderBucketKey {
@@ -14,15 +12,13 @@ fn get_bucket_key(processed_obj: &ProcessedObject) -> RenderBucketKey {
 }
 
 pub(crate) fn compile_scene_2d(
-    instance: &VulkanInstance,
-    device: &VulkanDevice,
-    state: &mut RendererState,
+    state: &mut RendererState<'_>,
     scene_id: &str,
 ) {
     process_objects_2d(
         scene_id,
         process_object,
-        &mut (instance, device, state),
+        state,
     );
     
     let scene_state = state.scene_states_2d.get_mut(scene_id).unwrap();
@@ -34,7 +30,7 @@ pub(crate) fn compile_scene_2d(
         let bucket = scene_state.render_buckets.get_mut(&get_bucket_key(&stale_obj)).unwrap();
         bucket.objects.retain(|h| h != &stale_obj_handle);
         bucket.needs_rebuild = true;
-        stale_obj.destroy(device);
+        stale_obj.destroy();
     }
 
     for (obj_handle, obj) in &mut scene_state.processed_objs {

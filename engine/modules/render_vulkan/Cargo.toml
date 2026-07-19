@@ -17,12 +17,8 @@ argus_render = { path = "../render" }
 argus_resman = { path = "../resman" }
 argus_wm = { path = "../wm" }
 
-ash = "0.38.0"
-dashmap = "6.1.0"
 glslang = "0.6.2"
-itertools = { workspace = true }
-konst = "0.3.16"
-
+vk_wrapper = { path = "../../libs/vk_wrapper" }
 
 [build-dependencies]
 argus_build_util = { path = "../../libs/build_util", features = ["arp"] }

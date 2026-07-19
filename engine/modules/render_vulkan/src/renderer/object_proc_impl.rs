@@ -1,23 +1,21 @@
-use ash::vk;
 use argus_render::common::Material;
 use argus_render::constants::*;
 use argus_render::twod::{get_render_context_2d, RenderObject2d};
 use argus_util::math::{Matrix4x4, Vector4f};
 use argus_util::pool::Handle;
-use crate::setup::device::VulkanDevice;
-use crate::setup::instance::VulkanInstance;
+use vk_wrapper::*;
 use crate::state::{ProcessedObject, RendererState, Scene2dState};
-use crate::util::{create_pipeline_for_material, PipelineInfo, VulkanBuffer, MEM_CLASS_DEVICE_RW};
-use crate::util::defines::*;
+use crate::defines::*;
+use crate::renderer::pipelines::create_pipeline_for_material;
 
 pub(crate) fn process_object(
     scene_id: &str,
     object_handle: Handle,
     transform: &Matrix4x4,
     is_transform_dirty: bool,
-    state_tuple: &mut (&VulkanInstance, &VulkanDevice, &mut RendererState),
+    state: &mut RendererState<'_>,
 ) {
-    let (instance, device, state) = state_tuple;
+    let device = state.device;
     
     let mut object = get_render_context_2d().get_object_mut(object_handle)
         .expect("Object not present in render context during processing");
@@ -42,7 +40,7 @@ pub(crate) fn process_object(
         );
     } else {
         let new_proc_obj =
-            create_processed_object_2d(instance, device, state, &mut object, transform);
+            create_processed_object_2d(device, state, &mut object, transform);
         state.scene_states_2d.get_mut(scene_id).unwrap().processed_objs.insert(
             object_handle,
             new_proc_obj,
@@ -50,13 +48,12 @@ pub(crate) fn process_object(
     }
 }
 
-pub(crate) fn create_processed_object_2d(
-    instance: &VulkanInstance,
-    device: &VulkanDevice,
-    state: &mut RendererState,
+pub(crate) fn create_processed_object_2d<'ctx>(
+    device: &'ctx vk::Device<'ctx>,
+    state: &mut RendererState<'ctx>,
     object: &mut RenderObject2d,
     transform: &Matrix4x4,
-) -> ProcessedObject {
+) -> ProcessedObject<'ctx> {
     let vertex_count = object.get_primitives().iter()
         .map(|prim| prim.get_vertices().len())
         .sum::<usize>() as u32;
@@ -69,7 +66,7 @@ pub(crate) fn create_processed_object_2d(
             device,
             obj_mat.get::<Material>().unwrap(),
             &state.viewport_size,
-            state.fb_render_pass.unwrap(),
+            state.fb_render_pass.as_ref().unwrap(),
         ).unwrap()
     });
 
@@ -79,12 +76,11 @@ pub(crate) fn create_processed_object_2d(
 
     assert!(buffer_size <= i32::MAX as u32, "Buffer size is too big");
 
-    let mut staging_buffer = VulkanBuffer::new(
-        instance,
+    let mut staging_buffer = vk::Buffer::new(
         device,
         buffer_size as vk::DeviceSize,
         vk::BufferUsageFlags::TRANSFER_SRC,
-        MEM_CLASS_DEVICE_RW,
+        vk::MEM_CLASS_DEVICE_RW,
     ).unwrap();
 
     let mut total_vertices = 0;
@@ -149,12 +145,12 @@ pub(crate) fn create_processed_object_2d(
 }
 
 pub(crate) fn update_processed_object_2d(
-    device: &VulkanDevice,
+    device: &vk::Device,
     object: &mut RenderObject2d,
     proc_obj: &mut ProcessedObject,
     transform: &Matrix4x4,
     is_transform_dirty: bool,
-    pipeline: &PipelineInfo,
+    pipeline: &vk::Pipeline,
 ) {
     // if a parent group or the object itself has had its transform updated
     proc_obj.updated = is_transform_dirty;

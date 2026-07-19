@@ -2,8 +2,7 @@ use std::cmp::Ordering;
 use argus_resman::{Resource, ResourceIdentifier};
 use argus_util::math::{Vector2f, Vector2i};
 use argus_util::pool::Handle;
-use crate::setup::device::VulkanDevice;
-use crate::util::VulkanBuffer;
+use vk_wrapper::vk;
 
 #[derive(Clone, Eq, Hash, PartialEq)]
 pub(crate) struct RenderBucketKey {
@@ -32,7 +31,7 @@ impl RenderBucketKey {
     }
 }
 
-pub(crate) struct RenderBucket {
+pub(crate) struct RenderBucket<'ctx> {
     pub(crate) material_res: Resource,
     pub(crate) atlas_stride: Vector2f,
     #[allow(dead_code)]
@@ -40,18 +39,18 @@ pub(crate) struct RenderBucket {
     pub(crate) light_opacity: f32,
 
     pub(crate) objects: Vec<Handle>,
-    pub(crate) vertex_buffer: Option<VulkanBuffer>,
-    pub(crate) staging_vertex_buffer: Option<VulkanBuffer>,
-    pub(crate) anim_frame_buffer: Option<VulkanBuffer>,
-    pub(crate) staging_anim_frame_buffer: Option<VulkanBuffer>,
+    pub(crate) vertex_buffer: Option<vk::Buffer<'ctx>>,
+    pub(crate) staging_vertex_buffer: Option<vk::Buffer<'ctx>>,
+    pub(crate) anim_frame_buffer: Option<vk::Buffer<'ctx>>,
+    pub(crate) staging_anim_frame_buffer: Option<vk::Buffer<'ctx>>,
     pub(crate) vertex_count: u32,
 
-    pub(crate) ubo_buffer: Option<VulkanBuffer>,
+    pub(crate) ubo_buffer: Option<vk::Buffer<'ctx>>,
 
     pub(crate) needs_rebuild: bool,
 }
 
-impl RenderBucket {
+impl<'ctx> RenderBucket<'ctx> {
     pub(crate) fn new(
         material_res: Resource,
         atlas_stride: Vector2f,
@@ -74,21 +73,21 @@ impl RenderBucket {
         }
     }
     
-    pub(crate) fn destroy(self, device: &VulkanDevice) {        
+    pub(crate) fn destroy(self) {
         if let Some(buf) = self.vertex_buffer {
-            buf.destroy(device);
+            buf.destroy();
         }
         if let Some(buf) = self.staging_vertex_buffer {
-            buf.destroy(device);
+            buf.destroy();
         }
         if let Some(buf) = self.anim_frame_buffer {
-            buf.destroy(device);
+            buf.destroy();
         }
         if let Some(buf) = self.staging_anim_frame_buffer {
-            buf.destroy(device);
+            buf.destroy();
         }
         if let Some(buf) = self.ubo_buffer {
-            buf.destroy(device);
+            buf.destroy();
         }
     }
 }

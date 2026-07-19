@@ -1,83 +1,67 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::ffi;
-use std::ffi::CStr;
+use std::ffi::CString;
 use std::sync::atomic::AtomicBool;
 use std::sync::{atomic, OnceLock};
 use std::time::Duration;
-use ash::vk;
-use ash::prelude::VkResult;
-use ash::vk::Handle;
-use argus_core::{register_event_handler, register_module, EngineManager, LifecycleStage, Ordering, TargetThread};
+use argus_core::{register_event_handler, register_module, ClientConfig, EngineManager, LifecycleStage, Ordering, TargetThread};
 use argus_logging::{crate_logger, debug, info, warn, LogLevel};
 use argus_render::common::register_render_backend;
 use argus_render::constants::{RESOURCE_TYPE_SHADER_GLSL_FRAG, RESOURCE_TYPE_SHADER_GLSL_VERT};
 use argus_resman::{ResourceManager};
-use argus_wm::{vk_create_surface, vk_is_supported, WindowCreationFlags, WindowEvent, WindowEventType, WindowManager};
+use argus_wm::{vk_create_surface, vk_get_required_instance_extensions, vk_is_supported, WindowCreationFlags, WindowEvent, WindowEventType, WindowManager};
+use vk_wrapper::vk;
 use crate::loader::ShaderLoader;
 use crate::renderer::VulkanRenderer;
 use crate::resources::RESOURCES_PACK;
-use crate::setup::device::VulkanDevice;
-use crate::setup::instance::VulkanInstance;
-use crate::setup::LOGGER;
+use crate::LOGGER;
 
 const BACKEND_ID: &str = "vulkan";
 
 crate_logger!(LOGGER_VK, "vulkan");
 
 thread_local! {
-    static RENDERERS: RefCell<HashMap<String, VulkanRenderer>> = RefCell::new(HashMap::new());
+    static RENDERERS: RefCell<HashMap<String, VulkanRenderer<'static, 'static>>> =
+        RefCell::new(HashMap::new());
 }
 
 static IS_BACKEND_ACTIVE: AtomicBool = AtomicBool::new(false);
 
-static VK_INSTANCE: OnceLock<VulkanInstance> = OnceLock::new();
-static VK_DEVICE: OnceLock<VulkanDevice> = OnceLock::new();
-static VK_DEBUG_MESSENGER: OnceLock<Option<vk::DebugUtilsMessengerEXT>> = OnceLock::new();
+static VK_INSTANCE: OnceLock<vk::Instance> = OnceLock::new();
+static VK_DEVICE: OnceLock<vk::Device> = OnceLock::new();
+static VK_DEBUG_MESSENGER: OnceLock<Option<vk::DebugUtilsMessenger>> = OnceLock::new();
 
-#[allow(unused)]
-extern "system" fn debug_callback(
+fn debug_callback(
     severity: vk::DebugUtilsMessageSeverityFlagsEXT,
-    ty: vk::DebugUtilsMessageTypeFlagsEXT,
-    callback_data: *const vk::DebugUtilsMessengerCallbackDataEXT,
-    user_data: *mut ffi::c_void,
-) -> vk::Bool32 {
-    let (level, is_error) = match severity {
+    _ty: vk::DebugUtilsMessageTypeFlagsEXT,
+    message: &str,
+) -> u32 {
+    let (level, _) = match severity {
         vk::DebugUtilsMessageSeverityFlagsEXT::ERROR => (LogLevel::Severe, true),
         vk::DebugUtilsMessageSeverityFlagsEXT::WARNING => (LogLevel::Warning, true),
         vk::DebugUtilsMessageSeverityFlagsEXT::INFO => (LogLevel::Info, false),
         vk::DebugUtilsMessageSeverityFlagsEXT::VERBOSE => (LogLevel::Trace, false),
         _ => { return 0; }
     };
-    let message = unsafe { CStr::from_ptr((*callback_data).p_message) };
-    LOGGER_VK.log(level, message.to_string_lossy());
+    LOGGER_VK.log(level, message);
     1
 }
 
-fn init_vk_debug_utils(inst: &VulkanInstance) -> VkResult<vk::DebugUtilsMessengerEXT> {
-    let debug_info = vk::DebugUtilsMessengerCreateInfoEXT::default()
-        .message_severity(
-            vk::DebugUtilsMessageSeverityFlagsEXT::VERBOSE |
+fn init_vk_debug_utils(inst: &'_ vk::Instance) -> Result<vk::DebugUtilsMessenger<'_>, String> {
+    vk::DebugUtilsMessenger::create(inst,
+        vk::DebugUtilsMessageSeverityFlagsEXT::VERBOSE |
             vk::DebugUtilsMessageSeverityFlagsEXT::INFO |
             vk::DebugUtilsMessageSeverityFlagsEXT::WARNING |
-            vk::DebugUtilsMessageSeverityFlagsEXT::ERROR
-        )
-        .message_type(
-            vk::DebugUtilsMessageTypeFlagsEXT::GENERAL |
-            vk::DebugUtilsMessageTypeFlagsEXT::VALIDATION
-        )
-        .pfn_user_callback(Some(debug_callback));
-
-    unsafe {
-        inst.ext_debug_utils().create_debug_utils_messenger(&debug_info, None)
-    }
+            vk::DebugUtilsMessageSeverityFlagsEXT::ERROR,
+        vk::DebugUtilsMessageTypeFlagsEXT::GENERAL |
+            vk::DebugUtilsMessageTypeFlagsEXT::VALIDATION,
+        debug_callback,
+    )
 }
 
-fn deinit_vk_debug_utils(inst: &VulkanInstance, debug_messenger: vk::DebugUtilsMessengerEXT) {
+fn deinit_vk_debug_utils(debug_messenger: vk::DebugUtilsMessenger) {
     if cfg!(debug_assertions) {
-        unsafe {
-            inst.ext_debug_utils().destroy_debug_utils_messenger(debug_messenger, None);
-        }
+        debug_messenger.destroy();
     }
 }
 
@@ -98,25 +82,23 @@ fn activate_vulkan_backend() -> bool {
 
     window.update(Duration::from_secs(0));
 
-    let ash_entry = match unsafe { ash::Entry::load() } {
-        Ok(entry) => entry,
-        Err(err) => {
-            debug!(
-                LOGGER,
-                "Vulkan does not appear to be supported (failed to load library: {})",
-                err,
-            );
-            WindowManager::instance().set_window_creation_flags(WindowCreationFlags::None);
-            window.request_close();
-            return false;
-        },
-    };
-    let vk_instance = match VulkanInstance::new(ash_entry, window, &[]) {
+    let wm_required_exts: Vec<_> = vk_get_required_instance_extensions(window).unwrap()
+        .into_iter()
+        .map(|ext| CString::new(ext).unwrap())
+        .collect();
+    let client_name = EngineManager::instance().get_config()
+        .get_section::<ClientConfig>().as_ref().unwrap()
+        .name.clone();
+    let vk_instance = match vk::Instance::load(
+        &wm_required_exts.iter().map(|s| s.as_ref()).collect::<Vec<_>>(),
+        &client_name,
+        &LOGGER,
+    ) {
         Ok(inst) => inst,
         Err(err) => {
             debug!(
                 LOGGER,
-                "Vulkan does not appear to be supported (failed to create instance: {})",
+                "Unable to create Vulkan instance: {}",
                 err.to_string(),
             );
             WindowManager::instance().set_window_creation_flags(WindowCreationFlags::None);
@@ -124,9 +106,13 @@ fn activate_vulkan_backend() -> bool {
             return false;
         }
     };
+    if VK_INSTANCE.set(vk_instance).is_err() {
+        panic!("Failed to set global Vulkan instance");
+    }
+    let vk_instance = VK_INSTANCE.get().unwrap();
 
     let vk_debug_messenger = if cfg!(debug_assertions) {
-        Some(init_vk_debug_utils(&vk_instance).unwrap())
+        Some(init_vk_debug_utils(vk_instance).unwrap())
     } else {
         None
     };
@@ -138,35 +124,67 @@ fn activate_vulkan_backend() -> bool {
         return false;
     }*/
 
-    // SAFETY: We just created the Vulkan instance and haven't done anything
-    //         with it yet, so we know that it's valid.
-    let vk_inst_wm = unsafe {
-        argus_wm::VkInstance::from_raw(vk_instance.get_underlying().handle().as_raw())
-    };
+    let probe_surface_wm = {
+        // SAFETY: We just created the Vulkan instance and haven't done anything
+        // with it yet so it's guaranteed to be valid, and the wm wrapper only
+        // lives to the end of this scope so it cannot outlive `vk_instance`.
+        let vk_inst_wm = unsafe {
+            argus_wm::VkInstance::from_raw(vk_instance.get_handle())
+        };
 
-    let probe_surface_wm = match vk_create_surface(window, &vk_inst_wm) {
-        Ok(surface) => surface,
-        Err(err) => {
-            warn!(
+        match vk_create_surface(window, &vk_inst_wm) {
+            Ok(surface) => surface,
+            Err(err) => {
+                warn!(
                 LOGGER,
                 "Vulkan does not appear to be supported (failed to create surface: {})",
                 err.to_string(),
             );
-            WindowManager::instance().set_window_creation_flags(WindowCreationFlags::None);
-            if cfg!(debug_assertions) {
-                deinit_vk_debug_utils(&vk_instance, vk_debug_messenger.unwrap());
-            }
-            window.request_close();
-            return false;
-        },
+                WindowManager::instance().set_window_creation_flags(WindowCreationFlags::None);
+                if cfg!(debug_assertions) {
+                    deinit_vk_debug_utils(vk_debug_messenger.unwrap());
+                }
+                window.request_close();
+                return false;
+            },
+        }
     };
-    let probe_surface = vk::SurfaceKHR::from_raw(probe_surface_wm.as_raw());
+    // SAFETY: We just created the surface handle, and it is consumed by the
+    // wrapper object thus guaranteeing all future interaction will be done
+    // through the wrapper.
+    let probe_surface = unsafe {
+        vk::Surface::from_handle(vk_instance, probe_surface_wm.into_raw())
+    };
 
-    let vk_device_res = VulkanDevice::new(&vk_instance, probe_surface);
+    let phys_device = match vk::select_physical_device(&vk_instance, &probe_surface, &LOGGER) {
+        Ok(dev) => dev,
+        Err(err) => {
+            info!(
+                LOGGER,
+                "Vulkan does not appear to be supported (could not get Vulkan device: {})",
+                err.to_string()
+            );
+            if cfg!(debug_assertions) {
+                deinit_vk_debug_utils(vk_debug_messenger.unwrap());
+            }
+            WindowManager::instance().set_window_creation_flags(WindowCreationFlags::None);
+            return false;
+        }
+    };
+    let phys_dev_props = phys_device.get_properties();
 
-    unsafe {
-        vk_instance.khr_surface().destroy_surface(probe_surface, None);
-    }
+    info!(
+        LOGGER,
+        "Selected video device {}",
+        phys_dev_props.device_name_as_c_str().map(|s| s.to_string_lossy().to_string())
+            .unwrap_or_else(|_| "(unknown)".to_owned()),
+    );
+
+    let vk_device_res = vk_instance.create_device(phys_device, &probe_surface, &LOGGER);
+
+    debug!(LOGGER, "Successfully created logical Vulkan device");
+
+    probe_surface.destroy();
     window.request_close();
 
     let vk_device = match vk_device_res {
@@ -178,7 +196,7 @@ fn activate_vulkan_backend() -> bool {
                 err.to_string(),
             );
             if cfg!(debug_assertions) {
-                deinit_vk_debug_utils(&vk_instance, vk_debug_messenger.unwrap());
+                deinit_vk_debug_utils(vk_debug_messenger.unwrap());
             }
             WindowManager::instance().set_window_creation_flags(WindowCreationFlags::None);
             return false;
@@ -187,9 +205,6 @@ fn activate_vulkan_backend() -> bool {
 
     IS_BACKEND_ACTIVE.store(true, atomic::Ordering::Relaxed);
 
-    if VK_INSTANCE.set(vk_instance).is_err() {
-        panic!("Failed to set global Vulkan instance");
-    }
     if VK_DEVICE.set(vk_device).is_err() {
         panic!("Failed to set global Vulkan instance");
     }
@@ -212,8 +227,8 @@ fn window_event_handler(event: &WindowEvent) {
             // don't create a context if the window was immediately closed
             if !window.is_close_request_pending() {
                 let renderer = VulkanRenderer::new(
-                    VK_INSTANCE.get().cloned().unwrap(),
-                    VK_DEVICE.get().cloned().unwrap(),
+                    VK_INSTANCE.get().unwrap(),
+                    VK_DEVICE.get().unwrap(),
                     &window,
                 );
                 RENDERERS.with_borrow_mut(|renderers| {

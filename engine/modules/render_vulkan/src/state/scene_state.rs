@@ -19,19 +19,19 @@
 use std::collections::{BTreeMap, HashMap};
 use argus_render::common::SceneType;
 use argus_util::pool::Handle;
+use vk_wrapper::vk;
 use crate::state::{ProcessedObject, RenderBucket, RenderBucketKey};
-use crate::util::VulkanBuffer;
 
-pub(crate) struct Scene2dState {
+pub(crate) struct Scene2dState<'ctx> {
     pub(crate) scene_id: String,
     pub(crate) scene_type: SceneType,
-    pub(crate) ubo: Option<VulkanBuffer>,
-    pub(crate) render_buckets: BTreeMap<RenderBucketKey, RenderBucket>,
-    pub(crate) processed_objs: HashMap<Handle, ProcessedObject>,
+    pub(crate) ubo: Option<vk::Buffer<'ctx>>,
+    pub(crate) render_buckets: BTreeMap<RenderBucketKey, RenderBucket<'ctx>>,
+    pub(crate) processed_objs: HashMap<Handle, ProcessedObject<'ctx>>,
     pub(crate) visited: bool,
 }
 
-impl Scene2dState {
+impl<'ctx> Scene2dState<'ctx> {
     pub(crate) fn new(scene_id: impl Into<String>) -> Self {
         Self {
             scene_id: scene_id.into(),
@@ -40,6 +40,20 @@ impl Scene2dState {
             render_buckets: BTreeMap::new(),
             processed_objs: Default::default(),
             visited: false,
+        }
+    }
+
+    pub fn destroy(self) {
+        for (_, bucket) in self.render_buckets {
+            bucket.destroy();
+        }
+
+        for (_, obj) in self.processed_objs {
+            obj.destroy();
+        }
+
+        if let Some(buf) = self.ubo {
+            buf.destroy();
         }
     }
 }

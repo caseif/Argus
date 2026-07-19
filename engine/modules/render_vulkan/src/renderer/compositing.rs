@@ -1,15 +1,10 @@
-use crate::setup::device::VulkanDevice;
-use crate::setup::instance::VulkanInstance;
-use crate::setup::swapchain::VulkanSwapchain;
 use crate::state::{PerFrameData, RendererState, ViewportState};
-use crate::util::*;
 use argus_render::common::{AttachedViewport, SceneType, Viewport, ViewportCoordinateSpaceMode};
 use argus_render::constants::*;
 use argus_render::twod::get_render_context_2d;
 use argus_util::dirtiable::ValueAndDirtyFlag;
 use argus_util::math::{Matrix4x4, Vector2u};
-use ash::vk;
-use std::mem::MaybeUninit;
+use vk_wrapper::*;
 
 struct TransformedViewport {
     top: i32,
@@ -84,33 +79,26 @@ fn transform_viewport_to_pixels(viewport: &Viewport, resolution: &Vector2u)
     }
 }
 
-fn create_uniform_ds_write<'a>(
-    ds: vk::DescriptorSet,
+fn create_uniform_ds_write<'ctx>(
+    ds: &'ctx vk::DescriptorSet<'ctx>,
     binding: u32,
-    buffer: &VulkanBuffer,
-    buf_info: &'a mut MaybeUninit<vk::DescriptorBufferInfo>,
-) -> vk::WriteDescriptorSet<'a> {
-    buf_info.write(
-        vk::DescriptorBufferInfo::default()
-            .buffer(unsafe { buffer.get_handle() })
-            .offset(0)
-            .range(vk::WHOLE_SIZE)
-    );
-
-    let mut ds_write = vk::WriteDescriptorSet::default()
+    buffer: &'ctx vk::Buffer,
+) -> vk::WriteDescriptorSet<'ctx> {
+    vk::WriteDescriptorSet::default()
         .dst_set(ds)
         .dst_binding(binding)
         .dst_array_element(0)
         .descriptor_type(vk::DescriptorType::UNIFORM_BUFFER)
-        .descriptor_count(1);
-    ds_write.descriptor_count = 1;
-    ds_write.p_buffer_info = buf_info.as_ptr();
-
-    ds_write
+        .descriptor_count(1)
+        .buffer_info([
+            vk::DescriptorBufferInfo::new(buffer)
+                .offset(0)
+                .range(vk::WHOLE_SIZE)
+        ])
 }
 
 fn update_scene_ubo(
-    device: &VulkanDevice,
+    device: &vk::Device,
     scene_type: SceneType,
     scene_id: &str,
     frame_state: &mut PerFrameData,
@@ -138,10 +126,9 @@ fn update_scene_ubo(
     frame_state.scene_ubo_dirty = false;
 }
 
-fn update_viewport_ubo(
-    instance: &VulkanInstance,
-    device: &VulkanDevice,
-    frame_state: &mut PerFrameData,
+fn update_viewport_ubo<'ctx>(
+    device: &'ctx vk::Device<'ctx>,
+    frame_state: &mut PerFrameData<'ctx>,
     view_matrix: &Matrix4x4,
 ) {
     let mut must_update = frame_state.view_matrix_dirty;
@@ -149,12 +136,11 @@ fn update_viewport_ubo(
     let viewport_ubo = frame_state.viewport_ubo
         .get_or_insert_with(|| {
             must_update = true;
-            VulkanBuffer::new(
-                instance,
+            vk::Buffer::new(
                 device,
                 SHADER_UBO_VIEWPORT_LEN as vk::DeviceSize,
                 vk::BufferUsageFlags::UNIFORM_BUFFER,
-                MEM_CLASS_DEVICE_RW,
+                vk::MEM_CLASS_DEVICE_RW,
             )
                 .unwrap()
     });
@@ -169,23 +155,20 @@ fn update_viewport_ubo(
     }
 }
 
-fn create_framebuffers(
-    instance: &VulkanInstance,
-    device: &VulkanDevice,
-    swapchain: &VulkanSwapchain,
-    pipeline: &PipelineInfo,
-    render_pass: vk::RenderPass,
-    desc_pool: vk::DescriptorPool,
-    viewport_state: &mut ViewportState,
+fn create_framebuffers<'state, 'ctx>(
+    swapchain: &vk::Swapchain<'ctx>,
+    pipeline: &vk::Pipeline,
+    render_pass: &vk::RenderPass<'ctx>,
+    desc_pool: &'state vk::DescriptorPool<'ctx>,
+    viewport_state: &'state mut ViewportState<'ctx>,
     size: &Vector2u,
 ) {
     let format = swapchain.image_format;
 
     for frame_state in &mut viewport_state.per_frame {
         let front_images = vec![
-            VulkanImage::create_image_with_view(
-                instance,
-                device,
+            vk::Image::create_with_view(
+                swapchain.get_device(),
                 format,
                 Vector2u::new(size.x, size.y),
                 {
@@ -196,9 +179,8 @@ fn create_framebuffers(
                 },
                 vk::ImageAspectFlags::COLOR,
             ).unwrap(),
-            VulkanImage::create_image_with_view(
-                instance,
-                device,
+            vk::Image::create_with_view(
+                swapchain.get_device(),
                 vk::Format::R32_SFLOAT,
                 Vector2u::new(size.x, size.y),
                 {
@@ -210,41 +192,6 @@ fn create_framebuffers(
                 vk::ImageAspectFlags::COLOR,
             ).unwrap(),
         ];
-        let front_handle = create_framebuffer_for_swapchain_images(
-            device,
-            render_pass,
-            &front_images,
-        ).unwrap();
-
-        let back_images = vec![
-            VulkanImage::create_image_with_view(
-                instance,
-                device,
-                format,
-                Vector2u::new(size.x, size.y),
-                {
-                    vk::ImageUsageFlags::COLOR_ATTACHMENT |
-                    vk::ImageUsageFlags::SAMPLED
-                },
-                vk::ImageAspectFlags::COLOR,
-            ).unwrap(),
-            VulkanImage::create_image_with_view(
-                instance,
-                device,
-                vk::Format::R32_SFLOAT,
-                Vector2u::new(size.x, size.y),
-                {
-                    vk::ImageUsageFlags::COLOR_ATTACHMENT |
-                    vk::ImageUsageFlags::SAMPLED
-                },
-                vk::ImageAspectFlags::COLOR,
-            ).unwrap(),
-        ];
-        let back_handle = create_framebuffer_for_swapchain_images(
-            device,
-            render_pass,
-            &back_images,
-        ).unwrap();
 
         let sampler_info = vk::SamplerCreateInfo::default()
             .mag_filter(vk::Filter::NEAREST)
@@ -263,63 +210,83 @@ fn create_framebuffers(
             .min_lod(0.0)
             .max_lod(0.0);
 
-        let front_sampler = unsafe {
-            device.logical_device
-                .create_sampler(&sampler_info, None)
-                .expect("Failed to create framebuffer sampler")
-        };
-
-        assert!(frame_state.composite_desc_sets.is_empty());
-        frame_state.composite_desc_sets = create_descriptor_sets(
-            device,
+        assert!(frame_state.composite_desc_sets.is_none());
+        frame_state.composite_desc_sets = Some(vk::DescriptorSetGroup::create(
+            swapchain.get_device(),
             desc_pool,
             &pipeline.reflection,
+        ).unwrap());
+
+        let front_sampler = vk::Sampler::create(swapchain.get_device(), &sampler_info)
+            .expect("Failed to create framebuffer sampler");
+
+        let front_fb = vk::Framebuffer::create_from_images(
+            swapchain.get_device(),
+            render_pass,
+            front_images,
+            Some(front_sampler),
         ).unwrap();
 
-        let desc_image_info = vk::DescriptorImageInfo::default()
-            .image_layout(vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL)
-            .image_view(unsafe { front_images[0].get_vk_image_view() })
-            .sampler(front_sampler);
-        let desc_image_infos = [desc_image_info];
+        let back_images = vec![
+            vk::Image::create_with_view(
+                swapchain.get_device(),
+                format,
+                Vector2u::new(size.x, size.y),
+                {
+                    vk::ImageUsageFlags::COLOR_ATTACHMENT |
+                    vk::ImageUsageFlags::SAMPLED
+                },
+                vk::ImageAspectFlags::COLOR,
+            ).unwrap(),
+            vk::Image::create_with_view(
+                swapchain.get_device(),
+                vk::Format::R32_SFLOAT,
+                Vector2u::new(size.x, size.y),
+                {
+                    vk::ImageUsageFlags::COLOR_ATTACHMENT |
+                    vk::ImageUsageFlags::SAMPLED
+                },
+                vk::ImageAspectFlags::COLOR,
+            ).unwrap(),
+        ];
+        let back_fb = vk::Framebuffer::create_from_images(
+            swapchain.get_device(),
+            render_pass,
+            back_images,
+            None,
+        ).unwrap();
 
-        let mut ds_writes = Vec::with_capacity(frame_state.composite_desc_sets.len());
-        for ds in &frame_state.composite_desc_sets {
-            let sampler_ds_write = vk::WriteDescriptorSet::default()
-                .dst_set(*ds)
+        let ds_writes = frame_state.composite_desc_sets.as_ref().unwrap().iter().map(|ds| {
+            vk::WriteDescriptorSet::default()
+                .dst_set(ds)
                 .dst_binding(0)
                 .dst_array_element(0)
                 .descriptor_type(vk::DescriptorType::COMBINED_IMAGE_SAMPLER)
                 .descriptor_count(1)
-                .image_info(&desc_image_infos);
-            ds_writes.push(sampler_ds_write);
-        }
-        unsafe {
-            device.logical_device.update_descriptor_sets(&ds_writes, &[]);
-        }
+                .image_info([
+                    vk::DescriptorImageInfo::default()
+                        .image_layout(vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL)
+                        .image_view(front_fb.get_images().unwrap()[0].get_view().unwrap())
+                        .sampler(front_fb.get_sampler().unwrap())
+                ])
+        }).collect();
+        swapchain.get_device().update_descriptor_sets(ds_writes);
 
         assert!(frame_state.front_fb.is_none());
         assert!(frame_state.back_fb.is_none());
-        frame_state.front_fb = Some(FramebufferGrouping {
-            handle: front_handle,
-            images: front_images,
-            sampler: Some(front_sampler),
-        });
-        frame_state.back_fb = Some(FramebufferGrouping {
-            handle: back_handle,
-            images: back_images,
-            sampler: None,
-        });
+        frame_state.front_fb = Some(front_fb);
+        frame_state.back_fb = Some(back_fb);
     }
 }
 
 pub(crate) fn draw_scene_to_framebuffer(
-    instance: &VulkanInstance,
-    device: &VulkanDevice,
     state: &mut RendererState,
     viewport_id: u32,
     resolution: ValueAndDirtyFlag<Vector2u>,
     cur_frame: usize,
 ) {
+    let device = state.device;
+
     let mut viewport = get_render_context_2d().get_viewport_mut(viewport_id).unwrap();
 
     let viewport_state = state.viewport_states_2d.get_mut(&viewport.get_id()).unwrap();
@@ -344,47 +311,28 @@ pub(crate) fn draw_scene_to_framebuffer(
             None
         };
 
-        unsafe { device.logical_device.queue_wait_idle(device.queues.graphics_family).unwrap() };
+        device.queues.graphics_family.wait_idle().unwrap();
+
         for frame_state in &mut viewport_state.per_frame {
             if let Some(front_fb) = frame_state.front_fb.take() {
                 // delete framebuffers
-                destroy_framebuffer(device, front_fb.handle);
-                for image in front_fb.images {
-                    image.destroy(device);
-                }
-                if let Some(sampler) = front_fb.sampler {
-                    unsafe { device.logical_device.destroy_sampler(sampler, None) };
-                }
+                front_fb.destroy();
             }
             if let Some(back_fb) = frame_state.back_fb.take() {
-                destroy_framebuffer(device, back_fb.handle);
-                for image in back_fb.images {
-                    image.destroy(device);
-                }
-                if let Some(sampler) = back_fb.sampler {
-                    unsafe { device.logical_device.destroy_sampler(sampler, None) };
-                }
+                back_fb.destroy();
             }
-            if !frame_state.composite_desc_sets.is_empty() {
-                destroy_descriptor_sets(
-                    device,
-                    state.desc_pool.unwrap(),
-                    &frame_state.composite_desc_sets,
-                )
-                    .unwrap();
-                frame_state.composite_desc_sets.clear();
+            if let Some(composite_ds_group) = frame_state.composite_desc_sets.take() {
+                composite_ds_group.destroy(state.desc_pool.as_ref().unwrap()).unwrap();
             }
         }
     }
 
     if viewport_state.per_frame[cur_frame].front_fb.is_none() {
         create_framebuffers(
-            instance,
-            device,
             swapchain,
             state.composite_pipeline.as_ref().unwrap(),
-            state.fb_render_pass.unwrap(),
-            state.desc_pool.unwrap(),
+            state.fb_render_pass.as_ref().unwrap(),
+            state.desc_pool.as_ref().unwrap(),
             viewport_state,
             &Vector2u::new(fb_width, fb_height),
         );
@@ -399,15 +347,14 @@ pub(crate) fn draw_scene_to_framebuffer(
         cur_frame_state,
     );
     update_viewport_ubo(
-        instance,
         device,
         cur_frame_state,
         &viewport.get_view_matrix().value,
     );
 
-    begin_oneshot_commands(device, cur_frame_state.command_buf.as_ref().unwrap());
+    cur_frame_state.command_buf.as_ref().unwrap().begin_oneshot_commands();
 
-    let vk_cmd_buf = unsafe { cur_frame_state.command_buf.as_ref().unwrap().get_handle() };
+    let cmd_buf = cur_frame_state.command_buf.as_ref().unwrap();
 
     let color_clear_val = vk::ClearValue {
         color: vk::ClearColorValue { float32: [0.0, 0.0, 0.0, 0.0] },
@@ -420,17 +367,14 @@ pub(crate) fn draw_scene_to_framebuffer(
     let clear_vals = [color_clear_val, light_opac_clear_val];
 
     let rp_info = vk::RenderPassBeginInfo::default()
-        .framebuffer(cur_frame_state.front_fb.as_ref().unwrap().handle)
+        .framebuffer(cur_frame_state.front_fb.as_ref().unwrap())
         .clear_values(&clear_vals)
-        .render_pass(state.fb_render_pass.unwrap())
+        .render_pass(state.fb_render_pass.as_ref().unwrap())
         .render_area(vk::Rect2D {
             extent: vk::Extent2D { width: fb_width, height: fb_height },
             offset: vk::Offset2D { x: 0, y: 0 },
         });
-    unsafe {
-        device.logical_device
-            .cmd_begin_render_pass(vk_cmd_buf, &rp_info, vk::SubpassContents::INLINE);
-    }
+    cmd_buf.cmd_begin_render_pass(&rp_info, vk::SubpassContents::INLINE);
 
     assert!(
         resolution.value.x <= i32::MAX as u32 && resolution.value.y <= i32::MAX as u32,
@@ -471,17 +415,21 @@ pub(crate) fn draw_scene_to_framebuffer(
         let desc_sets = cur_frame_state.material_desc_sets
             .entry(mat.get_prototype().uid.clone())
             .or_insert_with(|| {
-                let sets = create_descriptor_sets(device, state.desc_pool.unwrap(), shader_refl)
+                let sets = vk::DescriptorSetGroup::create(
+                    device,
+                    state.desc_pool.as_ref().unwrap(),
+                    shader_refl,
+                )
                     .unwrap();
 
                 let mut ds_writes = Vec::new();
 
-                let ds = sets[0];
+                let ds = &sets[0];
 
                 let sampler_info = vk::DescriptorImageInfo::default()
                     .image_layout(vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL)
-                    .image_view(unsafe { texture.image.get_vk_image_view() })
-                    .sampler(texture.sampler);
+                    .image_view(texture.image.get_view().as_ref().unwrap())
+                    .sampler(&texture.sampler);
                 let sampler_infos = [sampler_info];
 
                 let sampler_ds_write = vk::WriteDescriptorSet::default()
@@ -489,64 +437,64 @@ pub(crate) fn draw_scene_to_framebuffer(
                     .dst_binding(0)
                     .dst_array_element(0)
                     .descriptor_type(vk::DescriptorType::COMBINED_IMAGE_SAMPLER)
-                    .image_info(&sampler_infos);
+                    .descriptor_count(1)
+                    .image_info(sampler_infos);
 
                 ds_writes.push(sampler_ds_write);
 
                 let global_ubo = state.global_ubo.as_ref().unwrap();
-                let mut buf_info_global = MaybeUninit::uninit();
-                let mut buf_info_scene = MaybeUninit::uninit();
-                let mut buf_info_viewport = MaybeUninit::uninit();
-                let mut buf_info_obj = MaybeUninit::uninit();
                 shader_refl.get_ubo_binding_and_then(
                     SHADER_UBO_GLOBAL,
-                    |binding| {
-                        ds_writes.push(create_uniform_ds_write(ds, binding, global_ubo, &mut buf_info_global));
-                    },
+                    |binding| ds_writes.push(create_uniform_ds_write(
+                        ds,
+                        binding,
+                        global_ubo,
+                    )),
                 );
                 let scene_ubo = cur_frame_state.scene_ubo.as_ref().unwrap();
                 shader_refl.get_ubo_binding_and_then(
                     SHADER_UBO_SCENE,
-                    |binding| {
-                        ds_writes.push(create_uniform_ds_write(ds, binding, scene_ubo, &mut buf_info_scene));
-                    },
+                    |binding| ds_writes.push(create_uniform_ds_write(
+                        ds,
+                        binding,
+                        scene_ubo,
+                    )),
                 );
                 let vp_ubo = cur_frame_state.viewport_ubo.as_ref().unwrap();
                 shader_refl.get_ubo_binding_and_then(
                     SHADER_UBO_VIEWPORT,
-                    |binding| {
-                        ds_writes.push(create_uniform_ds_write(ds, binding, vp_ubo, &mut buf_info_viewport));
-                    },
+                    |binding| ds_writes.push(create_uniform_ds_write(
+                        ds,
+                        binding,
+                        vp_ubo,
+                    )),
                 );
                 let obj_ubo = bucket.ubo_buffer.as_ref().unwrap();
                 shader_refl.get_ubo_binding_and_then(
                     SHADER_UBO_OBJ,
-                    |binding| {
-                        ds_writes.push(create_uniform_ds_write(ds, binding, obj_ubo, &mut buf_info_obj));
-                    },
+                    |binding| ds_writes.push(create_uniform_ds_write(
+                        ds,
+                        binding,
+                        obj_ubo,
+                    )),
                 );
 
-                unsafe { device.logical_device.update_descriptor_sets(&ds_writes, &[]) };
+                device.update_descriptor_sets(ds_writes);
 
                 sets
             },
         );
 
-        let current_desc_set = desc_sets[0];
+        let current_desc_set = &desc_sets[0];
         let current_desc_sets = [current_desc_set];
 
         if last_pipeline.is_none() ||
-            last_pipeline.is_some_and(|last| last == unsafe { pipeline_info.get_handle() }) {
-            unsafe {
-                device.logical_device.cmd_bind_pipeline(
-                    vk_cmd_buf,
-                    vk::PipelineBindPoint::GRAPHICS,
-                    pipeline_info.get_handle(),
-                );
-            }
-            unsafe {
-                last_pipeline = Some(pipeline_info.get_handle());
-            }
+            last_pipeline.is_some_and(|last| last == pipeline_info) {
+            cmd_buf.cmd_bind_pipeline(
+                vk::PipelineBindPoint::GRAPHICS,
+                pipeline_info,
+            );
+            last_pipeline = Some(pipeline_info);
 
             let vk_viewport = vk::Viewport::default()
                 .width(fb_width as f32)
@@ -554,7 +502,7 @@ pub(crate) fn draw_scene_to_framebuffer(
                 .x(-(viewport_px.left as f32))
                 .y(-(viewport_px.top as f32));
             let vk_viewports = [vk_viewport];
-            unsafe { device.logical_device.cmd_set_viewport(vk_cmd_buf, 0, &vk_viewports) };
+            cmd_buf.cmd_set_viewport(0, &vk_viewports);
 
             let vk_scissor = vk::Rect2D::default()
                 .extent(vk::Extent2D {
@@ -566,38 +514,33 @@ pub(crate) fn draw_scene_to_framebuffer(
                     y: 0,
                 });
             let vk_scissors = [vk_scissor];
-            unsafe { device.logical_device.cmd_set_scissor(vk_cmd_buf, 0, &vk_scissors) };
+            cmd_buf.cmd_set_scissor(0, &vk_scissors);
         }
 
-        unsafe {
-            device.logical_device.cmd_bind_descriptor_sets(
-                vk_cmd_buf,
-                vk::PipelineBindPoint::GRAPHICS,
-                pipeline_info.layout,
-                0,
-                &current_desc_sets,
-                &[],
-            );
-        }
+        cmd_buf.cmd_bind_descriptor_sets(
+            vk::PipelineBindPoint::GRAPHICS,
+            &pipeline_info.layout,
+            0,
+            &current_desc_sets,
+            &[],
+        );
 
         //if (tex_handle != last_texture) {
         //    glBindTexture(GL_TEXTURE_2D, tex_handle);
         //    last_texture = tex_handle;
         //}
 
-        unsafe {
-            let vertex_buffers = [
-                bucket.vertex_buffer.as_ref().unwrap().get_handle(),
-                bucket.anim_frame_buffer.as_ref().unwrap().get_handle(),
-            ];
-            let offsets = [0, 0];
-            device.logical_device.cmd_bind_vertex_buffers(vk_cmd_buf, 0, &vertex_buffers, &offsets);
-        }
+        let vertex_buffers = [
+            bucket.vertex_buffer.as_ref().unwrap(),
+            bucket.anim_frame_buffer.as_ref().unwrap(),
+        ];
+        let offsets = [0, 0];
+        cmd_buf.cmd_bind_vertex_buffers(0, &vertex_buffers, &offsets);
 
         //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-        unsafe { device.logical_device.cmd_draw(vk_cmd_buf, vertex_count, 1, 0, 0) };
+        cmd_buf.cmd_draw(vertex_count, 1, 0, 0);
     }
 
     /*for (let postfx : viewport_state.viewport.get_postprocessing_shaders()) {
@@ -631,58 +574,52 @@ pub(crate) fn draw_scene_to_framebuffer(
         glDrawArrays(GL_TRIANGLES, 0, 6);
     }*/
 
-    unsafe { device.logical_device.cmd_end_render_pass(vk_cmd_buf) };
+    cmd_buf.cmd_end_render_pass();
 
     /*if (vkEndCommandBuffer(vk_cmd_buf) != VK_SUCCESS) {
         crash("Failed to record command buffer");
     }*/
-    end_command_buffer(device, cur_frame_state.command_buf.as_ref().unwrap());
-    unsafe {
-        device.logical_device.reset_fences(&[cur_frame_state.composite_fence]).unwrap();
-    }
-    queue_command_buffer_submit(
+    cur_frame_state.command_buf.as_ref().unwrap().end_commands();
+    device.reset_fences(
+        &[&cur_frame_state.composite_fence.unwrap()]
+    )
+        .unwrap();
+    cur_frame_state.command_buf.as_ref().unwrap().queue_submit(
         state.submit_sender.as_ref().unwrap(),
         state.submit_mutex.as_ref(),
-        cur_frame_state.command_buf.clone().unwrap(),
         state.swapchain.as_ref().unwrap(),
-        device.queues.graphics_family,
-        vec![cur_frame_state.rebuild_semaphore],
+        &device.queues.graphics_family,
+        vec![cur_frame_state.rebuild_semaphore.unwrap()],
         vec![vk::PipelineStageFlags::ALL_COMMANDS],
-        vec![cur_frame_state.draw_semaphore],
-        Some(cur_frame_state.composite_fence),
+        vec![cur_frame_state.draw_semaphore.unwrap()],
+        Some(cur_frame_state.composite_fence.unwrap()),
         None,
     )
         .unwrap();
 }
 
-pub(crate) fn draw_framebuffer_to_swapchain(
-    device: &VulkanDevice,
-    frame_state: &mut PerFrameData,
+pub(crate) fn draw_framebuffer_to_swapchain<'ctx>(
+    frame_state: &mut PerFrameData<'ctx>,
     viewport: &Viewport,
-    swapchain: &VulkanSwapchain,
-    pipeline: &PipelineInfo,
-    cmd_buf: CommandBufferInfo,
+    swapchain: &vk::Swapchain<'ctx>,
+    pipeline: &vk::Pipeline<'ctx>,
+    cmd_buf: &vk::CommandBuffer<'ctx>,
 ) {
     let resolution = swapchain.resolution;
 
     let viewport_px = transform_viewport_to_pixels(viewport, &resolution);
 
-    let cur_desc_set = frame_state.composite_desc_sets[0];
-    let cur_desc_sets = [cur_desc_set];
+    let cur_desc_sets = [&frame_state.composite_desc_sets.as_ref().unwrap()[0]];
 
     let fb_width = swapchain.resolution.x;
     let fb_height = swapchain.resolution.y;
-
-    let vk_cmd_buf = unsafe { cmd_buf.get_handle() };
 
     let vk_viewport = vk::Viewport::default()
         .width(fb_width as f32)
         .height(fb_height as f32)
         .x(-(viewport_px.left as f32))
         .y(-(viewport_px.top as f32));
-    unsafe {
-        device.logical_device.cmd_set_viewport(vk_cmd_buf, 0, &[vk_viewport]);
-    }
+    cmd_buf.cmd_set_viewport(0, &[vk_viewport]);
 
     let scissor = vk::Rect2D::default()
         .extent(vk::Extent2D {
@@ -693,22 +630,15 @@ pub(crate) fn draw_framebuffer_to_swapchain(
             x: 0,
             y: 0,
         });
-    unsafe {
-        device.logical_device.cmd_set_scissor(vk_cmd_buf, 0, &[scissor]);
-    }
+    cmd_buf.cmd_set_scissor(0, &[scissor]);
 
-    unsafe {
-        device.logical_device.cmd_bind_descriptor_sets(
-            vk_cmd_buf,
-            vk::PipelineBindPoint::GRAPHICS,
-            pipeline.layout,
-            0,
-            &cur_desc_sets,
-            &[],
-        );
-    }
+    cmd_buf.cmd_bind_descriptor_sets(
+        vk::PipelineBindPoint::GRAPHICS,
+        &pipeline.layout,
+        0,
+        &cur_desc_sets,
+        &[],
+    );
 
-    unsafe {
-        device.logical_device.cmd_draw(vk_cmd_buf, 6, 1, 0, 0);
-    }
+    cmd_buf.cmd_draw(6, 1, 0, 0);
 }

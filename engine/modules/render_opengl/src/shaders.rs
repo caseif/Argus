@@ -31,7 +31,7 @@ use argus_render::common::{Material, Shader, ShaderStage};
 use argus_render::constants::*;
 use argus_resman::{Resource, ResourceIdentifier, ResourceManager};
 use argus_shadertools::glslang::Target;
-use argus_shadertools::shadertools::compile_glsl_to_spirv;
+use argus_shadertools::compile_glsl_to_spirv;
 use crate::LOGGER;
 
 #[derive(Default)]
@@ -63,7 +63,7 @@ fn compile_shaders(shaders: &Vec<Resource>) -> (Vec<GlShaderHandle>, ShaderRefle
     let mut shader_uids: Vec<String> = Vec::new();
     let mut shader_sources: Vec<String> = Vec::new();
     for shader_res in shaders {
-        let shader: &Shader = shader_res.get().unwrap();
+        let shader: &Shader<u8> = shader_res.get().unwrap();
         shader_uids.push(shader.get_uid().to_string());
         shader_sources.push(String::from_utf8_lossy(shader.get_source()).to_string());
     }
@@ -74,7 +74,7 @@ fn compile_shaders(shaders: &Vec<Resource>) -> (Vec<GlShaderHandle>, ShaderRefle
         &shaders
             .iter()
             .map(|shader_res| {
-                let shader: &Shader = shader_res.get().unwrap();
+                let shader: &Shader<u8> = shader_res.get().unwrap();
                 (
                     to_shadertools_stage(shader.get_stage()),
                     String::from_utf8(shader.get_source().to_vec()).unwrap(),
@@ -233,7 +233,7 @@ pub(crate) fn link_program(shader_uids: impl IntoIterator<Item = impl AsRef<str>
             }
         };
 
-        let shader: &Shader = shader_res.get().unwrap();
+        let shader: &Shader<u8> = shader_res.get().unwrap();
 
         if shader.get_stage() == ShaderStage::Vertex {
             have_vert = true;

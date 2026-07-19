@@ -27,7 +27,8 @@ pub struct VkInstance {
 }
 
 impl VkInstance {
-    // SAFETY: handle must be a pointer to a valid Vulkan instance.
+    // SAFETY: `handle` must be a pointer to a valid Vulkan instance which must
+    // outlive the returned object.
     pub unsafe fn from_raw(handle: u64) -> Self {
         Self {
             underlying: Fragile::new(handle as SdlVkInstance),
@@ -35,6 +36,10 @@ impl VkInstance {
     }
 
     pub fn as_raw(&self) -> u64 {
+        self.underlying.get().addr() as u64
+    }
+
+    pub fn into_raw(self) -> u64 {
         self.underlying.get().addr() as u64
     }
 }
@@ -45,6 +50,10 @@ pub struct VkSurfaceKHR {
 
 impl VkSurfaceKHR {
     pub fn as_raw(&self) -> u64 {
+        self.underlying.addr() as u64
+    }
+
+    pub fn into_raw(self) -> u64 {
         self.underlying.addr() as u64
     }
 }
