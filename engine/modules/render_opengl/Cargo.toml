@@ -17,8 +17,7 @@ argus_render = { path = "../render" }
 argus_resman = { path = "../resman" }
 argus_wm = { path = "../wm" }
 
-glslang = "0.6.2"
-num_enum = { workspace = true }
+glslang = { workspace = true }
 spirv-cross2 = { workspace = true, features = ["glsl"] }
 
 [build-dependencies]

@@ -9,7 +9,7 @@ crate-type = ["rlib"]
 
 [dependencies]
 glsl = { workspace = true }
-glslang = "0.6.2"
+glslang = { workspace = true }
 libc = { workspace = true }
 
 [features]

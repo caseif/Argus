@@ -17,7 +17,7 @@ argus_render = { path = "../render" }
 argus_resman = { path = "../resman" }
 argus_wm = { path = "../wm" }
 
-glslang = "0.6.2"
+glslang = { workspace = true }
 vk_wrapper = { path = "../../libs/vk_wrapper" }
 
 [build-dependencies]
