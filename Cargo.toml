@@ -21,7 +21,7 @@ arp = { git = "https://github.com/caseif/libarp-rs", rev = "e435b0e", default-fe
 ash = "0.38.0"
 bindgen = "0.72.1"
 bitflags = "2.13.0"
-boxdd = "0.4.0"
+boxdd = "0.5.0"
 chrono = "0.4.45"
 clap = "4.6.1"
 ctrlc = "3.5.2"
