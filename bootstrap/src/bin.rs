@@ -27,7 +27,11 @@ fn main() {
     let namespace = args.namespace;
 
     let mut log_settings = LogSettings::default();
-    log_settings.prelude = vec![PreludeComponent::Channel, PreludeComponent::Level];
+    log_settings.prelude = vec![
+        PreludeComponent::MonotonicTime,
+        PreludeComponent::Channel,
+        PreludeComponent::Level,
+    ];
     init_logger(log_settings);
 
     info!(LOGGER, "Loading client config...");
