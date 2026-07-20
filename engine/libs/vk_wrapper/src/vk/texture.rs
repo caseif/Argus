@@ -46,7 +46,7 @@ pub fn prepare_texture<'ctx>(
     {
         let bytes_per_pixel = 4;
         let bytes_per_row = width * bytes_per_pixel;
-        let mut mapped = staging_buf.map(device, 0, vk::WHOLE_SIZE, vk::MemoryMapFlags::empty())
+        let mut mapped = staging_buf.map(0, vk::WHOLE_SIZE, vk::MemoryMapFlags::empty())
             .map_err(|err| err.to_string())?;
         for y in 0..height {
             let dst = mapped.offset_mut(y * bytes_per_row);

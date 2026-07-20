@@ -230,8 +230,8 @@ impl Instance {
         };
 
         let phys_device_limits = physical_device.get_properties().limits;
-
-        Ok(vk::Device {
+        
+        let mut dev = vk::Device {
             instance: self,
             underlying: logical_device,
             physical_device,
@@ -244,7 +244,19 @@ impl Instance {
             },
             queue_mutexes: Default::default(),
             limits: phys_device_limits,
-        })
+            allocator: None
+        };
+        let allocator_info = unsafe {
+            vk_mem::AllocatorCreateInfo::new(
+                self.get_underlying(),
+                &dev.get_underlying(),
+                dev.physical_device.get_underlying(),
+            )
+        };
+        dev.allocator = Some(unsafe {
+            vk_mem::Allocator::new(allocator_info).map_err(|err| err.to_string())?
+        });
+        Ok(dev)
     }
 }
 

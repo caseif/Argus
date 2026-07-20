@@ -98,7 +98,6 @@ fn create_uniform_ds_write<'ctx>(
 }
 
 fn update_scene_ubo(
-    device: &vk::Device,
     scene_type: SceneType,
     scene_id: &str,
     frame_state: &mut PerFrameData,
@@ -116,10 +115,10 @@ fn update_scene_ubo(
         let scene_ubo = frame_state.scene_ubo.as_mut().unwrap();
 
         let al_color_arr: [f32; 3] = al_color.into();
-        scene_ubo.write(device, &al_color_arr, SHADER_UNIFORM_SCENE_AL_COLOR_OFF as vk::DeviceSize)
+        scene_ubo.write(&al_color_arr, SHADER_UNIFORM_SCENE_AL_COLOR_OFF as vk::DeviceSize)
             .unwrap();
 
-        scene_ubo.write(device, &[al_level], SHADER_UNIFORM_SCENE_AL_LEVEL_OFF as vk::DeviceSize)
+        scene_ubo.write(&[al_level], SHADER_UNIFORM_SCENE_AL_LEVEL_OFF as vk::DeviceSize)
             .unwrap();
     }
 
@@ -147,7 +146,6 @@ fn update_viewport_ubo<'ctx>(
 
     if must_update {
         viewport_ubo.write(
-            device,
             &view_matrix.cells,
             SHADER_UNIFORM_VIEWPORT_VM_OFF as vk::DeviceSize,
         )
@@ -341,7 +339,6 @@ pub(crate) fn draw_scene_to_framebuffer(
     let cur_frame_state = &mut viewport_state.per_frame[cur_frame];
 
     update_scene_ubo(
-        device,
         scene_state.scene_type,
         &scene_state.scene_id,
         cur_frame_state,

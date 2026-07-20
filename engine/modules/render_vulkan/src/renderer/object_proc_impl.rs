@@ -31,7 +31,6 @@ pub(crate) fn process_object(
         // pipeline should be created by now
         let pipeline = &state.material_pipelines[&object.get_material().get_prototype().uid];
         update_processed_object_2d(
-            device,
             &mut object,
             proc_obj,
             transform,
@@ -88,7 +87,7 @@ pub(crate) fn create_processed_object_2d<'ctx>(
     #[allow(unused_assignments)]
     {
         let mut staging_buf_map =
-            staging_buffer.map(device, 0, vk::WHOLE_SIZE, vk::MemoryMapFlags::empty()).unwrap();
+            staging_buffer.map(0, vk::WHOLE_SIZE, vk::MemoryMapFlags::empty()).unwrap();
         let float_buffer = staging_buf_map.as_slice_mut();
 
         for prim in object.get_primitives() {
@@ -145,7 +144,6 @@ pub(crate) fn create_processed_object_2d<'ctx>(
 }
 
 pub(crate) fn update_processed_object_2d(
-    device: &vk::Device,
     object: &mut RenderObject2d,
     proc_obj: &mut ProcessedObject,
     transform: &Matrix4x4,
@@ -183,7 +181,7 @@ pub(crate) fn update_processed_object_2d(
     {
         let staging_buf = proc_obj.staging_buffer.as_mut().unwrap();
         let mut staging_buf_map =
-            staging_buf.map(device, 0, vk::WHOLE_SIZE, vk::MemoryMapFlags::empty()).unwrap();
+            staging_buf.map(0, vk::WHOLE_SIZE, vk::MemoryMapFlags::empty()).unwrap();
         let float_buffer = staging_buf_map.as_slice_mut();
         for prim in object.get_primitives() {
             for vertex in prim.get_vertices() {

@@ -229,7 +229,7 @@ fn window_event_handler(event: &WindowEvent) {
                 let renderer = VulkanRenderer::new(
                     VK_INSTANCE.get().unwrap(),
                     VK_DEVICE.get().unwrap(),
-                    &window,
+                    &mut window,
                 );
                 RENDERERS.with_borrow_mut(|renderers| {
                     renderers.insert(

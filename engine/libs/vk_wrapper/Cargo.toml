@@ -13,3 +13,4 @@ argus_shadertools = { path = "../../libs/shadertools" }
 argus_util = { path = "../../libs/argus_util" }
 ash = { workspace = true }
 itertools = { workspace = true }
+vk-mem = {  workspace = true }

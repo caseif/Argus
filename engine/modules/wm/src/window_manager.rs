@@ -444,7 +444,7 @@ impl WindowManager {
         let state = window.state.get_mut().unwrap();
         // ignore events for uninitialized windows
         if !state.contains(WindowStateFlags::Created) {
-        return;
+            return;
         }
 
         match event.subtype {

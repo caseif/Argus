@@ -27,13 +27,11 @@ pub(crate) fn fill_buckets<'ctx>(
 
             let uv_stride = [bucket.atlas_stride.x, bucket.atlas_stride.y];
             ubo_buffer.write(
-                device,
                 &uv_stride,
                 SHADER_UNIFORM_OBJ_UV_STRIDE_OFF as vk::DeviceSize,
             ).unwrap();
 
             ubo_buffer.write(
-                device,
                 &[bucket.light_opacity],
                 SHADER_UNIFORM_OBJ_LIGHT_OPACITY_OFF as vk::DeviceSize,
             ).unwrap();
@@ -142,7 +140,6 @@ pub(crate) fn fill_buckets<'ctx>(
         let mut anim_frame_off: usize = 0;
 
         let mut anim_frame_buf = bucket.staging_anim_frame_buffer.as_mut().unwrap().map(
-            device,
             0,
             vk::WHOLE_SIZE,
             vk::MemoryMapFlags::empty(),

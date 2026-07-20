@@ -4,6 +4,7 @@ use crate::vk;
 pub use ash::vk::ImageAspectFlags;
 pub use ash::vk::ImageLayout;
 pub use ash::vk::ImageUsageFlags;
+use vk_mem::Alloc;
 use crate::vk::Wrapper;
 
 pub struct Image<'ctx> {
@@ -12,7 +13,7 @@ pub struct Image<'ctx> {
     size: Vector2u,
     #[allow(dead_code)]
     format: ash::vk::Format,
-    vk_mem: ash::vk::DeviceMemory,
+    vk_mem: vk_mem::Allocation,
     view: Option<ImageView<'ctx>>,
     is_destroyed: bool,
 }
@@ -48,31 +49,19 @@ impl<'ctx> Image<'ctx> {
             .queue_family_indices(&qf_indices)
             .initial_layout(ash::vk::ImageLayout::UNDEFINED);
 
-        let image = {
-            let _queue_lock = device.queue_mutexes.graphics_family.lock().unwrap();
-            device.create_vk_image(&image_info)
-                .map_err(|err| err.to_string())?
+        let alloc_info = vk_mem::AllocationCreateInfo {
+            flags: vk_mem::AllocationCreateFlags::empty(),
+            usage: vk_mem::MemoryUsage::Auto,
+            required_flags: Default::default(),
+            preferred_flags: Default::default(),
+            memory_type_bits: 0,
+            user_data: 0,
+            priority: 0.0,
         };
 
-        let mem_reqs = unsafe { device.get_underlying().get_image_memory_requirements(image) };
-
-        let Some(mem_type) = vk::find_memory_type(
-            device,
-            mem_reqs.memory_type_bits,
-            mem_reqs.size,
-            vk::MEM_CLASS_DEVICE_RO
-        )
-        else {
-            return Err("Failed to find suitable memory type for vkImage".to_owned());
-        };
-        let alloc_info = ash::vk::MemoryAllocateInfo::default()
-            .allocation_size(mem_reqs.size)
-            .memory_type_index(mem_type);
-
-        let image_memory = unsafe { device.get_underlying().allocate_memory(&alloc_info, None) }
-            .map_err(|err| err.to_string())?;
-
-        unsafe { device.get_underlying().bind_image_memory(image, image_memory, 0) }
+        let (image, image_memory) = unsafe {
+            device.allocator.as_ref().unwrap().create_image(&image_info, &alloc_info)
+        }
             .map_err(|err| err.to_string())?;
 
         Ok(Self {
@@ -104,7 +93,7 @@ impl<'ctx> Image<'ctx> {
                 view.destroy();
             }
             self.device.get_underlying().destroy_image(self.underlying, None);
-            self.device.get_underlying().free_memory(self.vk_mem, None);
+            self.device.allocator.as_ref().unwrap().free_memory(&mut self.vk_mem);
         }
         self.is_destroyed = true;
     }

@@ -1,20 +1,17 @@
 use std::cell::RefCell;
 use std::slice;
-use std::sync::atomic::{AtomicU64, Ordering};
-use ash::prelude::VkResult;
 use ash::vk::Handle;
 use crate::vk;
-use crate::vk::{find_memory_type, Wrapper};
+use crate::vk::Wrapper;
 
 pub use ash::vk::BufferUsageFlags;
 pub use ash::vk::MemoryMapFlags;
-
-static ALLOCATION_COUNT: AtomicU64 = AtomicU64::new(0);
+use vk_mem::{Alloc, AllocationCreateFlags, MemoryUsage};
 
 pub struct Buffer<'ctx> {
     device: &'ctx vk::Device<'ctx>,
     underlying: ash::vk::Buffer,
-    mem: ash::vk::DeviceMemory,
+    mem: vk_mem::Allocation,
     size: ash::vk::DeviceSize,
     usage_flags: ash::vk::BufferUsageFlags,
     is_map_in_use: RefCell<bool>,
@@ -99,41 +96,15 @@ impl<'ctx> Buffer<'ctx> {
             .usage(usage)
             .sharing_mode(ash::vk::SharingMode::EXCLUSIVE);
 
-        // SAFETY:
-        // UID-vkCreateBuffer-device-parameter:
-        //   The device object is guaranteed to contain a valid handle.
-        // VUID-vkCreateBuffer-device-09664:
-        //   Device creation can only succeed if both video and transfer
-        //   queue families are supported.
-        // VUID-vkCreateBuffer-flags-00911,
-        // VUID-vkCreateBuffer-flags-09383,
-        // VUID-vkCreateBuffer-flags-09384:
-        //   We do not set any buffer creation flags.
-        // VUID-vkCreateBuffer-pNext-06387:
-        //   We do not use FUCHSIA extensions.
-        let buffer = unsafe {
-            device.get_underlying().create_buffer(&buffer_info, None)
-                .map_err(|err| err.to_string())?
+        let alloc_info = vk_mem::AllocationCreateInfo {
+            flags: AllocationCreateFlags::MAPPED | AllocationCreateFlags::HOST_ACCESS_RANDOM,
+            usage: MemoryUsage::Auto,
+            required_flags: props,
+            preferred_flags: ash::vk::MemoryPropertyFlags::empty(),
+            memory_type_bits: 0,
+            user_data: 0,
+            priority: 0.0,
         };
-
-        // SAFETY: We just created the buffer handle so we know it's valid and
-        // was created on the same device.
-        let mem_reqs = unsafe { device.get_underlying().get_buffer_memory_requirements(buffer) };
-
-        let Some(mem_type_index) =
-            find_memory_type(device, mem_reqs.memory_type_bits, mem_reqs.size, props)
-        else {
-            return Err("Failed to find suitable memory type for buffer".to_owned());
-        };
-        let alloc_info = ash::vk::MemoryAllocateInfo::default()
-            .allocation_size(mem_reqs.size)
-            .memory_type_index(mem_type_index);
-
-        if ALLOCATION_COUNT.fetch_add(1, Ordering::Relaxed) >
-            device.limits.max_memory_allocation_count as u64 {
-            ALLOCATION_COUNT.fetch_sub(1, Ordering::Relaxed);
-            return Err("Reached max memory allocation count".to_owned());
-        }
 
         // SAFETY:
         // VUID-vkAllocateMemory-pAllocateInfo-01713:
@@ -147,29 +118,10 @@ impl<'ctx> Buffer<'ctx> {
         // VUID-vkAllocateMemory-maxMemoryAllocationCount-04101:
         //   We check total allocations above and return an error if the device
         //   limit would otherwise be exceeded.
-        let buffer_mem = unsafe {
-            device.get_underlying().allocate_memory(&alloc_info, None)
+        let (buffer, buffer_mem) = unsafe {
+            device.allocator.as_ref().unwrap().create_buffer(&buffer_info, &alloc_info)
                 .map_err(|err| err.to_string())?
         };
-
-        // SAFETY:
-        // VUID-vkBindBufferMemory-buffer-07459:
-        //   We just created the buffer so it cannot yet have been bound.
-        // VUID-vkBindBufferMemory-buffer-01030:
-        //   We do not use sparse memory.
-        // VUID-vkBindBufferMemory-memoryOffset-01031:
-        //   Offset is zero and size is non-zero.
-        // VUID-vkBindBufferMemory-memory-01035:
-        // VUID-vkBindBufferMemory-size-01037:
-        //   find_memory_type guarantees the returned memory type meets the
-        //   requirements of the buffer.
-        // VUID-vkBindBufferMemory-memoryOffset-01036:
-        //   Offset is zero and therefore satisfies all possible alignments.
-        // All other constraints are related to extensions that are not in use.
-        unsafe {
-            device.get_underlying().bind_buffer_memory(buffer, buffer_mem, 0)
-                .map_err(|err| err.to_string())?;
-        }
 
         let mut buf = Self {
             device,
@@ -198,12 +150,7 @@ impl<'ctx> Buffer<'ctx> {
             // VUID-vkMapMemory-flags-09568:
             //   We do not pass any flags.
             let buffer_ptr = unsafe {
-                device.get_underlying().map_memory(
-                    buf.mem,
-                    0,
-                    vk::WHOLE_SIZE,
-                    vk::MemoryMapFlags::empty(),
-                )
+                device.allocator.as_ref().unwrap().map_memory(&mut buf.mem)
                     .map_err(|err| err.to_string())?
             };
             buf.persistent_map = Some(buffer_ptr.cast());
@@ -218,11 +165,10 @@ impl<'ctx> Buffer<'ctx> {
 
     pub fn map(
         &mut self,
-        device: &vk::Device,
         offset: vk::DeviceSize,
         size: vk::DeviceSize,
         flags: vk::MemoryMapFlags,
-    ) -> VkResult<MappedBuffer<'_>> {
+    ) -> Result<MappedBuffer<'_>, String> {
         assert!(!self.underlying.is_null());
         assert!(!*self.is_map_in_use.borrow(), "Buffer is already mapped elsewhere");
         assert!(offset < self.size);
@@ -264,7 +210,9 @@ impl<'ctx> Buffer<'ctx> {
             // VUID-vkMapMemory-flags-09568:
             //   We assert above that flags does not contain PLACED_BIT_EXT.
             unsafe {
-                device.get_underlying().map_memory(self.mem, offset, size, flags)?.cast()
+                self.device.allocator.as_ref().unwrap().map_memory(&mut self.mem)
+                    .map_err(|err| err.to_string())?
+                    .byte_offset(offset as isize)
             }
         };
 
@@ -332,10 +280,9 @@ impl<'ctx> Buffer<'ctx> {
 
     pub fn write<T: Copy>(
         &mut self,
-        device: &vk::Device,
         src: &[T],
         dst_offset: vk::DeviceSize,
-    ) -> VkResult<()> {
+    ) -> Result<(), String> {
         assert_eq!(
             self.size % size_of::<T>() as vk::DeviceSize,
             0,
@@ -348,7 +295,6 @@ impl<'ctx> Buffer<'ctx> {
         assert!(!*self.is_map_in_use.borrow(), "Buffer is currently mapped elsewhere");
 
         let mut mapped = self.map(
-            device,
             dst_offset,
             size_of_val(src) as vk::DeviceSize,
             vk::MemoryMapFlags::empty(),
@@ -364,7 +310,7 @@ impl<'ctx> Buffer<'ctx> {
 
         if self.persistent_map.is_some() {
             self.persistent_map = None;
-            unsafe { self.device.get_underlying().unmap_memory(self.mem) };
+            unsafe { self.device.allocator.as_ref().unwrap().unmap_memory(&mut self.mem) }
         }
 
         // SAFETY:
@@ -379,8 +325,7 @@ impl<'ctx> Buffer<'ctx> {
         // SAFETY:
         // VUID-vkFreeMemory-memory-00677:
         //   TODO: Not provable at this time.
-        unsafe { self.device.get_underlying().free_memory(self.mem, None); }
-        ALLOCATION_COUNT.fetch_sub(1, Ordering::Relaxed);
+        unsafe { self.device.allocator.as_ref().unwrap().free_memory(&mut self.mem); }
 
         self.is_destroyed = true;
     }

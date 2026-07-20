@@ -39,7 +39,7 @@ impl<'dev, 'inst> VulkanRenderer<'dev, 'inst> {
     pub(crate) fn new(
         vk_instance: &'inst vk::Instance,
         vk_device: &'dev vk::Device<'inst>,
-        window: &Window,
+        window: &mut Window,
     )
         -> Self {
         let mut renderer = Self {
@@ -56,7 +56,7 @@ impl<'dev, 'inst> VulkanRenderer<'dev, 'inst> {
         self.is_initted
     }
 
-    pub(crate) fn init(&mut self, window: &Window) {
+    pub(crate) fn init(&mut self, window: &mut Window) {
         let surface = {
             // SAFETY: `self` can only be created via ::new which accepts a
             // Vulkan instance via a safe vk::Instance object, and the returned
@@ -150,7 +150,6 @@ impl<'dev, 'inst> VulkanRenderer<'dev, 'inst> {
         ).unwrap();
         {
             let mut composite_vbo_mapped = composite_vbo.map(
-                &self.vk_device,
                 0,
                 size_of_val(FRAME_QUAD_VERTEX_DATA) as vk::DeviceSize,
                 vk::MemoryMapFlags::empty(),
@@ -262,9 +261,7 @@ impl<'dev, 'inst> VulkanRenderer<'dev, 'inst> {
         }
     }
 
-    pub(crate) fn render(&mut self, window: &mut Window, _delta: Duration) {
-        let cur_frame = self.state.cur_frame.load(Ordering::Acquire);
-
+    fn prepare_render(&mut self, window: &mut Window, cur_frame: usize) {
         /*static auto last_print = std::chrono::high_resolution_clock::now();
         static int64_t time_samples = 0;
 
@@ -313,8 +310,6 @@ impl<'dev, 'inst> VulkanRenderer<'dev, 'inst> {
             //state.present_sem[state.cur_frame].wait();
         }
 
-        let sc_image_index = get_next_image(&self.vk_device, &mut self.state, cur_frame);
-
         //timer_start = std::chrono::high_resolution_clock::now();
         record_scene_rebuild(
             window,
@@ -324,7 +319,20 @@ impl<'dev, 'inst> VulkanRenderer<'dev, 'inst> {
         submit_scene_rebuild(&self.vk_device, &mut self.state, cur_frame);
         //timer_end = std::chrono::high_resolution_clock::now();
         //rebuild_time += (timer_end - timer_start);
+    }
 
+    pub(crate) fn render(&mut self, window: &mut Window, _delta: Duration) {
+        if !self.is_initted {
+            return;
+        }
+
+        let cur_frame = self.state.cur_frame.load(Ordering::Acquire);
+
+        let sc_image_index = get_next_image(&self.vk_device, &mut self.state, cur_frame);
+
+        self.prepare_render(window, cur_frame);
+
+        let resolution = window.get_resolution();
         let canvas = window.get_canvas_mut().unwrap()
             .as_any_mut().downcast_mut::<RenderCanvas>().unwrap();
         let viewport_ids = canvas.get_viewports_2d();
@@ -433,9 +441,11 @@ impl<'dev, 'inst> VulkanRenderer<'dev, 'inst> {
             if force || camera_transform.dirty {
                 viewport.update_view_state(&resolution, ViewportYAxisConvention::TopDown);
 
-                for per_frame in &mut self.state.viewport_states_2d
-                    .get_mut(&viewport.get_id()).unwrap().per_frame {
-                    per_frame.view_matrix_dirty = true;
+                if let Some(viewport_state) = self.state.viewport_states_2d
+                    .get_mut(&viewport.get_id()) {
+                    for per_frame in &mut viewport_state.per_frame {
+                        per_frame.view_matrix_dirty = true;
+                    }
                 }
             }
         }

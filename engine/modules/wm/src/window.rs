@@ -290,11 +290,6 @@ impl Window {
 
                 let handle = self.handle.as_mut().unwrap().get_mut();
 
-                let disp_off = target_display.get_position();
-                handle.set_position(
-                    WindowPos::Positioned(disp_off.x),
-                    WindowPos::Positioned(disp_off.y),
-                );
                 handle.set_fullscreen(true).unwrap();
                 let new_mode = match display_mode.value {
                     Some(mode) => {
@@ -343,6 +338,14 @@ impl Window {
                 handle.set_size(windowed_res.value.x, windowed_res.value.y).unwrap();
 
                 self.cur_resolution.write().unwrap().set(windowed_res.value);
+
+                dispatch_event(WindowEvent {
+                    subtype: WindowEventType::Resize,
+                    window: self.id.clone(),
+                    resolution: Some(windowed_res.value),
+                    position: None,
+                    delta: None,
+                });
             }
 
             if position.dirty {
@@ -351,6 +354,14 @@ impl Window {
                 let pos_y: i32 = target_disp.get_position().y + position.value.y;
                 self.handle.as_mut().unwrap().get_mut()
                     .set_position(WindowPos::Positioned(pos_x), WindowPos::Positioned(pos_y));
+
+                dispatch_event(WindowEvent {
+                    subtype: WindowEventType::Move,
+                    window: self.id.clone(),
+                    resolution: None,
+                    position: Some(position.value),
+                    delta: None,
+                });
             }
         }
 

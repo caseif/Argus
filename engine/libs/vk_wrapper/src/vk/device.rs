@@ -26,6 +26,7 @@ pub struct Device<'inst> {
     pub queues: vk::QueueFamilies<'inst>,
     pub queue_mutexes: vk::QueueMutexes,
     pub limits: ash::vk::PhysicalDeviceLimits,
+    pub allocator: Option<vk_mem::Allocator>,
 }
 
 impl<'inst> Device<'inst> {
@@ -44,12 +45,6 @@ impl<'inst> Device<'inst> {
     #[allow(dead_code)]
     pub fn destroy(self) {
         unsafe { self.underlying.destroy_device(None); }
-    }
-
-    pub(crate) fn create_vk_image(&self, create_info: &ash::vk::ImageCreateInfo)
-        -> Result<ash::vk::Image, String> {
-        unsafe { self.underlying.create_image(create_info, None) }
-            .map_err(|err| err.to_string())
     }
 
     pub fn wait_idle(&self) -> Result<(), String> {
