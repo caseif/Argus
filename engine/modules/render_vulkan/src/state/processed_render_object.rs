@@ -40,7 +40,7 @@ impl<'ctx> ProcessedObject<'ctx> {
             anim_frame_updated: false,
         }
     }
-    
+
     pub(crate) fn destroy(self) {
         if let Some(buf) = self.staging_buffer {
             buf.destroy();

@@ -52,6 +52,11 @@ impl<'inst> Device<'inst> {
             .map_err(|err| err.to_string())
     }
 
+    pub fn wait_idle(&self) -> Result<(), String> {
+        unsafe { self.underlying.device_wait_idle() }
+            .map_err(|err| err.to_string())
+    }
+
     pub fn wait_for_fences(&self, fences: &[&vk::Fence<'_>], wait_all: bool, timeout: u64)
                            -> Result<(), String> {
         unsafe {

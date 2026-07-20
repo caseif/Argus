@@ -368,10 +368,6 @@ impl<'ctx> Buffer<'ctx> {
         }
 
         // SAFETY:
-        // VUID-vkFreeMemory-memory-00677:
-        //   TODO: Not provable at this time.
-        unsafe { self.device.get_underlying().free_memory(self.mem, None); }
-        // SAFETY:
         // VUID-vkDestroyBuffer-buffer-00922:
         //   TODO: Not provable at this time.
         // VUID-vkDestroyBuffer-buffer-00923:
@@ -379,8 +375,13 @@ impl<'ctx> Buffer<'ctx> {
         // VUID-vkDestroyBuffer-buffer-00924:
         //   We do not use explicit allocation callbacks and we pass None here.
         unsafe { self.device.get_underlying().destroy_buffer(self.underlying, None); }
+
+        // SAFETY:
+        // VUID-vkFreeMemory-memory-00677:
+        //   TODO: Not provable at this time.
+        unsafe { self.device.get_underlying().free_memory(self.mem, None); }
         ALLOCATION_COUNT.fetch_sub(1, Ordering::Relaxed);
-        
+
         self.is_destroyed = true;
     }
 }

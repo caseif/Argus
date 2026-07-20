@@ -189,7 +189,7 @@ impl<'ctx> Swapchain<'ctx> {
     ) -> Result<Swapchain<'ctx>, String> {
         let device = self.device;
 
-        unsafe { device.get_underlying().device_wait_idle() }
+        device.wait_idle()
             .map_err(|err| format!("vkDeviceWaitIdle failed: {}", err))?;
 
         let color_att_loc = self.color_att_loc;
