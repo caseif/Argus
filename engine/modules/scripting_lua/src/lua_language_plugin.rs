@@ -316,7 +316,7 @@ fn wrap_param(
 
                 create_bool_object_wrapper(
                     param_def,
-                    context.is_boolean(param_index),
+                    context.get_boolean(param_index),
                 )
             }
             FundamentalType::String => {
