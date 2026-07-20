@@ -433,9 +433,11 @@ impl<'dev, 'inst> VulkanRenderer<'dev, 'inst> {
             if force || camera_transform.dirty {
                 viewport.update_view_state(&resolution, ViewportYAxisConvention::TopDown);
 
-                for per_frame in &mut self.state.viewport_states_2d
-                    .get_mut(&viewport.get_id()).unwrap().per_frame {
-                    per_frame.view_matrix_dirty = true;
+                if let Some(viewport_state) = self.state.viewport_states_2d
+                    .get_mut(&viewport.get_id()) {
+                    for per_frame in &mut viewport_state.per_frame {
+                        per_frame.view_matrix_dirty = true;
+                    }
                 }
             }
         }
