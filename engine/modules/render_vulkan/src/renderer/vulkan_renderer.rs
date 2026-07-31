@@ -6,7 +6,7 @@ use crate::state::{RendererState, Scene2dState, ViewportState};
 use crate::defines::*;
 use argus_logging::debug;
 use argus_render::common::{AttachedViewport, Material, RenderCanvas, SceneType, TextureData};
-use argus_render::constants::{SHADER_UBO_GLOBAL_LEN, SHADER_UBO_SCENE_LEN};
+use argus_render::constants::{SHADER_FB_FRAG, SHADER_FB_VERT, SHADER_UBO_GLOBAL_LEN, SHADER_UBO_SCENE_LEN};
 use argus_render::twod::{get_render_context_2d, ViewportYAxisConvention};
 use argus_resman::{ResourceIdentifier, ResourceManager};
 use argus_util::math::Vector2u;
@@ -136,7 +136,7 @@ impl<'dev, 'inst> VulkanRenderer<'dev, 'inst> {
 
         self.state.composite_pipeline = Some(create_pipeline_for_shaders(
             &self.vk_device,
-            &[&FB_SHADER_VERT_PATH, &FB_SHADER_FRAG_PATH],
+            &[&SHADER_FB_VERT, &SHADER_FB_FRAG],
             &self.state.viewport_size,
             &swapchain.composite_render_pass,
         ).unwrap());

@@ -42,6 +42,3 @@ pub(crate) const FB_SHADER_ATTRIB_ANIM_FRAME_LOC: u32 = 2;
 pub(crate) const SHADOW_RAYS_COUNT: usize = 720;
 
 pub(crate) const SHADER_IMAGE_SHADOWMAP_LEN: usize = SHADOW_RAYS_COUNT * LIGHTS_MAX as usize * 4;
-
-pub(crate) const FB_SHADER_VERT_PATH: &str = "argus:shader/opengl/framebuffer_vert";
-pub(crate) const FB_SHADER_FRAG_PATH: &str = "argus:shader/opengl/framebuffer_frag";

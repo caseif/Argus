@@ -78,6 +78,9 @@ pub const SHADER_UNIFORM_OBJ_LIGHT_OPACITY_OFF: u32 = 8;
 pub const SHADER_STD_VERT: &str = "argus:render/shader/std_vert";
 pub const SHADER_STD_FRAG: &str = "argus:render/shader/std_frag";
 
+pub const SHADER_FB_VERT: &str = "argus:render/shader/framebuffer_vert";
+pub const SHADER_FB_FRAG: &str = "argus:render/shader/framebuffer_frag";
+
 pub const SHADER_SHADOWMAP_VERT: &str = "argus:render/shader/shadowmap_vert";
 pub const SHADER_SHADOWMAP_FRAG: &str = "argus:render/shader/shadowmap_frag";
 

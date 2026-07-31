@@ -20,7 +20,6 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::{env, fs};
 use argus_build_util::rerun::run_if_changed;
-use argus_build_util::resource::pack_builtin_resources;
 
 const RUBY_EXE: &str = "ruby";
 #[cfg(windows)]
@@ -42,7 +41,8 @@ fn main() {
         generate_opengl_bindings(&gl_profile_path)
     });
 
-    pack_builtin_resources();
+    // currently all required resources are owned by the common render module
+    //pack_builtin_resources();
 }
 
 fn generate_opengl_bindings(profile_path: &Path) {

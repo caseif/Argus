@@ -17,6 +17,3 @@ pub const SHADER_ATTRIB_ANIM_FRAME_FORMAT: vk::Format = vk::Format::R32G32_SFLOA
 
 pub const SHADER_OUT_COLOR_LOC: u32 = 0;
 pub const SHADER_OUT_LIGHT_OPACITY_LOC: u32 = 1;
-
-pub const FB_SHADER_VERT_PATH: &str = "argus:shader/vk/framebuffer_vert";
-pub const FB_SHADER_FRAG_PATH: &str = "argus:shader/vk/framebuffer_frag";

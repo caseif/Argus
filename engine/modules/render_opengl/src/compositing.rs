@@ -425,7 +425,7 @@ pub(crate) fn draw_scene_2d_to_framebuffer(
 
         let postfx_program = postfx_programs
             .entry(postfx.clone())
-            .or_insert_with_key(|postfx| link_program([FB_SHADER_VERT_PATH, postfx.as_str()]));
+            .or_insert_with_key(|postfx| link_program([SHADER_FB_VERT, postfx.as_str()]));
 
         swap(&mut fb_front, &mut fb_back);
         swap(&mut color_buf_front, &mut color_buf_back);
@@ -1025,7 +1025,7 @@ pub(crate) fn draw_framebuffer_to_screen(
 }
 
 pub(crate) fn setup_framebuffer(state: &mut RendererState) {
-    let frame_program = link_program([FB_SHADER_VERT_PATH, FB_SHADER_FRAG_PATH]);
+    let frame_program = link_program([SHADER_FB_VERT, SHADER_FB_FRAG]);
 
     if !frame_program
         .reflection

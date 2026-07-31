@@ -16,8 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use argus_build_util::resource::pack_builtin_resources;
-
 fn main() {
-    pack_builtin_resources();
+    // currently all required resources are owned by the common render module
+    //pack_builtin_resources();
 }

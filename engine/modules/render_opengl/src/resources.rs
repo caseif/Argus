@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-pub(crate) static RESOURCES_PACK: &[u8] = include_bytes!(
-    concat!(env!("OUT_DIR"), "/generated/arp/resources.arp")
-);
+// currently all required resources are owned by the common render module
+pub(crate) static RESOURCES_PACK: &[u8] = &[];
+//pub(crate) static RESOURCES_PACK: &[u8] = include_bytes!(
+//    concat!(env!("OUT_DIR"), "/generated/arp/resources.arp")
+//);
