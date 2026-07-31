@@ -28,8 +28,7 @@ pub(crate) struct PerFrameData<'ctx> {
 
     pub(crate) composite_fence: Option<vk::Fence<'ctx>>,
 
-    pub(crate) front_fb: Option<vk::Framebuffer<'ctx>>,
-    pub(crate) back_fb: Option<vk::Framebuffer<'ctx>>,
+    pub(crate) composite_fb: Option<vk::Framebuffer<'ctx>>,
 
     pub(crate) scene_ubo: Option<vk::Buffer<'ctx>>,
     pub(crate) scene_ubo_dirty: bool,
@@ -67,10 +66,7 @@ impl<'ctx> ViewportState<'ctx> {
     pub fn destroy(self, desc_pool: &vk::DescriptorPool, cmd_pool: &vk::CommandPool) {
         for mut frame_state in self.per_frame {
             frame_state.composite_fence.unwrap().destroy();
-            if let Some(fb) = frame_state.front_fb.take() {
-                fb.destroy();
-            }
-            if let Some(fb) = frame_state.back_fb.take() {
+            if let Some(fb) = frame_state.composite_fb.take() {
                 fb.destroy();
             }
 

@@ -218,40 +218,11 @@ fn create_framebuffers<'state, 'ctx>(
         let front_sampler = vk::Sampler::create(swapchain.get_device(), &sampler_info)
             .expect("Failed to create framebuffer sampler");
 
-        let front_fb = vk::Framebuffer::create_from_images(
+        let composite_fb = vk::Framebuffer::create_from_images(
             swapchain.get_device(),
             render_pass,
             front_images,
             Some(front_sampler),
-        ).unwrap();
-
-        let back_images = vec![
-            vk::Image::create_with_view(
-                swapchain.get_device(),
-                format,
-                Vector2u::new(size.x, size.y),
-                {
-                    vk::ImageUsageFlags::COLOR_ATTACHMENT |
-                    vk::ImageUsageFlags::SAMPLED
-                },
-                vk::ImageAspectFlags::COLOR,
-            ).unwrap(),
-            vk::Image::create_with_view(
-                swapchain.get_device(),
-                vk::Format::R32_SFLOAT,
-                Vector2u::new(size.x, size.y),
-                {
-                    vk::ImageUsageFlags::COLOR_ATTACHMENT |
-                    vk::ImageUsageFlags::SAMPLED
-                },
-                vk::ImageAspectFlags::COLOR,
-            ).unwrap(),
-        ];
-        let back_fb = vk::Framebuffer::create_from_images(
-            swapchain.get_device(),
-            render_pass,
-            back_images,
-            None,
         ).unwrap();
 
         let ds_writes = frame_state.composite_desc_sets.as_ref().unwrap().iter().map(|ds| {
@@ -264,16 +235,14 @@ fn create_framebuffers<'state, 'ctx>(
                 .image_info([
                     vk::DescriptorImageInfo::default()
                         .image_layout(vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL)
-                        .image_view(front_fb.get_images().unwrap()[0].get_view().unwrap())
-                        .sampler(front_fb.get_sampler().unwrap())
+                        .image_view(composite_fb.get_images().unwrap()[0].get_view().unwrap())
+                        .sampler(composite_fb.get_sampler().unwrap())
                 ])
         }).collect();
         swapchain.get_device().update_descriptor_sets(ds_writes);
 
-        assert!(frame_state.front_fb.is_none());
-        assert!(frame_state.back_fb.is_none());
-        frame_state.front_fb = Some(front_fb);
-        frame_state.back_fb = Some(back_fb);
+        assert!(frame_state.composite_fb.is_none());
+        frame_state.composite_fb = Some(composite_fb);
     }
 }
 
@@ -312,12 +281,9 @@ pub(crate) fn draw_scene_to_framebuffer(
         device.queues.graphics_family.wait_idle().unwrap();
 
         for frame_state in &mut viewport_state.per_frame {
-            if let Some(front_fb) = frame_state.front_fb.take() {
+            if let Some(front_fb) = frame_state.composite_fb.take() {
                 // delete framebuffers
                 front_fb.destroy();
-            }
-            if let Some(back_fb) = frame_state.back_fb.take() {
-                back_fb.destroy();
             }
             if let Some(composite_ds_group) = frame_state.composite_desc_sets.take() {
                 composite_ds_group.destroy(state.desc_pool.as_ref().unwrap()).unwrap();
@@ -325,7 +291,7 @@ pub(crate) fn draw_scene_to_framebuffer(
         }
     }
 
-    if viewport_state.per_frame[cur_frame].front_fb.is_none() {
+    if viewport_state.per_frame[cur_frame].composite_fb.is_none() {
         create_framebuffers(
             swapchain,
             state.composite_pipeline.as_ref().unwrap(),
@@ -364,7 +330,7 @@ pub(crate) fn draw_scene_to_framebuffer(
     let clear_vals = [color_clear_val, light_opac_clear_val];
 
     let rp_info = vk::RenderPassBeginInfo::default()
-        .framebuffer(cur_frame_state.front_fb.as_ref().unwrap())
+        .framebuffer(cur_frame_state.composite_fb.as_ref().unwrap())
         .clear_values(&clear_vals)
         .render_pass(state.fb_render_pass.as_ref().unwrap())
         .render_area(vk::Rect2D {
