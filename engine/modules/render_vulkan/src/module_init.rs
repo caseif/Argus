@@ -13,7 +13,6 @@ use argus_wm::{vk_create_surface, vk_get_required_instance_extensions, vk_is_sup
 use vk_wrapper::vk;
 use crate::loader::ShaderLoader;
 use crate::renderer::VulkanRenderer;
-use crate::resources::RESOURCES_PACK;
 use crate::LOGGER;
 
 const BACKEND_ID: &str = "vulkan";
@@ -305,10 +304,6 @@ pub fn update_lifecycle_render_vulkan(stage: LifecycleStage) {
         }
         LifecycleStage::Init => {
             EngineManager::instance().add_render_init_callback(on_render_init, Ordering::Standard);
-        }
-        LifecycleStage::PostInit => {
-            ResourceManager::instance().add_memory_package(RESOURCES_PACK)
-                .expect("Failed to load in-memory resources for render_vulkan");
         }
         LifecycleStage::Deinit => {
             if !IS_BACKEND_ACTIVE.load(atomic::Ordering::Relaxed) {

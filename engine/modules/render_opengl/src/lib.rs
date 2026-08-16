@@ -27,7 +27,6 @@ pub(crate) mod util;
 pub(crate) mod bucket_proc;
 pub(crate) mod gl_renderer;
 pub(crate) mod materials;
-pub(crate) mod resources;
 pub(crate) mod shaders;
 pub(crate) mod textures;
 mod compositing;
@@ -45,7 +44,6 @@ use argus_wm::*;
 use crate::aglet::{AgletError, agletLoadCapabilities};
 use crate::gl_renderer::GlRenderer;
 use crate::loader::ShaderLoader;
-use crate::resources::RESOURCES_PACK;
 
 const BACKEND_ID: &str = "opengl";
 
@@ -247,7 +245,4 @@ fn on_render_init() {
         TargetThread::Render,
         Ordering::Standard
     );
-
-    ResourceManager::instance().add_memory_package(RESOURCES_PACK)
-        .expect("Failed to load in-memory resources for render_opengl");
 }

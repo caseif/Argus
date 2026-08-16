@@ -9,5 +9,3 @@ pub(crate) mod loader;
 pub(crate) mod module_init;
 pub(crate) mod renderer;
 pub(crate) mod state;
-
-mod resources;
