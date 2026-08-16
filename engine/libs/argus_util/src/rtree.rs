@@ -33,17 +33,17 @@ impl<T: PartialEq + Eq + Copy + Hash> QuadTree<T> {
         self.tree.insert(item);
         self.hashes.insert(Self::hash_item(&item.handle));
     }
-    
+
     pub fn update(&mut self, key: &T, aabb: math::AABB) {
         self.remove(key);
         self.insert(QuadTreeNode::new(*key, aabb));
     }
 
     pub fn remove(&mut self, item: &T) {
-        self.tree.remove(&QuadTreeNode::from_handle(*item));
         self.hashes.remove(&Self::hash_item(item));
+        self.tree.remove_with_selection_function(SelectByHandle::new(item));
     }
-    
+
     pub fn iter(&self) -> RTreeIterator<'_, QuadTreeNode<T>> {
         self.into_iter()
     }
@@ -94,7 +94,29 @@ impl<T: PartialEq + Eq + Copy + Hash> PartialEq for QuadTreeNode<T> {
 }
 
 impl<T: PartialEq + Eq + Copy + Hash> Eq for QuadTreeNode<T> {}
+/// A custom selection function to match nodes based on the handle
+struct SelectByHandle<'a, T> {
+    handle: &'a T,
+}
 
+impl<'a, T> SelectByHandle<'a, T> {
+    pub fn new(handle: &'a T) -> Self {
+        Self { handle }
+    }
+}
+
+impl<'a, T> rstar::SelectionFunction<QuadTreeNode<T>> for SelectByHandle<'a, T>
+where
+    T: PartialEq + Eq + Copy + Hash,
+{
+    fn should_unpack_parent(&self, _: &rstar::AABB<[f32; 2]>) -> bool {
+        true
+    }
+
+    fn should_unpack_leaf(&self, node: &QuadTreeNode<T>) -> bool {
+        node.handle == *self.handle
+    }
+}
 impl<T: PartialEq + Eq + Copy + Hash> RTreeObject for QuadTreeNode<T> {
     type Envelope = rstar::AABB<[f32; 2]>;
 
