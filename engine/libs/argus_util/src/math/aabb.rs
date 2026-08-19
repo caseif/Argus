@@ -59,11 +59,17 @@ impl Mul<AABB> for Matrix4x4 {
     type Output = AABB;
 
     fn mul(self, rhs: AABB) -> Self::Output {
-        let min = self * Vector4f::new(rhs.min.x, rhs.min.y, 0.0, 1.0);
-        let max = self * Vector4f::new(rhs.max.x, rhs.max.y, 0.0, 1.0);
+        let v0 = self * Vector4f::new(rhs.min.x, rhs.min.y, 0.0, 1.0);
+        let v1 = self * Vector4f::new(rhs.max.x, rhs.min.y, 0.0, 1.0);
+        let v2 = self * Vector4f::new(rhs.max.x, rhs.max.y, 0.0, 1.0);
+        let v3 = self * Vector4f::new(rhs.min.x, rhs.max.y, 0.0, 1.0);
+        let min_x = v0.x.min(v1.x.min(v2.x.min(v3.x)));
+        let max_x = v0.x.max(v1.x.max(v2.x.max(v3.x)));
+        let min_y = v0.y.min(v1.y.min(v2.y.min(v3.y)));
+        let max_y = v0.y.max(v1.y.max(v2.y.max(v3.y)));
         AABB::from_corners(
-            Vector2f::new(min.x, min.y),
-            Vector2f::new(max.x, max.y),
+            Vector2f::new(min_x, min_y),
+            Vector2f::new(max_x, max_y),
         )
     }
 }
