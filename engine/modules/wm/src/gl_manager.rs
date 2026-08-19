@@ -6,6 +6,8 @@ use sdl3::VideoSubsystem;
 use std::{ffi, mem};
 
 use sdl3::video::GLContext as SdlGlContext;
+use argus_logging::warn;
+use crate::module_init::LOGGER;
 
 bitflags! {
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -141,7 +143,9 @@ impl GlManager {
 
     pub fn set_swap_interval(&self, interval: i32) {
         let swap_interval = SwapInterval::from_i32(interval).unwrap_or(SwapInterval::Immediate);
-        self.video_subsystem.gl_set_swap_interval(swap_interval).unwrap();
+        if let Err(err) = self.video_subsystem.gl_set_swap_interval(swap_interval) {
+            warn!(LOGGER, "Failed to set swap interval: {}", err);
+        }
     }
 
     pub fn swap_buffers(&self, window: &Window) -> Result<(), String> {
