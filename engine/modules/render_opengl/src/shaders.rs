@@ -386,7 +386,23 @@ pub(crate) fn get_std_program(storage: &mut Option<LinkedProgram>) -> &LinkedPro
 }
 
 pub(crate) fn get_shadowmap_program(storage: &mut Option<LinkedProgram>) -> &LinkedProgram {
-    storage.get_or_insert_with(|| link_program([SHADER_SHADOWMAP_VERT, SHADER_SHADOWMAP_FRAG]))
+    storage.get_or_insert_with(|| {
+        if GlSupport::have(GlExt::ComputeShader) {
+            debug!(
+                LOGGER,
+                "ARB_compute_shader is available, \
+                 using compute shader for light raycasting",
+            );
+            link_program([SHADER_SHADOWMAP_COMP])
+        } else {
+            debug!(
+                LOGGER,
+                "ARB_compute_shader is not available, \
+                 using fallback fragment shader for light raycasting",
+            );
+            link_program([SHADER_SHADOWMAP_VERT, SHADER_SHADOWMAP_FRAG])
+        }
+    })
 }
 
 pub(crate) fn get_lighting_program(storage: &mut Option<LinkedProgram>) -> &LinkedProgram {

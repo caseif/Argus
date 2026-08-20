@@ -1,10 +1,17 @@
 #version 460 core
 
-#define UINT_MAX 4294967295
+#extension GL_ARB_compute_shader : enable
+
+// fallback fragment shader currently uses atomics which don't support floats
+#ifdef GL_ARB_compute_shader
+#define IS_RAY_BUFFER_FLOAT 1
+#endif
+
 #define PI 3.14159
 #define TWO_PI (PI * 2.0)
 
 #define LIGHTS_MAX 32
+#define RAY_COUNT 360
 
 #define LIGHT_TYPE_POINT 0
 
@@ -28,7 +35,11 @@ in vec2 TexCoord;
 
 out vec4 out_Color;
 
+#ifdef IS_RAY_BUFFER_FLOAT
+layout(binding = 0) uniform samplerBuffer u_RayBuffer;
+#else
 layout(binding = 0) uniform usamplerBuffer u_RayBuffer;
+#endif
 
 layout(std140, binding = 0) uniform Scene {
     vec4 AmbientLightColor;
@@ -41,6 +52,17 @@ layout(std140, binding = 1) uniform Viewport {
     uint LightCount;
     Light2D Lights[32];
 } viewport;
+
+// annoying workaround bc our GLSL parser chokes on mid-function macros
+#ifdef IS_RAY_BUFFER_FLOAT
+float fetch_occl_dist(int ray_index) {
+    return texelFetch(u_RayBuffer, ray_index).r;
+}
+#else
+float fetch_occl_dist(int ray_index) {
+    return texelFetch(u_RayBuffer, ray_index).r / float(DIST_MULTIPLIER);
+}
+#endif
 
 // Applies a power-like function with a non-integer exponent without doing an
 // expensive pow() operation.
@@ -82,8 +104,6 @@ float get_shadow_attenuation(Light2D light, float dist_from_occluder) {
 }
 
 void main() {
-    uint ray_count = 720;
-
     vec3 light_sum = vec3(scene.AmbientLightColor.rgb * scene.AmbientLightLevel);
 
     for (int i = 0; i < LIGHTS_MAX; i++) {
@@ -96,15 +116,15 @@ void main() {
 
         vec2 offset = WorldPos.xy - light.position.xy;
         float theta = atan(offset.y, offset.x) + PI;
-        uint ray_index = uint(floor(float(ray_count) * theta / TWO_PI));
+        uint ray_index = uint(floor(float(RAY_COUNT) * theta / TWO_PI)) % RAY_COUNT;
 
         float dist = distance(light.position.xy, WorldPos.xy);
 
         bool is_occluded = false;
         float occl_dist;
         if (light.is_occludable != 0U) {
-            int ray_lookup_index = int(i * ray_count + ray_index);
-            occl_dist = texelFetch(u_RayBuffer, ray_lookup_index).r / float(DIST_MULTIPLIER);
+            int ray_lookup_index = int(i * RAY_COUNT + ray_index);
+            occl_dist = fetch_occl_dist(ray_lookup_index);
             is_occluded = dist >= occl_dist;
         }
 

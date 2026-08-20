@@ -86,6 +86,7 @@ pub const SHADER_FB_FRAG: &str = "argus:render/shader/framebuffer_frag";
 
 pub const SHADER_SHADOWMAP_VERT: &str = "argus:render/shader/shadowmap_vert";
 pub const SHADER_SHADOWMAP_FRAG: &str = "argus:render/shader/shadowmap_frag";
+pub const SHADER_SHADOWMAP_COMP: &str = "argus:render/shader/shadowmap_comp";
 
 pub const SHADER_LIGHTING_VERT: &str = "argus:render/shader/lighting_vert";
 pub const SHADER_LIGHTING_FRAG: &str = "argus:render/shader/lighting_frag";

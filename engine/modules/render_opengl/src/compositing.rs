@@ -342,6 +342,8 @@ pub(crate) fn draw_scene_2d_to_framebuffer(
 
     let scene = get_render_context_2d().get_scene(&scene_state.scene_id).unwrap();
     if scene.is_lighting_enabled() {
+        let light_handles = scene.get_lights_for_viewport(&att_viewport, LIGHT_ENVELOPE_BUFFER);
+        let lights_count = light_handles.len();
         // generate shadowmap
         let shadowmap_program = get_shadowmap_program(&mut renderer_state.shadowmap_program);
         compute_scene_2d_shadowmap(
@@ -349,6 +351,7 @@ pub(crate) fn draw_scene_2d_to_framebuffer(
             viewport_state,
             shadowmap_program,
             renderer_state.frame_vao.unwrap(),
+            lights_count,
             resolution,
         );
 
@@ -573,7 +576,11 @@ fn init_viewport_buffers(
                 viewport_state.buffers.shadowmap_texture = Some(handle);
                 handle
             };
-            glTextureBuffer(sm_tex, GL_R32UI, sm_buf.get_handle());
+            glTextureBuffer(
+                sm_tex,
+                if GlSupport::have(GlExt::ComputeShader) { GL_R32F } else { GL_R32UI },
+                sm_buf.get_handle(),
+            );
             glTextureParameteri(sm_tex, GL_TEXTURE_MIN_FILTER, GL_NEAREST as GLint);
             glTextureParameteri(sm_tex, GL_TEXTURE_MAG_FILTER, GL_NEAREST as GLint);
         } else {
@@ -584,7 +591,11 @@ fn init_viewport_buffers(
                 handle
             };
             glBindTextureUnit(GL_TEXTURE_BUFFER, sm_tex);
-            glTexBuffer(GL_TEXTURE_BUFFER, GL_R32UI, sm_buf.get_handle());
+            glTexBuffer(
+                GL_TEXTURE_BUFFER,
+                if GlSupport::have(GlExt::ComputeShader) { GL_R32F } else { GL_R32UI },
+                sm_buf.get_handle(),
+            );
             glTexParameteri(
                 GL_TEXTURE_BUFFER,
                 GL_TEXTURE_MIN_FILTER,
@@ -858,6 +869,7 @@ fn compute_scene_2d_shadowmap(
     viewport_state: &ViewportState,
     program: &LinkedProgram,
     frame_vao: GlArrayHandle,
+    lights_count: usize,
     #[allow(unused)]
     resolution: &ValueAndDirtyFlag<Vector2u>,
 ) {
@@ -897,11 +909,19 @@ fn compute_scene_2d_shadowmap(
         GL_TRUE as GLboolean,
         0,
         GL_READ_WRITE,
-        GL_R32UI,
+        if GlSupport::have(GlExt::ComputeShader) { GL_R32F } else { GL_R32UI },
     );
 
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-    glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT | GL_TEXTURE_UPDATE_BARRIER_BIT);
+    if GlSupport::have(GlExt::ComputeShader) {
+        let workgroup_count = (lights_count * SHADOW_RAYS_COUNT + SHADOW_WORKGROUPS - 1) as f32 /
+            SHADOW_WORKGROUPS as f32;
+        glDispatchCompute(workgroup_count as u32, 1, 1);
+    } else {
+        // compute shaders not supported, use fragment shader fallback
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+    }
+
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
 
     glUseProgram(0);
     glBindVertexArray(0);

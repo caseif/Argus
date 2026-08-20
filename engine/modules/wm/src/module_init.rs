@@ -14,7 +14,7 @@ pub const WINDOWING_MODE_FULLSCREEN: &str = "fullscreen";
 
 const CONFIG_KEY_WINDOW: &str = "window";
 
-const PRINT_FRAME_TIME: bool = false;
+const PRINT_FRAME_TIME: bool = true;
 
 crate_logger!(LOGGER, "argus/wm");
 

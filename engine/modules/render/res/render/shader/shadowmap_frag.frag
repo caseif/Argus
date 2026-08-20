@@ -4,6 +4,7 @@
 #define TWO_PI (PI * 2.0)
 
 #define LIGHTS_MAX 32
+#define RAY_COUNT 360
 
 #define LIGHT_TYPE_POINT 0
 
@@ -52,8 +53,6 @@ void main() {
         discard;
     }
 
-    uint ray_count = 720;
-
     for (int i = 0; i < LIGHTS_MAX; i++) {
         if (i >= viewport.LightCount) {
             break;
@@ -65,16 +64,16 @@ void main() {
 
         if (abs(offset.x) < 0.01 && abs(offset.y) < 0.01) {
             // light is fully occluded
-            for (int j = 0; j < ray_count; j++) {
-                imageAtomicExchange(u_RayBuffer, int(i * ray_count + j), 0);
+            for (int j = 0; j < RAY_COUNT; j++) {
+                imageAtomicExchange(u_RayBuffer, int(i * RAY_COUNT + j), 0);
             }
             continue;
         }
 
         float theta = atan(offset.y, offset.x) + PI;
-        uint ray_index = uint(floor(float(ray_count) * theta / TWO_PI));
+        uint ray_index = uint(floor(float(RAY_COUNT) * theta / TWO_PI));
         uint dist = uint(distance(light_pos, WorldPos.xy) * DIST_MULTIPLIER);
-        imageAtomicMin(u_RayBuffer, int(i * ray_count + ray_index), dist);
+        imageAtomicMin(u_RayBuffer, int(i * RAY_COUNT + ray_index), dist);
     }
 
     discard;
