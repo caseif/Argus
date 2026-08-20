@@ -37,6 +37,7 @@ layout(std140, binding = 0) uniform Scene {
 
 layout(std140, binding = 1) uniform Viewport {
     mat4 ViewMatrix;
+    mat4 ViewMatrixInverse;
     uint LightCount;
     Light2D Lights[32];
 } viewport;

@@ -150,6 +150,11 @@ fn update_viewport_ubo<'ctx>(
             SHADER_UNIFORM_VIEWPORT_VM_OFF as vk::DeviceSize,
         )
             .unwrap();
+        viewport_ubo.write(
+            &view_matrix.inverse().unwrap().cells,
+            SHADER_UNIFORM_VIEWPORT_VM_INV_OFF as vk::DeviceSize,
+        )
+            .unwrap();
     }
 }
 

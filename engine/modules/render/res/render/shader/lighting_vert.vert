@@ -21,6 +21,7 @@ out vec2 TexCoord;
 
 layout(std140, binding = 1) uniform Viewport {
     mat4 ViewMatrix;
+    mat4 ViewMatrixInverse;
     uint LightCount;
     Light2D Lights[32];
 } viewport;

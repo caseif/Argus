@@ -1,5 +1,5 @@
 use std::ops::{Mul, MulAssign};
-use crate::math::Vector4f;
+use crate::math::{Vector4f};
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Matrix4x4 {
@@ -40,6 +40,67 @@ impl Matrix4x4 {
     #[must_use]
     pub fn get_mut(&mut self, row: usize, col: usize) -> &mut f32 {
         &mut self.cells[col * 4 + row]
+    }
+
+    #[must_use]
+    pub fn inverse(&self) -> Option<Matrix4x4> {
+        if self.cells[3] == 0.0 && self.cells[7] == 0.0 &&
+            self.cells[11] == 0.0 && self.cells[15] == 1.0 {
+            // matrix is affine
+            let det = self.cells[0] * (self.cells[5] * self.cells[10] - self.cells[9] * self.cells[6]) -
+                self.cells[4] * (self.cells[1] * self.cells[10] - self.cells[9] * self.cells[2]) +
+                self.cells[8] * (self.cells[1] * self.cells[6] - self.cells[5] * self.cells[2]);
+            if det == 0.0 {
+                return None;
+            }
+
+            let mat_3x3_inv: [f32; 9] = [
+                (self.cells[5] * self.cells[10] - self.cells[6] * self.cells[9]) / det,
+                (self.cells[2] * self.cells[9] - self.cells[1] * self.cells[10]) / det,
+                (self.cells[1] * self.cells[6] - self.cells[2] * self.cells[5]) / det,
+                (self.cells[6] * self.cells[8] - self.cells[4] * self.cells[10]) / det,
+                (self.cells[0] * self.cells[10] - self.cells[2] * self.cells[8]) / det,
+                (self.cells[1] * self.cells[8] - self.cells[0] * self.cells[9]) / det,
+                (self.cells[4] * self.cells[9] - self.cells[5] * self.cells[8]) / det,
+                (self.cells[2] * self.cells[4] - self.cells[0] * self.cells[6]) / det,
+                (self.cells[0] * self.cells[5] - self.cells[1] * self.cells[4]) / det,
+            ];
+            let b: [f32; 3] = [
+                -(mat_3x3_inv[0] * self.cells[12] +
+                    mat_3x3_inv[3] * self.cells[13] +
+                    mat_3x3_inv[6] * self.cells[14]),
+                -(mat_3x3_inv[1] * self.cells[12] +
+                    mat_3x3_inv[4] * self.cells[13] +
+                    mat_3x3_inv[7] * self.cells[14]),
+                -(mat_3x3_inv[2] * self.cells[12] +
+                    mat_3x3_inv[5] * self.cells[13] +
+                    mat_3x3_inv[8] * self.cells[14]),
+            ];
+
+            Some(Matrix4x4 {
+                cells: [
+                    mat_3x3_inv[0],
+                    mat_3x3_inv[1],
+                    mat_3x3_inv[2],
+                    0.0,
+                    mat_3x3_inv[3],
+                    mat_3x3_inv[4],
+                    mat_3x3_inv[5],
+                    0.0,
+                    mat_3x3_inv[6],
+                    mat_3x3_inv[7],
+                    mat_3x3_inv[8],
+                    0.0,
+                    b[0],
+                    b[1],
+                    b[2],
+                    1.0,
+                ],
+            })
+        } else {
+            // non-affine
+            todo!()
+        }
     }
 }
 

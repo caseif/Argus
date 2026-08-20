@@ -152,6 +152,10 @@ fn update_viewport_ubo(viewport: &mut AttachedViewport2d, scene_state: &Scene2dS
             &viewport.get_view_matrix().value.cells,
             SHADER_UNIFORM_VIEWPORT_VM_OFF as usize,
         );
+        ubo.write_val(
+            &viewport.get_view_matrix().value.inverse().unwrap().cells,
+            SHADER_UNIFORM_VIEWPORT_VM_INV_OFF as usize,
+        );
 
         let mut scene = get_render_context_2d().get_scene_mut(&scene_state.scene_id).unwrap();
 

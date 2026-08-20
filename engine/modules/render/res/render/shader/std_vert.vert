@@ -19,6 +19,7 @@ layout(std140, binding = 1) uniform Global {
 
 layout(std140, binding = 3) uniform Viewport {
     mat4 ViewMatrix;
+    mat4 ViewMatrixInverse;
     uint LightCount;
     Light2D Lights[32];
 } viewport;
