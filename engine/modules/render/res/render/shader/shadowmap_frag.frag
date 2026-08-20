@@ -19,7 +19,7 @@ struct Light2D {
     float shadow_falloff_gradient;
     float shadow_falloff_distance;
     int type;
-    bool is_occludable;
+    uint is_occludable;
 };
 
 in vec2 WorldPos;

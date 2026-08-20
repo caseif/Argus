@@ -101,4 +101,48 @@ impl RenderLight2d {
         }
         self.transform.set(transform);
     }
+
+    pub fn to_shader_repr(&self) -> Std140Light2D {
+        let pos = &self.peek_transform().translation;
+        let props = self.get_properties();
+        let color = props.color;
+        Std140Light2D {
+            color: [color.x, color.y, color.z, 1.0],
+            position: [pos.x, pos.y, 0.0, 1.0],
+            intensity: props.intensity,
+            falloff_gradient: props.falloff_gradient,
+            falloff_distance: props.falloff_distance,
+            falloff_buffer: props.falloff_buffer,
+            shadow_falloff_gradient: props.shadow_falloff_gradient,
+            shadow_falloff_distance: props.shadow_falloff_distance,
+            ty: props.ty as i32,
+            is_occludable: if props.is_occludable { 1 } else { 0 },
+            //unused: 0,
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(Clone, Default)]
+pub struct Std140Light2D {
+    // offset 0
+    pub color: [f32; 4],
+    // offset 16
+    pub position: [f32; 4],
+    // offset 32
+    pub intensity: f32,
+    // offset 36
+    pub falloff_gradient: f32,
+    // offset 40
+    pub falloff_distance: f32,
+    // offset 44
+    pub falloff_buffer: f32,
+    // offset 48
+    pub shadow_falloff_gradient: f32,
+    // offset 52
+    pub shadow_falloff_distance: f32,
+    // offset 56
+    pub ty: i32,
+    // offset 60
+    pub is_occludable: u32,
 }

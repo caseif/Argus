@@ -28,7 +28,7 @@ use std::ops::DerefMut;
 use std::ptr;
 use argus_render::common::{AttachedViewport, Material, Viewport, ViewportCoordinateSpaceMode};
 use argus_render::constants::*;
-use argus_render::twod::{get_render_context_2d, AttachedViewport2d};
+use argus_render::twod::{get_render_context_2d, AttachedViewport2d, Std140Light2D};
 use argus_util::dirtiable::ValueAndDirtyFlag;
 use argus_util::math::Vector2u;
 
@@ -41,31 +41,6 @@ struct TransformedViewport {
     pub(crate) bottom: i32,
     pub(crate) left: i32,
     pub(crate) right: i32,
-}
-
-#[repr(C)]
-#[derive(Clone, Default)]
-pub(crate) struct Std140Light2D {
-    // offset 0
-    color: [f32; 4],
-    // offset 16
-    position: [f32; 4],
-    // offset 32
-    intensity: f32,
-    // offset 36
-    falloff_gradient: f32,
-    // offset 40
-    falloff_distance: f32,
-    // offset 44
-    falloff_buffer: f32,
-    // offset 48
-    shadow_falloff_gradient: f32,
-    // offset 52
-    shadow_falloff_distance: f32,
-    // offset 56
-    ty: i32,
-    // offset 60
-    is_occludable: bool,
 }
 
 fn transform_viewport_to_pixels(viewport: &Viewport, resolution: &Vector2u) -> TransformedViewport {
@@ -186,22 +161,7 @@ fn update_viewport_ubo(viewport: &mut AttachedViewport2d, scene_state: &Scene2dS
         let mut shader_lights_arr: [Std140Light2D; LIGHTS_MAX as usize] = Default::default();
         for (i, light_handle) in light_handles.into_iter().enumerate() {
             let light = scene.get_light(light_handle).unwrap();
-
-            let pos = &light.peek_transform().translation;
-            let props = light.get_properties();
-            let color = props.color;
-            shader_lights_arr[i] = Std140Light2D {
-                color: [color.x, color.y, color.z, 1.0],
-                position: [pos.x, pos.y, 0.0, 1.0],
-                intensity: props.intensity,
-                falloff_gradient: props.falloff_gradient,
-                falloff_distance: props.falloff_distance,
-                falloff_buffer: props.falloff_buffer,
-                shadow_falloff_gradient: props.shadow_falloff_gradient,
-                shadow_falloff_distance: props.shadow_falloff_distance,
-                ty: props.ty as i32,
-                is_occludable: props.is_occludable,
-            };
+            shader_lights_arr[i] = light.to_shader_repr();
         }
 
         ubo.write_val(
@@ -1045,8 +1005,12 @@ pub(crate) fn setup_framebuffer(state: &mut RendererState) {
     state.frame_program = Some(frame_program);
 
     let frame_quad_vertex_data: [f32; 24] = [
-        -1.0, -1.0, 0.0, 0.0, -1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, -1.0, -1.0, 0.0, 0.0, 1.0,
-        1.0, 1.0, 1.0, 1.0, -1.0, 1.0, 0.0,
+        -1.0, -1.0, 0.0, 0.0,
+        -1.0, 1.0, 0.0, 1.0,
+        1.0, 1.0, 1.0, 1.0,
+        -1.0, -1.0, 0.0, 0.0,
+        1.0, 1.0, 1.0, 1.0,
+        1.0, -1.0, 1.0, 0.0,
     ];
 
     if aglet_have_gl_arb_direct_state_access() {

@@ -10,7 +10,7 @@ struct Light2D {
     float shadow_falloff_gradient;
     float shadow_falloff_distance;
     int type;
-    bool is_occludable;
+    uint is_occludable;
 };
 
 layout(std140, binding = 1) uniform Global {

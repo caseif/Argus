@@ -20,7 +20,7 @@ struct Light2D {
     float shadow_falloff_gradient;
     float shadow_falloff_distance;
     int type;
-    bool is_occludable;
+    uint is_occludable;
 };
 
 in vec2 WorldPos;
@@ -28,7 +28,6 @@ in vec2 TexCoord;
 
 out vec4 out_Color;
 
-//layout(binding = 0) uniform sampler2D u_Framebuffer;
 layout(binding = 0) uniform usamplerBuffer u_RayBuffer;
 
 layout(std140, binding = 0) uniform Scene {
@@ -102,7 +101,7 @@ void main() {
 
         bool is_occluded = false;
         float occl_dist;
-        if (light.is_occludable) {
+        if (light.is_occludable != 0U) {
             int ray_lookup_index = int(i * ray_count + ray_index);
             occl_dist = texelFetch(u_RayBuffer, ray_lookup_index).r / float(DIST_MULTIPLIER);
             is_occluded = dist >= occl_dist;
