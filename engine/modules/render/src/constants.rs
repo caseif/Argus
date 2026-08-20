@@ -20,6 +20,7 @@ pub const RESOURCE_TYPE_TEXTURE_PNG: &str = "image/png";
 pub const RESOURCE_TYPE_MATERIAL: &str = "application/x-argus-material+json";
 pub const RESOURCE_TYPE_SHADER_GLSL_VERT: &str = "text/x-glsl-vertex";
 pub const RESOURCE_TYPE_SHADER_GLSL_FRAG: &str = "text/x-glsl-fragment";
+pub const RESOURCE_TYPE_SHADER_GLSL_COMP: &str = "text/x-glsl-compute";
 
 pub const LIGHTS_MAX: u32 = 32;
 

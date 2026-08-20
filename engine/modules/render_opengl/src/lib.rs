@@ -38,7 +38,7 @@ use std::time::Duration;
 use argus_logging::{crate_logger, warn};
 use argus_core::{register_event_handler, register_module, EngineManager, LifecycleStage, Ordering, TargetThread};
 use argus_render::common::register_render_backend;
-use argus_render::constants::{RESOURCE_TYPE_MATERIAL, RESOURCE_TYPE_SHADER_GLSL_FRAG, RESOURCE_TYPE_SHADER_GLSL_VERT};
+use argus_render::constants::*;
 use argus_resman::{ResourceEvent, ResourceEventType, ResourceManager};
 use argus_wm::*;
 use crate::aglet::{AgletError, agletLoadCapabilities};
@@ -192,7 +192,9 @@ fn resource_event_handler(event: &ResourceEvent) {
         #[allow(unused)]
         for (_, renderer) in &mut renderers.iter() {
             let mt = &event.get_prototype().media_type;
-            if mt == RESOURCE_TYPE_SHADER_GLSL_VERT || mt == RESOURCE_TYPE_SHADER_GLSL_FRAG {
+            if mt == RESOURCE_TYPE_SHADER_GLSL_VERT ||
+                mt == RESOURCE_TYPE_SHADER_GLSL_FRAG ||
+                mt == RESOURCE_TYPE_SHADER_GLSL_COMP {
                 //TODO: remove shader from state
             } else if mt == RESOURCE_TYPE_MATERIAL {
                 //TODO: deinit material
@@ -231,6 +233,7 @@ fn on_render_init() {
         vec![
             RESOURCE_TYPE_SHADER_GLSL_VERT,
             RESOURCE_TYPE_SHADER_GLSL_FRAG,
+            RESOURCE_TYPE_SHADER_GLSL_COMP,
         ],
         ShaderLoader::new(),
     );

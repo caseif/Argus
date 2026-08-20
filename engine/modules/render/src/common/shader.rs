@@ -34,5 +34,6 @@ impl<W> Shader<W> {
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ShaderStage {
     Vertex = 0x01,
-    Fragment = 0x02
+    Fragment = 0x02,
+    Compute = 0x03,
 }

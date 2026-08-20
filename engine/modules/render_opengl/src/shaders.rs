@@ -128,6 +128,7 @@ fn compile_shaders(shaders: &Vec<Resource>) -> (Vec<GlShaderHandle>, ShaderRefle
         let gl_shader_stage: GLuint = match stage {
             glslang::ShaderStage::Vertex => GL_VERTEX_SHADER,
             glslang::ShaderStage::Fragment => GL_FRAGMENT_SHADER,
+            glslang::ShaderStage::Compute => GL_COMPUTE_SHADER,
             _ => {
                 panic!("Unrecognized shader stage ordinal {:?}", stage);
             }
@@ -202,6 +203,7 @@ fn compile_shaders(shaders: &Vec<Resource>) -> (Vec<GlShaderHandle>, ShaderRefle
             let stage_str = match stage {
                 glslang::ShaderStage::Vertex => "vertex",
                 glslang::ShaderStage::Fragment => "fragment",
+                glslang::ShaderStage::Compute => "compute",
                 _ => "unknown",
             };
 
@@ -225,6 +227,7 @@ pub(crate) fn link_program(shader_uids: impl IntoIterator<Item = impl AsRef<str>
     let mut shaders: Vec<Resource> = Vec::new();
     let mut have_vert = false;
     let mut have_frag = false;
+    let mut have_comp = false;
     for shader_uid in shader_uids {
         let shader_res = match ResourceManager::instance().get_resource(shader_uid.as_ref()) {
             Ok(r) => r,
@@ -239,12 +242,14 @@ pub(crate) fn link_program(shader_uids: impl IntoIterator<Item = impl AsRef<str>
             have_vert = true;
         } else if shader.get_stage() == ShaderStage::Fragment {
             have_frag = true;
+        } else if shader.get_stage() == ShaderStage::Compute {
+            have_comp = true;
         }
 
         shaders.push(shader_res);
     }
 
-    if !have_vert {
+    if !have_vert && !have_comp {
         let shader_res = match ResourceManager::instance().get_resource(SHADER_STD_VERT) {
             Ok(r) => r,
             Err(e) => {
@@ -254,7 +259,7 @@ pub(crate) fn link_program(shader_uids: impl IntoIterator<Item = impl AsRef<str>
 
         shaders.push(shader_res);
     }
-    if !have_frag {
+    if !have_frag && !have_comp {
         let shader_res = match ResourceManager::instance().get_resource(SHADER_STD_FRAG) {
             Ok(r) => r,
             Err(e) => {
@@ -431,5 +436,6 @@ fn to_shadertools_stage(stage: ShaderStage) -> glslang::ShaderStage {
     match stage {
         ShaderStage::Vertex => glslang::ShaderStage::Vertex,
         ShaderStage::Fragment => glslang::ShaderStage::Fragment,
+        ShaderStage::Compute => glslang::ShaderStage::Compute,
     }
 }

@@ -142,6 +142,7 @@ pub(crate) fn prepare_shaders<'ctx>(device: &'ctx vk::Device, shader_uids: &[imp
         let vk_shader_stage = match stage {
             ShaderStage::Vertex => vk::ShaderStageFlags::VERTEX,
             ShaderStage::Fragment => vk::ShaderStageFlags::FRAGMENT,
+            ShaderStage::Compute => vk::ShaderStageFlags::COMPUTE,
         };
 
         let stage_create_info = vk::ShaderModuleCreateInfo::default()
@@ -168,5 +169,6 @@ fn to_shadertools_stage(stage: &ShaderStage) -> glslang::ShaderStage {
     match stage {
         ShaderStage::Vertex => glslang::ShaderStage::Vertex,
         ShaderStage::Fragment => glslang::ShaderStage::Fragment,
+        ShaderStage::Compute => glslang::ShaderStage::Compute,
     }
 }

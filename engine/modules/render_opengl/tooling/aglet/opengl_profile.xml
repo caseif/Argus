@@ -13,5 +13,6 @@
         <extension required="false">GL_ARB_gl_spirv</extension>
         <extension required="false">GL_ARB_draw_buffers_blend</extension>
         <extension required="false">GL_ARB_explicit_uniform_location</extension>
+        <extension required="false">GL_ARB_compute_shader</extension>
     </extensions>
 </profile>

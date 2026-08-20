@@ -43,6 +43,7 @@ impl ResourceLoader for ShaderLoader {
         let (shader_type, shader_stage) = match prototype.media_type.as_str() {
             RESOURCE_TYPE_SHADER_GLSL_VERT => (SHADER_TYPE_GLSL, ShaderStage::Vertex),
             RESOURCE_TYPE_SHADER_GLSL_FRAG => (SHADER_TYPE_GLSL, ShaderStage::Fragment),
+            RESOURCE_TYPE_SHADER_GLSL_COMP => (SHADER_TYPE_GLSL, ShaderStage::Compute),
             _ => panic!("Unrecognized shader media type {}", prototype.media_type),
         };
 
