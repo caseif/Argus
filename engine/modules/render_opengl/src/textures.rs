@@ -23,6 +23,7 @@ use argus_resman::{Resource, ResourceError, ResourceManager};
 use crate::aglet::*;
 use crate::state::RendererState;
 use crate::util::gl_util::*;
+use crate::util::support::{GlExt, GlSupport};
 
 pub(crate) fn get_or_load_texture(state: &mut RendererState, material_res: &Resource)
     -> Result<(), ResourceError> {
@@ -45,7 +46,7 @@ pub(crate) fn get_or_load_texture(state: &mut RendererState, material_res: &Reso
 
     let mut handle: GlTextureHandle = 0;
 
-    if aglet_have_gl_arb_direct_state_access() {
+    if GlSupport::have(GlExt::DirectStateAccess) {
         glCreateTextures(GL_TEXTURE_2D, 1, &mut handle);
 
         glTextureParameteri(handle, GL_TEXTURE_MIN_FILTER, GL_LINEAR as i32);
@@ -64,16 +65,16 @@ pub(crate) fn get_or_load_texture(state: &mut RendererState, material_res: &Reso
 
     //glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 
-    if aglet_have_gl_arb_direct_state_access() {
+    if GlSupport::have(GlExt::DirectStateAccess) {
         glTextureStorage2D(handle, 1, GL_RGBA8, width as GLsizei, height as GLsizei);
-    } else if aglet_have_gl_arb_texture_storage() {
+    } else if GlSupport::have(GlExt::TextureStorage) {
         glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, width as GLsizei, height as GLsizei);
     } else {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA as i32, width as GLsizei, height as GLsizei,
                 0, GL_RGBA, GL_UNSIGNED_BYTE, ptr::null());
     }
 
-    if aglet_have_gl_arb_direct_state_access() {
+    if GlSupport::have(GlExt::DirectStateAccess) {
         glTextureSubImage2D(handle, 0, 0, 0, width as GLsizei, height as GLsizei,
             GL_RGBA, GL_UNSIGNED_BYTE, texture.get_pixel_data().as_ptr().cast());
     } else {
@@ -81,7 +82,7 @@ pub(crate) fn get_or_load_texture(state: &mut RendererState, material_res: &Reso
             GL_RGBA, GL_UNSIGNED_BYTE, texture.get_pixel_data().as_ptr().cast());
     }
 
-    if !aglet_have_gl_arb_direct_state_access() {
+    if !GlSupport::have(GlExt::DirectStateAccess) {
         bind_texture(0, 0);
     }
 

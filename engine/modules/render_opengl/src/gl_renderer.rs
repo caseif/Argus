@@ -36,6 +36,7 @@ use std::collections::HashSet;
 use std::ffi::CStr;
 use std::ptr;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use crate::util::support::{GlExt, GlSupport};
 
 pub(crate) struct GlRenderer {
     state: RendererState,
@@ -96,7 +97,7 @@ impl GlRenderer {
 
         gl_mgr.set_swap_interval(0);
 
-        if aglet_have_gl_khr_debug() {
+        if GlSupport::have(GlExt::Debug) {
             glDebugMessageCallback(gl_debug_callback, ptr::null());
         }
 
@@ -138,9 +139,9 @@ impl GlRenderer {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         // set blend equation for light opacity map
-        if aglet_have_gl_version_4_0() {
+        if GlSupport::have(GlExt::DrawBuffersBlend) {
             glBlendEquationi(1, GL_MAX);
-        } else if aglet_have_gl_arb_draw_buffers_blend() {
+        } else if GlSupport::have(GlExt::DrawBuffersBlendARB) {
             glBlendEquationiARB(1, GL_MAX);
         }
 

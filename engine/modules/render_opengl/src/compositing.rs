@@ -31,6 +31,7 @@ use argus_render::constants::*;
 use argus_render::twod::{get_render_context_2d, AttachedViewport2d, Std140Light2D};
 use argus_util::dirtiable::ValueAndDirtyFlag;
 use argus_util::math::Vector2u;
+use crate::util::support::{GlExt, GlSupport};
 
 const BINDING_INDEX_VBO: u32 = 0;
 
@@ -190,7 +191,7 @@ fn bind_ubo(program: &LinkedProgram, name: &str, buffer: &GlBuffer) {
 fn create_framebuffers(n: GLsizei) -> Vec<GlBufferHandle> {
     let mut handles = Vec::<GlBufferHandle>::with_capacity(n as usize);
     handles.resize(n as usize, Default::default());
-    if aglet_have_gl_arb_direct_state_access() {
+    if GlSupport::have(GlExt::DirectStateAccess) {
         glCreateFramebuffers(n, handles.as_mut_ptr());
     } else {
         glGenFramebuffers(n, handles.as_mut_ptr());
@@ -201,7 +202,7 @@ fn create_framebuffers(n: GLsizei) -> Vec<GlBufferHandle> {
 fn create_textures(target: GLenum, n: GLsizei) -> Vec<GlTextureHandle> {
     let mut handles = Vec::<GlTextureHandle>::with_capacity(n as usize);
     handles.resize(n as usize, Default::default());
-    if aglet_have_gl_arb_direct_state_access() {
+    if GlSupport::have(GlExt::DirectStateAccess) {
         glCreateTextures(target, n, handles.as_mut_ptr());
     } else {
         glGenTextures(n, handles.as_mut_ptr());
@@ -221,9 +222,6 @@ pub(crate) fn draw_scene_2d_to_framebuffer(
 
     let fb_width = (viewport_px.right - viewport_px.left).abs();
     let fb_height = (viewport_px.bottom - viewport_px.top).abs();
-
-    let have_draw_buffers_blend = aglet_have_gl_version_4_0()
-        || aglet_have_gl_arb_draw_buffers_blend();
 
     let scene_id = att_viewport.get_scene_id().to_string();
 
@@ -285,7 +283,7 @@ pub(crate) fn draw_scene_2d_to_framebuffer(
         let texture_uid = mat.get_texture_uid();
         let tex_handle = renderer_state.prepared_textures.get(texture_uid).unwrap();
 
-        if !have_draw_buffers_blend || program_info.has_custom_frag {
+        if !GlSupport::have(GlExt::DrawBuffersBlend) || program_info.has_custom_frag {
             non_std_buckets.push(key.clone());
         }
 
@@ -338,7 +336,7 @@ pub(crate) fn draw_scene_2d_to_framebuffer(
         glBindVertexArray(0);
     }
 
-    if !aglet_have_gl_arb_direct_state_access() {
+    if !GlSupport::have(GlExt::DirectStateAccess) {
         bind_texture(0, 0);
     }
 
@@ -437,7 +435,7 @@ pub(crate) fn draw_scene_2d_to_framebuffer(
 
         let mut last_tex: String = Default::default();
 
-        if !have_draw_buffers_blend {
+        if !GlSupport::have(GlExt::DrawBuffersBlend) {
             glBlendEquation(GL_MAX);
         }
 
@@ -500,13 +498,13 @@ pub(crate) fn draw_scene_2d_to_framebuffer(
 
         glBindVertexArray(0);
 
-        if !aglet_have_gl_arb_direct_state_access() {
+        if !GlSupport::have(GlExt::DirectStateAccess) {
             bind_texture(0, 0);
         }
 
         glUseProgram(0);
 
-        if !have_draw_buffers_blend {
+        if !GlSupport::have(GlExt::DrawBuffersBlend) {
             glBlendEquation(GL_FUNC_ADD);
         }
     }
@@ -558,9 +556,6 @@ fn init_viewport_buffers(
     fb_width: GLsizei,
     fb_height: GLsizei
 ) {
-    let have_draw_buffers_blend = aglet_have_gl_version_4_0()
-        || aglet_have_gl_arb_draw_buffers_blend();
-
     // shadowmap setup
     if viewport_state.buffers.shadowmap_texture.is_none() {
         viewport_state.buffers.shadowmap_buffer = Some(GlBuffer::new(
@@ -571,7 +566,7 @@ fn init_viewport_buffers(
             false,
         ));
         let sm_buf = viewport_state.buffers.shadowmap_buffer.as_ref().unwrap();
-        if aglet_have_gl_arb_direct_state_access() {
+        if GlSupport::have(GlExt::DirectStateAccess) {
             let sm_tex = {
                 let mut handle = 0;
                 glCreateTextures(GL_TEXTURE_BUFFER, 1, &mut handle);
@@ -650,7 +645,7 @@ fn init_viewport_buffers(
         viewport_state.buffers.light_opac_map_buf = Some(lom_buf);
         viewport_state.buffers.lightmap_buf = Some(lm_buf);
 
-        if aglet_have_gl_arb_direct_state_access() {
+        if GlSupport::have(GlExt::DirectStateAccess) {
             // initialize color buffers
 
             glTextureStorage2D(cb_prim, 1, GL_RGBA8, fb_width, fb_height);
@@ -682,7 +677,7 @@ fn init_viewport_buffers(
 
             // need to be able to set a per-attachment blend
             // function + equation to be able to do it in one pass
-            if have_draw_buffers_blend {
+            if GlSupport::have(GlExt::DrawBuffersBlend) {
                 let draw_bufs = [GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1];
                 glNamedFramebufferDrawBuffers(fb_prim, 2, draw_bufs.as_ptr());
             }
@@ -821,7 +816,7 @@ fn init_viewport_buffers(
 
             // need to be able to set a per-attachment blend
             // function + equation to be able to do it in one pass
-            if have_draw_buffers_blend {
+            if GlSupport::have(GlExt::DrawBuffersBlend) {
                 let draw_bufs = [GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1];
                 glDrawBuffers(2, draw_bufs.as_ptr());
             }
@@ -1017,7 +1012,7 @@ pub(crate) fn setup_framebuffer(state: &mut RendererState) {
         1.0, -1.0, 1.0, 0.0,
     ];
 
-    if aglet_have_gl_arb_direct_state_access() {
+    if GlSupport::have(GlExt::DirectStateAccess) {
         let frame_vao = {
             let mut handle = 0;
             glCreateVertexArrays(1, &mut handle);
@@ -1091,7 +1086,7 @@ pub(crate) fn setup_framebuffer(state: &mut RendererState) {
         &mut attr_offset,
     );
 
-    if !aglet_have_gl_arb_direct_state_access() {
+    if !GlSupport::have(GlExt::DirectStateAccess) {
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
     }

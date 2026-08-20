@@ -26,6 +26,7 @@ use argus_render::constants::*;
 use argus_render::twod::{get_render_context_2d, RenderObject2d};
 use argus_util::math::{Matrix4x4, Vector4f};
 use argus_util::pool::Handle;
+use crate::util::support::{GlExt, GlSupport};
 
 fn count_vertices(obj: &RenderObject2d) -> usize {
     obj.get_primitives()
@@ -102,11 +103,11 @@ fn create_processed_object_2d(
 
     let mut vertex_buffer = 0;
     let is_buffer_persistent =
-        aglet_have_gl_arb_direct_state_access() && aglet_have_gl_arb_buffer_storage();
+        GlSupport::have(GlExt::DirectStateAccess) && GlSupport::have(GlExt::BufferStorage);
 
-    let mapped_buffer_ptr: *mut GLfloat = if aglet_have_gl_arb_direct_state_access() {
+    let mapped_buffer_ptr: *mut GLfloat = if GlSupport::have(GlExt::DirectStateAccess) {
         glCreateBuffers(1, &mut vertex_buffer);
-        if aglet_have_gl_arb_buffer_storage() {
+        if GlSupport::have(GlExt::BufferStorage) {
             glNamedBufferStorage(
                 vertex_buffer,
                 buffer_size as GLsizeiptr,
@@ -188,7 +189,7 @@ fn create_processed_object_2d(
         }
     }
 
-    if !aglet_have_gl_arb_direct_state_access() {
+    if !GlSupport::have(GlExt::DirectStateAccess) {
         glUnmapBuffer(GL_COPY_READ_BUFFER);
         glBindBuffer(GL_COPY_READ_BUFFER, 0);
     }
@@ -259,7 +260,7 @@ fn update_processed_object_2d(
     let mapped_buffer_ptr: *mut GLfloat = proc_obj
         .mapped_buffer
         .unwrap_or_else(|| {
-            if aglet_have_gl_arb_direct_state_access() {
+            if GlSupport::have(GlExt::DirectStateAccess) {
                 glMapNamedBuffer(proc_obj.staging_buffer, GL_WRITE_ONLY)
             } else {
                 glBindBuffer(GL_COPY_READ_BUFFER, proc_obj.staging_buffer);
@@ -293,7 +294,7 @@ fn update_processed_object_2d(
     }
 
     if proc_obj.mapped_buffer.is_none() {
-        if aglet_have_gl_arb_direct_state_access() {
+        if GlSupport::have(GlExt::DirectStateAccess) {
             glUnmapNamedBuffer(proc_obj.staging_buffer);
         } else {
             glUnmapBuffer(GL_COPY_READ_BUFFER);
@@ -307,7 +308,7 @@ fn update_processed_object_2d(
 
 pub(crate) fn deinit_object_2d(obj: &mut ProcessedObject) {
     if obj.mapped_buffer.is_some() {
-        if aglet_have_gl_arb_direct_state_access() {
+        if GlSupport::have(GlExt::DirectStateAccess) {
             glUnmapNamedBuffer(obj.staging_buffer);
         } else {
             glBindBuffer(GL_ARRAY_BUFFER, obj.staging_buffer);

@@ -22,6 +22,7 @@ use crate::util::defines::*;
 use crate::util::gl_util::*;
 use std::ptr;
 use argus_render::constants::*;
+use crate::util::support::{GlExt, GlSupport};
 
 const BINDING_INDEX_VBO: u32 = 0;
 const BINDING_INDEX_ANIM_FRAME_BUF: u32 = 1;
@@ -89,7 +90,7 @@ pub(crate) fn fill_buckets_2d(renderer_state: &mut RendererState, scene_id: impl
                 .anim_frame_buffer
                 .inspect(|buf| glDeleteBuffers(1, buf));
 
-            if aglet_have_gl_arb_direct_state_access() {
+            if GlSupport::have(GlExt::DirectStateAccess) {
                 let vert_arr = {
                     let mut handle = 0;
                     glCreateVertexArrays(1, &mut handle);
@@ -248,7 +249,7 @@ pub(crate) fn fill_buckets_2d(renderer_state: &mut RendererState, scene_id: impl
 
         bucket.vertex_count = 0;
 
-        if !aglet_have_gl_arb_direct_state_access() {
+        if !GlSupport::have(GlExt::DirectStateAccess) {
             glBindBuffer(GL_ARRAY_BUFFER, bucket.vertex_buffer.unwrap());
         }
 
@@ -260,7 +261,7 @@ pub(crate) fn fill_buckets_2d(renderer_state: &mut RendererState, scene_id: impl
             let processed = scene_state.processed_objs.get_mut(obj_handle).unwrap(); //TODO
 
             if bucket.needs_rebuild || processed.updated {
-                if aglet_have_gl_arb_direct_state_access() {
+                if GlSupport::have(GlExt::DirectStateAccess) {
                     glCopyNamedBufferSubData(
                         processed.staging_buffer,
                         bucket.vertex_buffer.unwrap(),
@@ -310,7 +311,7 @@ pub(crate) fn fill_buckets_2d(renderer_state: &mut RendererState, scene_id: impl
         }
 
         if anim_buf_updated {
-            if aglet_have_gl_arb_direct_state_access() {
+            if GlSupport::have(GlExt::DirectStateAccess) {
                 glNamedBufferSubData(
                     bucket.anim_frame_buffer.unwrap(),
                     0,
@@ -328,7 +329,7 @@ pub(crate) fn fill_buckets_2d(renderer_state: &mut RendererState, scene_id: impl
             }
         }
 
-        if !aglet_have_gl_arb_direct_state_access() {
+        if !GlSupport::have(GlExt::DirectStateAccess) {
             glBindBuffer(GL_ARRAY_BUFFER, 0);
 
             glBindVertexArray(0);

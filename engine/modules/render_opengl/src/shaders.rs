@@ -33,6 +33,7 @@ use argus_resman::{Resource, ResourceIdentifier, ResourceManager};
 use argus_shadertools::glslang::Target;
 use argus_shadertools::compile_glsl_to_spirv;
 use crate::LOGGER;
+use crate::util::support::{GlExt, GlSupport};
 
 #[derive(Default)]
 pub(crate) struct ShaderReflectionInfo {
@@ -104,9 +105,7 @@ fn compile_shaders(shaders: &Vec<Resource>) -> (Vec<GlShaderHandle>, ShaderRefle
 
     let spirv_shaders = compile_res.bytecode;
 
-    let have_gl_spirv = aglet_have_gl_version_4_1() && aglet_have_gl_arb_gl_spirv();
-
-    let glsl_ver = if !have_gl_spirv {
+    let glsl_ver = if !GlSupport::have(GlExt::Spirv) {
         Some(
             if aglet_have_gl_version_4_6() {
                 GlslVersion::Glsl460
@@ -134,15 +133,19 @@ fn compile_shaders(shaders: &Vec<Resource>) -> (Vec<GlShaderHandle>, ShaderRefle
             }
         };
 
+        if !GlSupport::have(GlExt::ComputeShader) {
+            panic!("Compute shader support is not currently available");
+        }
+
         let shader_handle = glCreateShader(gl_shader_stage);
         if glIsShader(shader_handle) != GL_TRUE as u8 {
             panic!("Failed to create shader {}", glGetError());
         }
 
-        if have_gl_spirv {
+        if GlSupport::have(GlExt::Spirv) {
             debug!(
                 LOGGER,
-                "GL 4.1 profile and ARB_gl_spirv are available, \
+                "ARB_gl_spirv is available, \
                  passing compiled SPIR-V directly to OpenGL via glShaderBinary",
             );
 
@@ -305,51 +308,9 @@ pub(crate) fn link_program(shader_uids: impl IntoIterator<Item = impl AsRef<str>
         panic!("Failed to link program: {log_str}");
     }
 
-    // need 410 support for attribute location decorations
-    if !aglet_have_gl_version_4_1() {
-        let mut attrib_max_len: GLint = 0;
-        let mut attrib_count: GLint = 0;
-
-        glGetProgramiv(
-            program_handle,
-            GL_ACTIVE_ATTRIBUTE_MAX_LENGTH,
-            &mut attrib_max_len,
-        );
-        assert!(attrib_max_len >= 0);
-        glGetProgramiv(program_handle, GL_ACTIVE_ATTRIBUTES, &mut attrib_count);
-
-        let mut attrib_name_len: GLsizei = 0;
-        let mut attrib_size: GLint = 0;
-        let mut attrib_type: GLenum = 0;
-        let mut attrib_name_buf = vec![0u8; attrib_max_len as usize];
-
-        for i in 0..attrib_count as u32 {
-            glGetActiveAttrib(
-                program_handle,
-                i,
-                attrib_max_len,
-                &mut attrib_name_len,
-                &mut attrib_size,
-                &mut attrib_type,
-                attrib_name_buf.as_mut_ptr().cast(),
-            );
-
-            assert!(attrib_name_len <= attrib_max_len);
-            let attrib_loc = glGetAttribLocation(program_handle, attrib_name_buf.as_ptr().cast());
-            assert!(attrib_loc >= 0);
-            refl_info.inputs.insert(
-                String::from_utf8(attrib_name_buf.clone())
-                    .expect("OpenGL returned non-UTF-8 string for attribute name??"),
-                attrib_loc as u32,
-            );
-        }
-    }
-
-    let have_gl_spirv = aglet_have_gl_version_4_1() && aglet_have_gl_arb_gl_spirv();
-    // need GL 4.3 or ARB_explicit_uniform_location for GLSL uniform location/binding decorations
-    let have_explicit_uniform_location =
-            aglet_have_gl_version_4_3() || aglet_have_gl_arb_explicit_uniform_location();
-    if have_gl_spirv && !have_explicit_uniform_location {
+    // need ARB_explicit_uniform_location for GLSL uniform location/binding decorations
+    // (not applicable when passing SPIR-V directly to GL)
+    if GlSupport::have(GlExt::Spirv) && !GlSupport::have(GlExt::ExplicitUniformLocation) {
         let mut uniform_max_len: GLint = 0;
         let mut uniform_count: GLint = 0;
 

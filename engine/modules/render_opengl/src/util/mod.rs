@@ -19,3 +19,4 @@
 pub(crate) mod buffer;
 pub(crate) mod defines;
 pub(crate) mod gl_util;
+pub(crate) mod support;

@@ -24,6 +24,7 @@ use std::ptr;
 use argus_logging::LogLevel;
 use crate::aglet::*;
 use crate::GL_LOGGER;
+use crate::util::support::{GlExt, GlSupport};
 // all types here serve purely to provide semantic information to declarations
 
 pub(crate) type GlBufferHandle = GLuint;
@@ -100,7 +101,7 @@ pub(crate) fn set_attrib_pointer(
 ) {
     assert!(attr_len <= i32::MAX as u32);
 
-    if aglet_have_gl_arb_direct_state_access() {
+    if GlSupport::have(GlExt::DirectStateAccess) {
         glEnableVertexArrayAttrib(array_obj, attr_index);
         glVertexArrayAttribFormat(
             array_obj,
@@ -147,7 +148,7 @@ pub(crate) fn try_delete_vertex_array(array: GlArrayHandle) {
 }
 
 pub(crate) fn bind_texture(unit: GLuint, texture: GlTextureHandle) {
-    if aglet_have_gl_arb_direct_state_access() {
+    if GlSupport::have(GlExt::DirectStateAccess) {
         glBindTextureUnit(unit, texture);
     } else {
         glActiveTexture(GL_TEXTURE0 + unit);
@@ -156,7 +157,7 @@ pub(crate) fn bind_texture(unit: GLuint, texture: GlTextureHandle) {
 }
 
 pub(crate) fn restore_gl_blend_params() {
-    if aglet_have_gl_version_4_0() {
+    if GlSupport::have(GlExt::DrawBuffersBlend) || GlSupport::have(GlExt::DrawBuffersBlendARB) {
         return;
     }
 

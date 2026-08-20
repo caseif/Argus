@@ -20,6 +20,7 @@ use crate::aglet::*;
 use crate::util::gl_util::*;
 
 use std::{ptr, slice};
+use crate::util::support::{GlExt, GlSupport};
 
 pub(crate) struct GlBuffer {
     size: usize,
@@ -42,9 +43,9 @@ impl GlBuffer {
         let mut mapped: Option<*mut u8> = None;
         let mut persistent = false;
 
-        if aglet_have_gl_arb_direct_state_access() {
+        if GlSupport::have(GlExt::DirectStateAccess) {
             glCreateBuffers(1, &mut handle);
-            if aglet_have_gl_arb_buffer_storage() {
+            if GlSupport::have(GlExt::BufferStorage) {
                 let storage_flags = if allow_mapping {
                     GL_MAP_PERSISTENT_BIT | GL_MAP_WRITE_BIT
                 } else {
@@ -102,7 +103,7 @@ impl GlBuffer {
 
         assert!(self.mapped.is_none());
 
-        if aglet_have_gl_arb_direct_state_access() {
+        if GlSupport::have(GlExt::DirectStateAccess) {
             self.mapped = Some(glMapNamedBuffer(self.handle, GL_WRITE_ONLY).cast());
         } else {
             glBindBuffer(self.target, self.handle);
@@ -120,7 +121,7 @@ impl GlBuffer {
 
         assert!(self.mapped.is_some());
 
-        if aglet_have_gl_arb_direct_state_access() {
+        if GlSupport::have(GlExt::DirectStateAccess) {
             glUnmapNamedBuffer(self.handle);
         } else {
             glBindBuffer(self.target, self.handle);
@@ -141,7 +142,7 @@ impl GlBuffer {
                 unsafe { mapped_ptr.add(offset).copy_from(src.as_ptr().cast(), len) };
             },
             None => {
-                if aglet_have_gl_arb_direct_state_access() {
+                if GlSupport::have(GlExt::DirectStateAccess) {
                     glNamedBufferSubData(
                         self.handle,
                         offset as GLintptr,
@@ -172,12 +173,12 @@ impl GlBuffer {
     pub(crate) fn clear(&self, value: u32) {
         let mut must_remap = false;
 
-        if !aglet_have_gl_arb_direct_state_access() {
+        if !GlSupport::have(GlExt::DirectStateAccess) {
             glBindBuffer(self.target, self.handle);
         }
 
-        if !aglet_have_gl_arb_buffer_storage() && self.mapped.is_some() {
-            if aglet_have_gl_arb_direct_state_access() {
+        if !GlSupport::have(GlExt::BufferStorage) && self.mapped.is_some() {
+            if GlSupport::have(GlExt::DirectStateAccess) {
                 glUnmapNamedBuffer(self.handle);
             } else {
                 glUnmapBuffer(self.target);
@@ -185,8 +186,8 @@ impl GlBuffer {
             must_remap = true;
         }
 
-        if aglet_have_gl_version_4_3() {
-            if aglet_have_gl_arb_direct_state_access() {
+        if GlSupport::have(GlExt::ClearBufferObject) {
+            if GlSupport::have(GlExt::DirectStateAccess) {
                 glClearNamedBufferData(
                     self.handle,
                     GL_R32UI,
@@ -203,37 +204,34 @@ impl GlBuffer {
                     ptr::addr_of!(value).cast(),
                 );
             }
-        } else if aglet_have_gl_arb_direct_state_access() {
-            glClearNamedBufferSubData(
-                self.handle,
-                GL_R32UI,
-                0,
-                self.size as GLsizeiptr,
-                GL_RED_INTEGER,
-                GL_UNSIGNED_INT,
-                ptr::addr_of!(value).cast(),
-            );
         } else {
-            glClearBufferSubData(
-                self.target,
-                GL_R32UI,
-                0,
-                self.size as GLsizeiptr,
-                GL_RED_INTEGER,
-                GL_UNSIGNED_INT,
-                ptr::addr_of!(value).cast(),
-            );
+            let zeroes = vec![0u8; value as usize * size_of::<u32>()];
+            if GlSupport::have(GlExt::DirectStateAccess) {
+                glNamedBufferSubData(
+                    self.handle,
+                    0,
+                    self.size as GLsizeiptr,
+                    zeroes.as_ptr().cast(),
+                );
+            } else {
+                glBufferSubData(
+                    self.target,
+                    0,
+                    self.size as GLsizeiptr,
+                    zeroes.as_ptr().cast(),
+                );
+            }
         }
 
         if must_remap {
-            if aglet_have_gl_arb_direct_state_access() {
+            if GlSupport::have(GlExt::DirectStateAccess) {
                 glMapNamedBuffer(self.handle, GL_WRITE_ONLY);
             } else {
                 glMapBuffer(self.target, GL_WRITE_ONLY);
             }
         }
 
-        if !aglet_have_gl_arb_direct_state_access() {
+        if !GlSupport::have(GlExt::DirectStateAccess) {
             glBindBuffer(self.target, 0);
         }
     }
