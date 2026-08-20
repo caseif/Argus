@@ -340,8 +340,11 @@ pub(crate) fn link_program(shader_uids: impl IntoIterator<Item = impl AsRef<str>
         }
     }
 
-    // need 430 support for uniform location/binding decorations
-    if !aglet_have_gl_version_4_3() {
+    let have_gl_spirv = aglet_have_gl_version_4_1() && aglet_have_gl_arb_gl_spirv();
+    // need GL 4.3 or ARB_explicit_uniform_location for GLSL uniform location/binding decorations
+    let have_explicit_uniform_location =
+            aglet_have_gl_version_4_3() || aglet_have_gl_arb_explicit_uniform_location();
+    if have_gl_spirv && !have_explicit_uniform_location {
         let mut uniform_max_len: GLint = 0;
         let mut uniform_count: GLint = 0;
 
