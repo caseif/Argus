@@ -72,10 +72,10 @@ pub(crate) fn fill_buckets_2d(renderer_state: &mut RendererState, scene_id: impl
 
         let mut anim_frame_buf_len = 0;
         if bucket.needs_rebuild {
-            let mut buffer_len = 0;
+            let mut vert_buf_len = 0;
             for obj_handle in &bucket.objects {
                 let obj = scene_state.processed_objs.get(obj_handle).unwrap(); //TODO
-                buffer_len += obj.staging_buffer_size;
+                vert_buf_len += obj.staging_buffer_size;
                 anim_frame_buf_len +=
                     obj.vertex_count * SHADER_ATTRIB_ANIM_FRAME_LEN * size_of::<GLfloat>();
             }
@@ -89,6 +89,9 @@ pub(crate) fn fill_buckets_2d(renderer_state: &mut RendererState, scene_id: impl
             bucket
                 .anim_frame_buffer
                 .inspect(|buf| glDeleteBuffers(1, buf));
+
+            let vert_stride = (vertex_len as usize * size_of::<GLfloat>()) as GLsizei;
+            let anim_buf_stride = (SHADER_ATTRIB_ANIM_FRAME_LEN * size_of::<GLfloat>()) as GLsizei;
 
             if GlSupport::have(GlExt::DirectStateAccess) {
                 let vert_arr = {
@@ -106,14 +109,12 @@ pub(crate) fn fill_buckets_2d(renderer_state: &mut RendererState, scene_id: impl
                 };
                 glNamedBufferData(
                     vert_buf,
-                    buffer_len as GLsizeiptr,
+                    vert_buf_len as GLsizeiptr,
                     ptr::null(),
                     GL_DYNAMIC_COPY,
                 );
 
-                let stride = (vertex_len as usize * size_of::<GLfloat>()) as GLsizei;
-
-                glVertexArrayVertexBuffer(vert_arr, BINDING_INDEX_VBO, vert_buf, 0, stride);
+                glVertexArrayVertexBuffer(vert_arr, BINDING_INDEX_VBO, vert_buf, 0, vert_stride);
 
                 let anim_buf = {
                     let mut handle = 0;
@@ -133,7 +134,7 @@ pub(crate) fn fill_buckets_2d(renderer_state: &mut RendererState, scene_id: impl
                     BINDING_INDEX_ANIM_FRAME_BUF,
                     anim_buf,
                     0,
-                    (SHADER_ATTRIB_ANIM_FRAME_LEN * size_of::<GLfloat>()) as GLsizei,
+                    anim_buf_stride,
                 );
             } else {
                 let vert_arr = {
@@ -143,6 +144,26 @@ pub(crate) fn fill_buckets_2d(renderer_state: &mut RendererState, scene_id: impl
                     handle
                 };
                 glBindVertexArray(vert_arr);
+
+                let vert_buf = {
+                    let mut handle = 0;
+                    glGenBuffers(1, &mut handle);
+                    bucket.vertex_buffer = Some(handle);
+                    handle
+                };
+                glBindBuffer(GL_ARRAY_BUFFER, vert_buf);
+                glBufferData(
+                    GL_ARRAY_BUFFER,
+                    vert_buf_len as GLsizeiptr,
+                    ptr::null(),
+                    GL_DYNAMIC_COPY,
+                );
+
+                if GlSupport::have(GlExt::VertexAttribBinding) {
+                    glBindVertexBuffer(BINDING_INDEX_VBO, vert_buf, 0, vert_stride);
+                } else {
+                    glBindBuffer(GL_ARRAY_BUFFER, vert_buf);
+                }
 
                 let anim_buf = {
                     let mut handle = 0;
@@ -158,19 +179,11 @@ pub(crate) fn fill_buckets_2d(renderer_state: &mut RendererState, scene_id: impl
                     GL_DYNAMIC_DRAW,
                 );
 
-                let vert_buf = {
-                    let mut handle = 0;
-                    glGenBuffers(1, &mut handle);
-                    bucket.vertex_buffer = Some(handle);
-                    handle
-                };
-                glBindBuffer(GL_ARRAY_BUFFER, vert_buf);
-                glBufferData(
-                    GL_ARRAY_BUFFER,
-                    buffer_len as GLsizeiptr,
-                    ptr::null(),
-                    GL_DYNAMIC_COPY,
-                );
+                if GlSupport::have(GlExt::VertexAttribBinding) {
+                    glBindVertexBuffer(BINDING_INDEX_ANIM_FRAME_BUF, anim_buf, 0, anim_buf_stride);
+                } else {
+                    glBindBuffer(GL_ARRAY_BUFFER, anim_buf);
+                }
             }
 
             if anim_frame_buf_len > 0 {
@@ -189,7 +202,7 @@ pub(crate) fn fill_buckets_2d(renderer_state: &mut RendererState, scene_id: impl
                     bucket.vertex_array.unwrap(),
                     bucket.vertex_buffer.unwrap(),
                     BINDING_INDEX_VBO,
-                    vertex_len as GLuint,
+                    vertex_len,
                     SHADER_ATTRIB_POSITION_LEN as u32,
                     *loc,
                     &mut attr_offset,
@@ -263,14 +276,14 @@ pub(crate) fn fill_buckets_2d(renderer_state: &mut RendererState, scene_id: impl
             if bucket.needs_rebuild || processed.updated {
                 if GlSupport::have(GlExt::DirectStateAccess) {
                     glCopyNamedBufferSubData(
-                        processed.staging_buffer,
+                        processed.staging_buffer.get_handle(),
                         bucket.vertex_buffer.unwrap(),
                         0,
                         offset as GLintptr,
                         processed.staging_buffer_size as GLsizeiptr,
                     );
                 } else {
-                    glBindBuffer(GL_COPY_READ_BUFFER, processed.staging_buffer);
+                    glBindBuffer(GL_COPY_READ_BUFFER, processed.staging_buffer.get_handle());
                     glCopyBufferSubData(
                         GL_COPY_READ_BUFFER,
                         GL_ARRAY_BUFFER,

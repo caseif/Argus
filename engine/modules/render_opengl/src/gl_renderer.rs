@@ -36,6 +36,7 @@ use std::collections::HashSet;
 use std::ffi::CStr;
 use std::ptr;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use strum::IntoEnumIterator;
 use crate::util::support::{GlExt, GlSupport};
 
 pub(crate) struct GlRenderer {
@@ -94,6 +95,11 @@ impl GlRenderer {
             "Obtained OpenGL {}.{} context ({})",
             gl_major, gl_minor, gl_version_str
         );
+
+        info!(LOGGER, "Current OpenGL extension support:");
+        for ext in GlExt::iter() {
+            info!(LOGGER, "  {}: {}", ext.name(), GlSupport::have(ext));
+        }
 
         gl_mgr.set_swap_interval(0);
 
@@ -309,7 +315,6 @@ impl GlRenderer {
             SHADER_UBO_GLOBAL_LEN as usize,
             GL_DYNAMIC_DRAW,
             true,
-            false,
         ));
     }
 
@@ -323,7 +328,7 @@ impl GlRenderer {
             .global_ubo
             .as_mut()
             .expect("Global UBO must be initialized before it can be updated")
-            .write_val(&millis, SHADER_UNIFORM_GLOBAL_TIME_OFF as usize);
+            .write_val(millis, SHADER_UNIFORM_GLOBAL_TIME_OFF as usize);
     }
 }
 

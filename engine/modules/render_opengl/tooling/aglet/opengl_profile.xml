@@ -3,26 +3,26 @@
     <api>
         <name>glcore</name>
         <minVersion>3.3</minVersion>
-        <targetVersion>4.3</targetVersion>
+        <targetVersion>4.6</targetVersion>
     </api>
     <extensions>
         <!-- 4.0 -->
         <extension required="false">GL_ARB_draw_buffers_blend</extension>
         <!-- 4.1 -->
-        <extension required="false">GL_ARB_get_program_binary</extension>
         <extension required="false">GL_ARB_ES2_compatibility</extension>
         <!-- 4.2 -->
         <extension required="false">GL_ARB_texture_storage</extension>
         <!-- 4.3 -->
         <extension required="false">GL_ARB_clear_buffer_object</extension>
         <extension required="false">GL_ARB_explicit_uniform_location</extension>
+        <extension required="false">GL_ARB_vertex_attrib_binding</extension>
         <extension required="false">GL_ARB_compute_shader</extension>
         <extension required="false">GL_KHR_debug</extension>
         <!-- 4.4 -->
         <extension required="false">GL_ARB_buffer_storage</extension>
         <!-- 4.5 -->
         <extension required="false">GL_ARB_direct_state_access</extension>
-        <!-- Non-core -->
+        <!-- 4.6 -->
         <extension required="false">GL_ARB_gl_spirv</extension>
     </extensions>
 </profile>

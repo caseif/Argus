@@ -133,7 +133,7 @@ fn compile_shaders(shaders: &Vec<Resource>) -> (Vec<GlShaderHandle>, ShaderRefle
             }
         };
 
-        if !GlSupport::have(GlExt::ComputeShader) {
+        if *stage == glslang::ShaderStage::Compute && !GlSupport::have(GlExt::ComputeShader) {
             panic!("Compute shader support is not currently available");
         }
 
@@ -171,7 +171,7 @@ fn compile_shaders(shaders: &Vec<Resource>) -> (Vec<GlShaderHandle>, ShaderRefle
                 ptr::null(),
             );
         } else {
-            debug!(LOGGER, "GL 4.1 profile and/or ARB_gl_spirv is not available, transpiling compiled SPIR-V to GLSL");
+            debug!(LOGGER, "ARB_gl_spirv is not available, transpiling compiled SPIR-V to GLSL");
 
             let module = Module::from_words(spirv_src.as_slice());
             let compiler = Compiler::<Glsl>::new(module).expect("Failed to create SPIR-V context");
@@ -310,9 +310,11 @@ pub(crate) fn link_program(shader_uids: impl IntoIterator<Item = impl AsRef<str>
 
     // need ARB_explicit_uniform_location for GLSL uniform location/binding decorations
     // (not applicable when passing SPIR-V directly to GL)
-    if GlSupport::have(GlExt::Spirv) && !GlSupport::have(GlExt::ExplicitUniformLocation) {
+    if !GlSupport::have(GlExt::Spirv) && !GlSupport::have(GlExt::ExplicitUniformLocation) {
         let mut uniform_max_len: GLint = 0;
         let mut uniform_count: GLint = 0;
+
+        glUseProgram(program_handle);
 
         glGetProgramiv(
             program_handle,
@@ -327,6 +329,13 @@ pub(crate) fn link_program(shader_uids: impl IntoIterator<Item = impl AsRef<str>
         uniform_name_buf.resize(uniform_max_len as usize, 0);
 
         for i in 0..uniform_count as u32 {
+            let mut block_index: GLint = -1;
+            glGetActiveUniformsiv(program_handle, 1, &i, GL_UNIFORM_BLOCK_INDEX, &mut block_index);
+            if block_index >= 0 {
+                // skip uniform inside block
+                continue;
+            }
+
             glGetActiveUniformName(
                 program_handle,
                 i,
@@ -337,6 +346,7 @@ pub(crate) fn link_program(shader_uids: impl IntoIterator<Item = impl AsRef<str>
             let uniform_name = String::from_utf8(uniform_name_buf.clone())
                 .expect("OpenGL returned non-UTF-8 string as uniform name??");
             assert!(uniform_name_len <= uniform_max_len);
+
             let uniform_loc =
                 glGetUniformLocation(program_handle, uniform_name_buf.as_ptr().cast());
             assert!(uniform_loc >= 0);

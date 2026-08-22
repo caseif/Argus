@@ -19,6 +19,8 @@ argus_wm = { path = "../wm" }
 
 glslang = { workspace = true }
 spirv-cross2 = { workspace = true, features = ["glsl"] }
+strum = { workspace = true }
+strum_macros = { workspace = true }
 
 [build-dependencies]
 argus_build_util = { path = "../../libs/build_util", features = ["arp"] }

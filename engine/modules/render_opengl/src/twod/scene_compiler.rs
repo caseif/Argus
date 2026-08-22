@@ -35,17 +35,17 @@ fn get_bucket_key(processed_obj: &ProcessedObject) -> RenderBucketKey {
 
 fn create_obj_ubo(bucket: &mut RenderBucket) {
     bucket.obj_ubo = Some(
-        GlBuffer::new(GL_UNIFORM_BUFFER, SHADER_UBO_OBJ_LEN as usize, GL_STATIC_DRAW, true, false)
+        GlBuffer::new(GL_UNIFORM_BUFFER, SHADER_UBO_OBJ_LEN as usize, GL_STATIC_DRAW, true)
     );
     let ubo = &bucket.obj_ubo.as_ref().unwrap();
 
     // we assume that these values will never change
 
     let stride = [bucket.atlas_stride.x, bucket.atlas_stride.y];
-    ubo.write_val(&stride, SHADER_UNIFORM_OBJ_UV_STRIDE_OFF as usize);
+    ubo.write_vals(&stride, SHADER_UNIFORM_OBJ_UV_STRIDE_OFF as usize);
 
     let light_opacity = bucket.light_opacity;
-    ubo.write_val(&light_opacity, SHADER_UNIFORM_OBJ_LIGHT_OPACITY_OFF as usize);
+    ubo.write_val(light_opacity, SHADER_UNIFORM_OBJ_LIGHT_OPACITY_OFF as usize);
 }
 
 fn handle_new_obj(

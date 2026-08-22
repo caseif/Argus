@@ -20,12 +20,11 @@ use crate::aglet::*;
 use crate::shaders::{get_material_program, LinkedProgram};
 use crate::state::{ProcessedObject, RendererState, Scene2dState};
 use crate::util::defines::*;
-use std::{ptr, slice};
-use std::ops::Deref;
 use argus_render::constants::*;
 use argus_render::twod::{get_render_context_2d, RenderObject2d};
-use argus_util::math::{Matrix4x4, Vector4f};
+use argus_util::math::{Matrix4x4, Vector2f, Vector4f};
 use argus_util::pool::Handle;
+use crate::util::buffer::GlBuffer;
 use crate::util::support::{GlExt, GlSupport};
 
 fn count_vertices(obj: &RenderObject2d) -> usize {
@@ -87,7 +86,7 @@ fn create_processed_object_2d(
     let attr_color_loc = program.reflection.inputs.get(SHADER_ATTRIB_COLOR);
     let attr_texcoord_loc = program.reflection.inputs.get(SHADER_ATTRIB_TEXCOORD);
 
-    let vertex_len = (attr_position_loc
+    let words_per_vertex = (attr_position_loc
         .map(|_| SHADER_ATTRIB_POSITION_LEN)
         .unwrap_or(0)
         + attr_normal_loc
@@ -98,99 +97,56 @@ fn create_processed_object_2d(
             .map(|_| SHADER_ATTRIB_TEXCOORD_LEN)
             .unwrap_or(0)) as GLuint;
 
-    let buffer_word_count = vertex_count * vertex_len as usize;
+    let buffer_word_count = vertex_count * words_per_vertex as usize;
     let buffer_size = buffer_word_count * size_of::<GLfloat>();
 
-    let mut vertex_buffer = 0;
-    let is_buffer_persistent =
-        GlSupport::have(GlExt::DirectStateAccess) && GlSupport::have(GlExt::BufferStorage);
+    let vertex_buffer = GlBuffer::new(GL_COPY_READ_BUFFER, buffer_size, GL_DYNAMIC_DRAW, true);
 
-    let mapped_buffer_ptr: *mut GLfloat = if GlSupport::have(GlExt::DirectStateAccess) {
-        glCreateBuffers(1, &mut vertex_buffer);
-        if GlSupport::have(GlExt::BufferStorage) {
-            glNamedBufferStorage(
-                vertex_buffer,
-                buffer_size as GLsizeiptr,
-                ptr::null(),
-                GL_MAP_PERSISTENT_BIT | GL_MAP_WRITE_BIT,
-            );
-            glMapNamedBufferRange(
-                vertex_buffer,
-                0,
-                buffer_size as GLsizeiptr,
-                GL_MAP_PERSISTENT_BIT | GL_MAP_WRITE_BIT,
-            )
-        } else {
-            glNamedBufferData(
-                vertex_buffer,
-                buffer_size as GLsizeiptr,
-                ptr::null(),
-                GL_DYNAMIC_DRAW,
-            );
-            glMapNamedBuffer(vertex_buffer, GL_WRITE_ONLY)
-        }
-    } else {
-        glGenBuffers(1, &mut vertex_buffer);
-        glBindBuffer(GL_COPY_READ_BUFFER, vertex_buffer);
-        glBufferData(
-            GL_COPY_READ_BUFFER,
-            buffer_size as GLsizeiptr,
-            ptr::null(),
-            GL_DYNAMIC_DRAW,
-        );
-        glMapBuffer(GL_COPY_READ_BUFFER, GL_WRITE_ONLY)
-    }
-    .cast();
+    {
+        let _vert_buf_map_guard = vertex_buffer.map_write();
 
-    let mapped_buffer = unsafe { slice::from_raw_parts_mut(mapped_buffer_ptr, buffer_word_count) };
+        let mut cur_vertex_index: usize = 0;
+        for prim in object.get_primitives() {
+            #[allow(unused_assignments)]
+            for vertex in &prim.vertices {
+                let mut cursor = cur_vertex_index * words_per_vertex as usize * size_of::<GLfloat>();
 
-    let mut cur_vertex_index: usize = 0;
-    for prim in object.get_primitives() {
-        #[allow(unused_assignments)]
-        for vertex in &prim.vertices {
-            let major_off: usize = cur_vertex_index * vertex_len as usize;
-            let mut minor_off: usize = 0;
+                if attr_position_loc.is_some() {
+                    let pos_vec = Vector4f {
+                        x: vertex.position.x,
+                        y: vertex.position.y,
+                        z: 0.0,
+                        w: 1.0,
+                    };
+                    let transformed_pos = {
+                        let pos = transform * pos_vec;
+                        Vector2f::new(pos.x, pos.y)
+                    };
+                    vertex_buffer.write_val(
+                        transformed_pos,
+                        cursor,
+                    );
+                    cursor += size_of_val(&transformed_pos);
+                }
+                if attr_normal_loc.is_some() {
+                    vertex_buffer.write_val(vertex.normal, cursor);
+                    cursor += size_of_val(&vertex.normal);
+                }
+                if attr_color_loc.is_some() {
+                    vertex_buffer.write_val(vertex.color, cursor);
+                    cursor += size_of_val(&vertex.color);
+                }
+                if attr_texcoord_loc.is_some() {
+                    vertex_buffer.write_val(vertex.tex_coord, cursor);
+                    cursor += size_of_val(&vertex.tex_coord);
+                }
 
-            #[allow(clippy::identity_op)]
-            if attr_position_loc.is_some() {
-                let pos_vec = Vector4f {
-                    x: vertex.position.x,
-                    y: vertex.position.y,
-                    z: 0.0,
-                    w: 1.0,
-                };
-                let transformed_pos = transform * pos_vec;
-                mapped_buffer[major_off + minor_off + 0] = transformed_pos.x;
-                mapped_buffer[major_off + minor_off + 1] = transformed_pos.y;
-                minor_off += 2;
+                cur_vertex_index += 1;
             }
-            #[allow(clippy::identity_op)]
-            if attr_normal_loc.is_some() {
-                mapped_buffer[major_off + minor_off + 0] = vertex.normal.x;
-                mapped_buffer[major_off + minor_off + 1] = vertex.normal.y;
-                minor_off += 2;
-            }
-            #[allow(clippy::identity_op)]
-            if attr_color_loc.is_some() {
-                mapped_buffer[major_off + minor_off + 0] = vertex.color.x;
-                mapped_buffer[major_off + minor_off + 1] = vertex.color.y;
-                mapped_buffer[major_off + minor_off + 2] = vertex.color.z;
-                mapped_buffer[major_off + minor_off + 3] = vertex.color.w;
-                minor_off += 4;
-            }
-            #[allow(clippy::identity_op)]
-            if attr_texcoord_loc.is_some() {
-                mapped_buffer[major_off + minor_off + 0] = vertex.tex_coord.x;
-                mapped_buffer[major_off + minor_off + 1] = vertex.tex_coord.y;
-                minor_off += 2;
-            }
-
-            cur_vertex_index += 1;
         }
     }
 
     if !GlSupport::have(GlExt::DirectStateAccess) {
-        glUnmapBuffer(GL_COPY_READ_BUFFER);
         glBindBuffer(GL_COPY_READ_BUFFER, 0);
     }
 
@@ -203,7 +159,6 @@ fn create_processed_object_2d(
         vertex_buffer,
         buffer_size,
         count_vertices(object),
-        is_buffer_persistent.then_some(mapped_buffer_ptr.cast()),
     );
 
     processed_obj.anim_frame = object.get_active_frame().value;
@@ -254,29 +209,13 @@ fn update_processed_object_2d(
         .map(|_| SHADER_ATTRIB_TEXCOORD_LEN)
         .unwrap_or(0)) as GLuint;
 
-    let vertex_count = count_vertices(object.deref());
-    let buffer_word_count = vertex_count * vertex_len as usize;
-
-    let mapped_buffer_ptr: *mut GLfloat = proc_obj
-        .mapped_buffer
-        .unwrap_or_else(|| {
-            if GlSupport::have(GlExt::DirectStateAccess) {
-                glMapNamedBuffer(proc_obj.staging_buffer, GL_WRITE_ONLY)
-            } else {
-                glBindBuffer(GL_COPY_READ_BUFFER, proc_obj.staging_buffer);
-                glMapBuffer(GL_COPY_READ_BUFFER, GL_WRITE_ONLY)
-            }
-        })
-        .cast();
-
-    let mapped_buffer = unsafe { slice::from_raw_parts_mut(mapped_buffer_ptr, buffer_word_count) };
+    let _buffer_map_guard = proc_obj.staging_buffer.map_write();
 
     let mut cur_vertex_index: usize = 0;
     for prim in object.get_primitives() {
         #[allow(unused_assignments, clippy::identity_op)]
         for vertex in &prim.vertices {
-            let major_off: usize = cur_vertex_index * vertex_len as usize;
-            let mut minor_off: usize = 0;
+            let mut cursor = cur_vertex_index * vertex_len as usize * size_of::<GLfloat>();
 
             let pos_vec = Vector4f {
                 x: vertex.position.x,
@@ -284,21 +223,14 @@ fn update_processed_object_2d(
                 z: 0.0,
                 w: 1.0,
             };
-            let transformed_pos = transform * pos_vec;
-            mapped_buffer[major_off + minor_off + 0] = transformed_pos.x;
-            mapped_buffer[major_off + minor_off + 1] = transformed_pos.y;
-            minor_off += 2;
+            let transformed_pos = {
+                let pos = transform * pos_vec;
+                Vector2f::new(pos.x, pos.y)
+            };
+            proc_obj.staging_buffer.write_val(transformed_pos, cursor);
+            cursor += size_of_val(&transformed_pos);
 
             cur_vertex_index += 1;
-        }
-    }
-
-    if proc_obj.mapped_buffer.is_none() {
-        if GlSupport::have(GlExt::DirectStateAccess) {
-            glUnmapNamedBuffer(proc_obj.staging_buffer);
-        } else {
-            glUnmapBuffer(GL_COPY_READ_BUFFER);
-            glBindBuffer(GL_COPY_READ_BUFFER, 0);
         }
     }
 
@@ -306,15 +238,6 @@ fn update_processed_object_2d(
     proc_obj.updated = true;
 }
 
-pub(crate) fn deinit_object_2d(obj: &mut ProcessedObject) {
-    if obj.mapped_buffer.is_some() {
-        if GlSupport::have(GlExt::DirectStateAccess) {
-            glUnmapNamedBuffer(obj.staging_buffer);
-        } else {
-            glBindBuffer(GL_ARRAY_BUFFER, obj.staging_buffer);
-            glUnmapBuffer(GL_ARRAY_BUFFER);
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
-        }
-    }
-    glDeleteBuffers(1, &obj.staging_buffer);
+pub(crate) fn deinit_object_2d(_obj: &mut ProcessedObject) {
+    // buffer is implicitly deleted on drop
 }

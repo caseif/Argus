@@ -25,12 +25,11 @@ use crate::util::gl_util::*;
 use std::cmp::{max, min};
 use std::mem::swap;
 use std::ops::DerefMut;
-use std::ptr;
 use argus_render::common::{AttachedViewport, Material, Viewport, ViewportCoordinateSpaceMode};
 use argus_render::constants::*;
 use argus_render::twod::{get_render_context_2d, AttachedViewport2d, Std140Light2D};
 use argus_util::dirtiable::ValueAndDirtyFlag;
-use argus_util::math::Vector2u;
+use argus_util::math::{Vector2u, Vector4f};
 use crate::util::support::{GlExt, GlSupport};
 
 const BINDING_INDEX_VBO: u32 = 0;
@@ -112,7 +111,6 @@ fn update_scene_ubo_2d(scene_state: &mut Scene2dState) {
             SHADER_UBO_SCENE_LEN as usize,
             GL_DYNAMIC_DRAW,
             true,
-            false,
         )
     });
 
@@ -129,8 +127,8 @@ fn update_scene_ubo_2d(scene_state: &mut Scene2dState) {
     }
 
     if must_update || al_color.dirty {
-        let color: [f32; 4] = [al_color.value.x, al_color.value.y, al_color.value.z, 1f32];
-        ubo.write_val(&color, SHADER_UNIFORM_SCENE_AL_COLOR_OFF as usize);
+        let color_rgba = Vector4f::new(al_color.value.x, al_color.value.y, al_color.value.z, 1f32);
+        ubo.write_val(color_rgba, SHADER_UNIFORM_SCENE_AL_COLOR_OFF as usize);
     }
 }
 
@@ -144,16 +142,15 @@ fn update_viewport_ubo(viewport: &mut AttachedViewport2d, scene_state: &Scene2dS
             SHADER_UBO_VIEWPORT_LEN as usize,
             GL_DYNAMIC_DRAW,
             true,
-            false,
         )
     });
 
     if must_update {
-        ubo.write_val(
+        ubo.write_vals(
             &viewport.get_view_matrix().value.cells,
             SHADER_UNIFORM_VIEWPORT_VM_OFF as usize,
         );
-        ubo.write_val(
+        ubo.write_vals(
             &viewport.get_view_matrix().value.inverse().unwrap().cells,
             SHADER_UNIFORM_VIEWPORT_VM_INV_OFF as usize,
         );
@@ -170,11 +167,11 @@ fn update_viewport_ubo(viewport: &mut AttachedViewport2d, scene_state: &Scene2dS
         }
 
         ubo.write_val(
-            &lights_count,
+            lights_count,
             SHADER_UNIFORM_VIEWPORT_LIGHT_COUNT_OFF as usize,
         );
 
-        ubo.write_val(&shader_lights_arr, SHADER_UNIFORM_VIEWPORT_LIGHTS_OFF as usize);
+        ubo.write_vals(&shader_lights_arr, SHADER_UNIFORM_VIEWPORT_LIGHTS_OFF as usize);
     }
 }
 
@@ -206,6 +203,9 @@ fn create_textures(target: GLenum, n: GLsizei) -> Vec<GlTextureHandle> {
         glCreateTextures(target, n, handles.as_mut_ptr());
     } else {
         glGenTextures(n, handles.as_mut_ptr());
+        for i in 0..n {
+            glBindTexture(target, handles[i as usize]);
+        }
     }
     handles
 }
@@ -321,7 +321,7 @@ pub(crate) fn draw_scene_2d_to_framebuffer(
         }
 
         if tex_handle.as_ref() != &last_texture {
-            bind_texture(0, *tex_handle.as_ref());
+            bind_texture(GL_TEXTURE_2D, 0, *tex_handle.as_ref());
             last_texture = *tex_handle.as_ref();
         }
 
@@ -337,7 +337,7 @@ pub(crate) fn draw_scene_2d_to_framebuffer(
     }
 
     if !GlSupport::have(GlExt::DirectStateAccess) {
-        bind_texture(0, 0);
+        bind_texture(GL_TEXTURE_2D, 0, 0);
     }
 
     let scene = get_render_context_2d().get_scene(&scene_state.scene_id).unwrap();
@@ -404,7 +404,7 @@ pub(crate) fn draw_scene_2d_to_framebuffer(
 
         glBindVertexArray(renderer_state.frame_vao.unwrap());
         glUseProgram(postfx_program.handle);
-        bind_texture(0, color_buf_back);
+        bind_texture(GL_TEXTURE_2D, 0, color_buf_back);
 
         bind_ubo(
             postfx_program,
@@ -486,7 +486,7 @@ pub(crate) fn draw_scene_2d_to_framebuffer(
 
             if texture_uid != &last_tex {
                 let tex_handle = renderer_state.prepared_textures.get(texture_uid).unwrap();
-                bind_texture(0, *tex_handle.as_ref());
+                bind_texture(GL_TEXTURE_2D, 0, *tex_handle.as_ref());
                 last_tex = texture_uid.to_string();
             }
 
@@ -502,7 +502,7 @@ pub(crate) fn draw_scene_2d_to_framebuffer(
         glBindVertexArray(0);
 
         if !GlSupport::have(GlExt::DirectStateAccess) {
-            bind_texture(0, 0);
+            bind_texture(GL_TEXTURE_2D, 0, 0);
         }
 
         glUseProgram(0);
@@ -512,7 +512,7 @@ pub(crate) fn draw_scene_2d_to_framebuffer(
         }
     }
 
-    bind_texture(0, 0);
+    bind_texture(GL_TEXTURE_2D, 0, 0);
     glUseProgram(0);
     glBindVertexArray(0);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
@@ -540,14 +540,14 @@ pub(crate) fn draw_lightmap_to_framebuffer(
     glViewport(0, 0, fb_width, fb_height);
 
     glBindVertexArray(renderer_state.frame_vao.unwrap());
-    bind_texture(0, lightmap_buf);
+    bind_texture(GL_TEXTURE_2D, 0, lightmap_buf);
 
     // blend color multiplicatively, don't touch destination alpha
     glBlendFuncSeparate(GL_ZERO, GL_SRC_COLOR, GL_ZERO, GL_ONE);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     restore_gl_blend_params();
 
-    bind_texture(0, 0);
+    bind_texture(GL_TEXTURE_2D, 0, 0);
     glBindVertexArray(0);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
     glUseProgram(0);
@@ -565,7 +565,6 @@ fn init_viewport_buffers(
             GL_TEXTURE_BUFFER,
             SHADER_IMAGE_SHADOWMAP_LEN,
             GL_STREAM_COPY,
-            false,
             false,
         ));
         let sm_buf = viewport_state.buffers.shadowmap_buffer.as_ref().unwrap();
@@ -590,7 +589,7 @@ fn init_viewport_buffers(
                 viewport_state.buffers.shadowmap_texture = Some(handle);
                 handle
             };
-            glBindTextureUnit(GL_TEXTURE_BUFFER, sm_tex);
+            bind_texture(GL_TEXTURE_BUFFER, 0, sm_tex);
             glTexBuffer(
                 GL_TEXTURE_BUFFER,
                 if GlSupport::have(GlExt::ComputeShader) { GL_R32F } else { GL_R32UI },
@@ -660,11 +659,10 @@ fn init_viewport_buffers(
             // initialize color buffers
 
             glTextureStorage2D(cb_prim, 1, GL_RGBA8, fb_width, fb_height);
-            glTextureStorage2D(cb_sec, 1, GL_RGBA8, fb_width, fb_height);
-
             glTextureParameteri(cb_prim, GL_TEXTURE_MIN_FILTER, GL_LINEAR as GLint);
             glTextureParameteri(cb_prim, GL_TEXTURE_MAG_FILTER, GL_LINEAR as GLint);
 
+            glTextureStorage2D(cb_sec, 1, GL_RGBA8, fb_width, fb_height);
             glTextureParameteri(cb_sec, GL_TEXTURE_MIN_FILTER, GL_LINEAR as GLint);
             glTextureParameteri(cb_sec, GL_TEXTURE_MAG_FILTER, GL_LINEAR as GLint);
 
@@ -679,13 +677,6 @@ fn init_viewport_buffers(
 
             // attach primary color buffers
             glNamedFramebufferTexture(fb_prim, GL_COLOR_ATTACHMENT0, cb_prim, 0);
-            glNamedFramebufferTexture(fb_sec, GL_COLOR_ATTACHMENT0, cb_sec, 0);
-
-            // attach auxiliary buffers
-            glNamedFramebufferTexture(fb_prim, GL_COLOR_ATTACHMENT1, lom_buf, 0);
-            // don't attach aux buffers to the secondary fb so they don't get
-            // lost while ping-ponging
-
             // need to be able to set a per-attachment blend
             // function + equation to be able to do it in one pass
             if GlSupport::have(GlExt::DrawBuffersBlend) {
@@ -693,11 +684,20 @@ fn init_viewport_buffers(
                 glNamedFramebufferDrawBuffers(fb_prim, 2, draw_bufs.as_ptr());
             }
 
+            // attach auxiliary buffers
+            glNamedFramebufferTexture(fb_prim, GL_COLOR_ATTACHMENT1, lom_buf, 0);
+            // don't attach aux buffers to the secondary fb so they don't get
+            // lost while ping-ponging
+
+            // attach secondary color buffer
+            glNamedFramebufferTexture(fb_sec, GL_COLOR_ATTACHMENT0, cb_sec, 0);
+
             // set up second-pass auxiliary FBO
             glNamedFramebufferTexture(fb_aux, GL_COLOR_ATTACHMENT1, lom_buf, 0);
 
             let aux_draw_bufs = [GL_NONE, GL_COLOR_ATTACHMENT1];
             glNamedFramebufferDrawBuffers(fb_aux, 2, aux_draw_bufs.as_ptr());
+            glNamedFramebufferReadBuffer(fb_aux, GL_NONE);
 
             // set up framebuffer for lighting pass
             glNamedFramebufferTexture(fb_lightmap, GL_COLOR_ATTACHMENT0, lm_buf, 0);
@@ -707,157 +707,126 @@ fn init_viewport_buffers(
 
             // check framebuffer statuses
 
-            let front_fb_status = glCheckNamedFramebufferStatus(fb_prim, GL_FRAMEBUFFER);
-            if front_fb_status != GL_FRAMEBUFFER_COMPLETE {
+            let fb_front_status = glCheckNamedFramebufferStatus(fb_prim, GL_FRAMEBUFFER);
+            if fb_front_status != GL_FRAMEBUFFER_COMPLETE {
                 panic!(
                     "Front framebuffer is incomplete (error {})",
-                    front_fb_status
+                    fb_front_status
                 );
             }
 
-            let back_fb_status = glCheckNamedFramebufferStatus(fb_sec, GL_FRAMEBUFFER);
-            if back_fb_status != GL_FRAMEBUFFER_COMPLETE {
-                panic!("Back framebuffer is incomplete (error {})", back_fb_status);
+            let fb_back_status = glCheckNamedFramebufferStatus(fb_sec, GL_FRAMEBUFFER);
+            if fb_back_status != GL_FRAMEBUFFER_COMPLETE {
+                panic!("Back framebuffer is incomplete (error {})", fb_back_status);
             }
 
-            let aux_fb_status = glCheckNamedFramebufferStatus(fb_aux, GL_FRAMEBUFFER);
-            if aux_fb_status != GL_FRAMEBUFFER_COMPLETE {
+            let fb_aux_status = glCheckNamedFramebufferStatus(fb_aux, GL_FRAMEBUFFER);
+            if fb_aux_status != GL_FRAMEBUFFER_COMPLETE {
                 panic!(
                     "Opacity map framebuffer is incomplete (error {})",
-                    aux_fb_status
+                    fb_aux_status
                 );
             }
 
-            let lm_fb_status = glCheckNamedFramebufferStatus(fb_lightmap, GL_FRAMEBUFFER);
-            if lm_fb_status != GL_FRAMEBUFFER_COMPLETE {
+            let fb_lm_status = glCheckNamedFramebufferStatus(fb_lightmap, GL_FRAMEBUFFER);
+            if fb_lm_status != GL_FRAMEBUFFER_COMPLETE {
                 panic!(
-                    "Opacity map framebuffer is incomplete (error {})",
-                    lm_fb_status
+                    "Lightmap framebuffer is incomplete (error {})",
+                    fb_lm_status
                 );
             }
         } else {
-            // light opacity buffer
-            bind_texture(0, lom_buf);
+            // initialize color buffers
 
-            glTexImage2D(
-                GL_TEXTURE_2D,
-                0,
-                GL_R32F as GLint,
-                fb_width,
-                fb_height,
-                0,
-                GL_RED,
-                GL_FLOAT,
-                ptr::null(),
-            );
-
-            // secondary framebuffer texture
-            bind_texture(0, cb_sec);
-
-            glTexImage2D(
-                GL_TEXTURE_2D,
-                0,
-                GL_RGBA as GLint,
-                fb_width,
-                fb_height,
-                0,
-                GL_RGBA,
-                GL_UNSIGNED_BYTE,
-                ptr::null(),
-            );
-
+            bind_texture(GL_TEXTURE_2D, 0, cb_prim);
+            glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, fb_width, fb_height);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR as GLint);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR as GLint);
 
-            bind_texture(0, 0);
-
-            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fb_sec);
-
-            glFramebufferTexture2D(
-                GL_DRAW_FRAMEBUFFER,
-                GL_COLOR_ATTACHMENT0,
-                GL_TEXTURE_2D,
-                cb_sec,
-                0,
-            );
-            // don't attach aux buffers to the secondary fb so they don't get
-            // lost while ping-ponging
-
-            let back_fb_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-            if back_fb_status != GL_FRAMEBUFFER_COMPLETE {
-                panic!("Back framebuffer is incomplete (error {})", back_fb_status);
-            }
-
-            // primary framebuffer texture
-            bind_texture(0, cb_prim);
-
-            glTexImage2D(
-                GL_TEXTURE_2D,
-                0,
-                GL_RGBA as GLint,
-                fb_width,
-                fb_height,
-                0,
-                GL_RGBA,
-                GL_UNSIGNED_BYTE,
-                ptr::null(),
-            );
-
+            bind_texture(GL_TEXTURE_2D, 0, cb_sec);
+            glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, fb_width, fb_height);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR as GLint);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR as GLint);
 
-            bind_texture(0, 0);
+            // initialize auxiliary buffers
 
-            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fb_prim);
+            bind_texture(GL_TEXTURE_2D, 0, lom_buf);
+            glTexStorage2D(GL_TEXTURE_2D, 1, GL_R32F, fb_width, fb_height);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST as GLint);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST as GLint);
 
-            glFramebufferTexture2D(
-                GL_DRAW_FRAMEBUFFER,
-                GL_COLOR_ATTACHMENT0,
-                GL_TEXTURE_2D,
-                cb_prim,
-                0,
-            );
-            glFramebufferTexture2D(
-                GL_DRAW_FRAMEBUFFER,
-                GL_COLOR_ATTACHMENT1,
-                GL_TEXTURE_2D,
-                lom_buf,
-                0,
-            );
+            bind_texture(GL_TEXTURE_2D, 0, lm_buf);
+            glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, fb_width, fb_height);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST as GLint);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST as GLint);
+
+            glBindFramebuffer(GL_FRAMEBUFFER, fb_prim);
+            // attach primary color buffer
+            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, cb_prim, 0);
+            // attach auxiliary lightmap buffer
+            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, lom_buf, 0);
 
             // need to be able to set a per-attachment blend
             // function + equation to be able to do it in one pass
             if GlSupport::have(GlExt::DrawBuffersBlend) {
                 let draw_bufs = [GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1];
-                glDrawBuffers(2, draw_bufs.as_ptr());
+                glDrawBuffers(draw_bufs.len() as GLsizei, draw_bufs.as_ptr());
             }
 
-            let front_fb_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-            if front_fb_status != GL_FRAMEBUFFER_COMPLETE {
+            // attach secondary color buffer
+            glBindFramebuffer(GL_FRAMEBUFFER, fb_sec);
+            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, cb_sec, 0);
+
+            // don't attach aux buffers to the secondary fb so they don't get
+            // lost while ping-ponging
+
+            // set up second-pass auxiliary FBO
+            glBindFramebuffer(GL_FRAMEBUFFER, fb_aux);
+            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, lom_buf, 0);
+
+            let aux_draw_bufs = [GL_NONE, GL_COLOR_ATTACHMENT1];
+            glDrawBuffers(aux_draw_bufs.len() as GLsizei, aux_draw_bufs.as_ptr());
+            glReadBuffer(GL_NONE);
+
+            // set up framebuffer for lighting pass
+            glBindFramebuffer(GL_FRAMEBUFFER, fb_lightmap);
+            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, lm_buf, 0);
+
+            let lightmap_draw_bufs = [GL_COLOR_ATTACHMENT0];
+            glDrawBuffers(lightmap_draw_bufs.len() as GLsizei, lightmap_draw_bufs.as_ptr());
+
+            // check framebuffer statuses
+
+            glBindFramebuffer(GL_FRAMEBUFFER, fb_prim);
+            let fb_prim_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+            if fb_prim_status != GL_FRAMEBUFFER_COMPLETE {
                 panic!(
                     "Front framebuffer is incomplete (error {})",
-                    front_fb_status
+                    fb_prim_status
                 );
             }
 
-            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fb_aux);
+            glBindFramebuffer(GL_FRAMEBUFFER, fb_sec);
+            let fb_sec_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+            if fb_sec_status != GL_FRAMEBUFFER_COMPLETE {
+                panic!("Back framebuffer is incomplete (error {})", fb_sec_status);
+            }
 
-            glFramebufferTexture2D(
-                GL_DRAW_FRAMEBUFFER,
-                GL_COLOR_ATTACHMENT1,
-                GL_TEXTURE_2D,
-                lom_buf,
-                0,
-            );
-
-            let draw_bufs = [GL_NONE, GL_COLOR_ATTACHMENT1];
-            glDrawBuffers(2, draw_bufs.as_ptr());
-
-            let aux_fb_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-            if aux_fb_status != GL_FRAMEBUFFER_COMPLETE {
+            glBindFramebuffer(GL_FRAMEBUFFER, fb_aux);
+            let fb_aux_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+            if fb_aux_status != GL_FRAMEBUFFER_COMPLETE {
                 panic!(
-                    "Auxiliary framebuffer is incomplete (error {})",
-                    front_fb_status
+                    "Opacity map framebuffer is incomplete (error {})",
+                    fb_aux_status
+                );
+            }
+
+            glBindFramebuffer(GL_FRAMEBUFFER, fb_lightmap);
+            let fb_lightmap_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+            if fb_lightmap_status != GL_FRAMEBUFFER_COMPLETE {
+                panic!(
+                    "Lightmap framebuffer is incomplete (error {})",
+                    fb_lightmap_status
                 );
             }
         }
@@ -900,7 +869,7 @@ fn compute_scene_2d_shadowmap(
         viewport_state.buffers.ubo.as_ref().unwrap(),
     );
 
-    bind_texture(0, viewport_state.buffers.light_opac_map_buf.unwrap());
+    bind_texture(GL_TEXTURE_2D, 0, viewport_state.buffers.light_opac_map_buf.unwrap());
 
     glBindImageTexture(
         0,
@@ -960,7 +929,7 @@ fn draw_scene_2d_lightmap(
         viewport_state.buffers.ubo.as_ref().unwrap(),
     );
 
-    bind_texture(0, viewport_state.buffers.shadowmap_texture.unwrap());
+    bind_texture(GL_TEXTURE_BUFFER, 0, viewport_state.buffers.shadowmap_texture.unwrap());
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT | GL_TEXTURE_UPDATE_BARRIER_BIT);
@@ -994,11 +963,11 @@ pub(crate) fn draw_framebuffer_to_screen(
     glBindVertexArray(frame_vao);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
     glUseProgram(frame_program.handle);
-    bind_texture(0, viewport_state.buffers.color_buf_front.unwrap());
+    bind_texture(GL_TEXTURE_2D, 0, viewport_state.buffers.color_buf_front.unwrap());
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
-    bind_texture(0, 0);
+    bind_texture(GL_TEXTURE_2D, 0, 0);
     glUseProgram(0);
     glBindVertexArray(0);
 }
@@ -1032,6 +1001,7 @@ pub(crate) fn setup_framebuffer(state: &mut RendererState) {
         1.0, -1.0, 1.0, 0.0,
     ];
 
+    let stride = 4 * size_of::<GLfloat>() as GLsizei;
     if GlSupport::have(GlExt::DirectStateAccess) {
         let frame_vao = {
             let mut handle = 0;
@@ -1059,7 +1029,7 @@ pub(crate) fn setup_framebuffer(state: &mut RendererState) {
             BINDING_INDEX_VBO,
             frame_vbo,
             0,
-            4 * size_of::<GLfloat>() as GLsizei,
+            stride,
         );
     } else {
         let frame_vao = {
@@ -1084,6 +1054,12 @@ pub(crate) fn setup_framebuffer(state: &mut RendererState) {
             frame_quad_vertex_data.as_ptr().cast(),
             GL_STATIC_DRAW,
         );
+
+        if GlSupport::have(GlExt::VertexAttribBinding) {
+            glBindVertexBuffer(BINDING_INDEX_VBO, frame_vbo, 0, stride);
+        } else {
+            glBindBuffer(GL_ARRAY_BUFFER, frame_vbo);
+        }
     }
 
     let mut attr_offset = 0;

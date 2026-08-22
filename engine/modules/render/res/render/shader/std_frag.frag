@@ -1,6 +1,7 @@
 #version 460 core
 
 layout(std140, binding = 1) uniform Global {
+    uint HaveComputeShaders;
     float Time;
 } global;
 

@@ -116,16 +116,33 @@ pub(crate) fn set_attrib_pointer(
         let stride = vertex_len * size_of::<GLfloat>() as u32;
         assert!(stride <= i32::MAX as u32);
 
-        glBindBuffer(GL_ARRAY_BUFFER, buffer_obj);
+        glBindVertexArray(array_obj);
+
         glEnableVertexAttribArray(attr_index);
-        glVertexAttribPointer(
-            attr_index,
-            attr_len as GLint,
-            GL_FLOAT,
-            GL_FALSE as GLboolean,
-            stride as GLsizei,
-            ptr::from_ref(attr_offset).cast()
-        );
+
+        if GlSupport::have(GlExt::VertexAttribBinding) {
+            glVertexAttribFormat(
+                attr_index,
+                attr_len as GLint,
+                GL_FLOAT,
+                GL_FALSE as GLboolean,
+                *attr_offset
+            );
+            glVertexAttribBinding(attr_index, binding_index);
+        } else {
+            glBindBuffer(GL_ARRAY_BUFFER, buffer_obj);
+            glVertexAttribPointer(
+                attr_index,
+                attr_len as GLint,
+                GL_FLOAT,
+                GL_FALSE as GLboolean,
+                stride as GLsizei,
+                (*attr_offset as usize) as *const c_void,
+            );
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+        }
+
+        glBindVertexArray(0);
     }
 
     *attr_offset += attr_len * size_of::<GLfloat>() as u32;
@@ -147,12 +164,12 @@ pub(crate) fn try_delete_vertex_array(array: GlArrayHandle) {
     glDeleteVertexArrays(1, &array);
 }
 
-pub(crate) fn bind_texture(unit: GLuint, texture: GlTextureHandle) {
+pub(crate) fn bind_texture(target: GLenum, unit: GLuint, texture: GlTextureHandle) {
     if GlSupport::have(GlExt::DirectStateAccess) {
         glBindTextureUnit(unit, texture);
     } else {
         glActiveTexture(GL_TEXTURE0 + unit);
-        glBindTexture(GL_TEXTURE_2D, texture);
+        glBindTexture(target, texture);
     }
 }
 

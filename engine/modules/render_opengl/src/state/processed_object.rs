@@ -16,11 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use std::ffi;
 use argus_resman::Resource;
 use argus_util::math::{Vector2f, Vector2u};
 use argus_util::pool::Handle;
-use crate::util::gl_util::GlBufferHandle;
+use crate::util::buffer::GlBuffer;
 
 pub(crate) struct ProcessedObject {
     pub(crate) obj_handle: Handle,
@@ -32,10 +31,9 @@ pub(crate) struct ProcessedObject {
 
     pub(crate) anim_frame: Vector2u,
 
-    pub(crate) staging_buffer: GlBufferHandle,
+    pub(crate) staging_buffer: GlBuffer,
     pub(crate) staging_buffer_size: usize,
     pub(crate) vertex_count: usize,
-    pub(crate) mapped_buffer: Option<*mut ffi::c_void>,
     pub(crate) newly_created: bool,
     pub(crate) visited: bool,
     pub(crate) updated: bool,
@@ -45,8 +43,8 @@ pub(crate) struct ProcessedObject {
 
 impl ProcessedObject {
     pub(crate) fn new(obj_handle: Handle, material_res: Resource, atlas_stride: Vector2f,
-    z_index: u32, light_opacity: f32, staging_buffer: GlBufferHandle, staging_buffer_size: usize,
-    vertex_count: usize, mapped_buffer: Option<*mut ffi::c_void>) -> Self {
+    z_index: u32, light_opacity: f32, staging_buffer: GlBuffer, staging_buffer_size: usize,
+    vertex_count: usize) -> Self {
         Self {
             obj_handle,
             material_res,
@@ -57,7 +55,6 @@ impl ProcessedObject {
             staging_buffer,
             staging_buffer_size,
             vertex_count,
-            mapped_buffer,
             newly_created: true,
             visited: false,
             updated: false,

@@ -55,7 +55,7 @@ pub(crate) fn get_or_load_texture(state: &mut RendererState, material_res: &Reso
         glTextureParameteri(handle, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE as i32);
     } else {
         glGenTextures(1, &mut handle);
-        bind_texture(0, handle);
+        bind_texture(GL_TEXTURE_2D, 0, handle);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR as i32);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR as i32);
@@ -83,7 +83,7 @@ pub(crate) fn get_or_load_texture(state: &mut RendererState, material_res: &Reso
     }
 
     if !GlSupport::have(GlExt::DirectStateAccess) {
-        bind_texture(0, 0);
+        bind_texture(GL_TEXTURE_2D, 0, 0);
     }
 
     let tex_rc = Rc::new(handle);
