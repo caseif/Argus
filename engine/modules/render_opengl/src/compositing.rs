@@ -658,20 +658,20 @@ fn init_viewport_buffers(
         if GlSupport::have(GlExt::DirectStateAccess) {
             // initialize color buffers
 
-            glTextureStorage2D(cb_prim, 1, GL_RGBA8, fb_width, fb_height);
+            alloc_texture_2d(cb_prim, GL_RGBA8, fb_width, fb_height);
             glTextureParameteri(cb_prim, GL_TEXTURE_MIN_FILTER, GL_LINEAR as GLint);
             glTextureParameteri(cb_prim, GL_TEXTURE_MAG_FILTER, GL_LINEAR as GLint);
 
-            glTextureStorage2D(cb_sec, 1, GL_RGBA8, fb_width, fb_height);
+            alloc_texture_2d(cb_sec, GL_RGBA8, fb_width, fb_height);
             glTextureParameteri(cb_sec, GL_TEXTURE_MIN_FILTER, GL_LINEAR as GLint);
             glTextureParameteri(cb_sec, GL_TEXTURE_MAG_FILTER, GL_LINEAR as GLint);
 
             // initialize auxiliary buffers
-            glTextureStorage2D(lom_buf, 1, GL_R32F, fb_width, fb_height);
+            alloc_texture_2d(lom_buf, GL_R32F, fb_width, fb_height);
             glTextureParameteri(lom_buf, GL_TEXTURE_MIN_FILTER, GL_NEAREST as GLint);
             glTextureParameteri(lom_buf, GL_TEXTURE_MAG_FILTER, GL_NEAREST as GLint);
 
-            glTextureStorage2D(lm_buf, 1, GL_RGBA8, fb_width, fb_height);
+            alloc_texture_2d(lm_buf, GL_RGBA8, fb_width, fb_height);
             glTextureParameteri(lm_buf, GL_TEXTURE_MIN_FILTER, GL_NEAREST as GLint);
             glTextureParameteri(lm_buf, GL_TEXTURE_MAG_FILTER, GL_NEAREST as GLint);
 
@@ -739,24 +739,24 @@ fn init_viewport_buffers(
             // initialize color buffers
 
             bind_texture(GL_TEXTURE_2D, 0, cb_prim);
-            glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, fb_width, fb_height);
+            alloc_texture_2d(GL_TEXTURE_2D, GL_RGBA8, fb_width, fb_height);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR as GLint);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR as GLint);
 
             bind_texture(GL_TEXTURE_2D, 0, cb_sec);
-            glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, fb_width, fb_height);
+            alloc_texture_2d(GL_TEXTURE_2D, GL_RGBA8, fb_width, fb_height);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR as GLint);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR as GLint);
 
             // initialize auxiliary buffers
 
             bind_texture(GL_TEXTURE_2D, 0, lom_buf);
-            glTexStorage2D(GL_TEXTURE_2D, 1, GL_R32F, fb_width, fb_height);
+            alloc_texture_2d(GL_TEXTURE_2D, GL_R32F, fb_width, fb_height);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST as GLint);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST as GLint);
 
             bind_texture(GL_TEXTURE_2D, 0, lm_buf);
-            glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, fb_width, fb_height);
+            alloc_texture_2d(GL_TEXTURE_2D, GL_RGBA8, fb_width, fb_height);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST as GLint);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST as GLint);
 

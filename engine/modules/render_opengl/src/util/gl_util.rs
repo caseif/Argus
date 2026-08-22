@@ -164,6 +164,31 @@ pub(crate) fn try_delete_vertex_array(array: GlArrayHandle) {
     glDeleteVertexArrays(1, &array);
 }
 
+pub(crate) fn alloc_texture_2d(
+    texture: GlTextureHandle,
+    format: GLenum,
+    width: GLsizei,
+    height: GLsizei,
+) {
+    if GlSupport::have(GlExt::TextureStorage) {
+        if GlSupport::have(GlExt::DirectStateAccess) {
+            glTextureStorage2D(texture, 1, GL_RGBA8, width as GLsizei, height as GLsizei);
+        } else {
+            glBindTexture(GL_TEXTURE_2D, texture);
+            glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, width as GLsizei, height as GLsizei);
+        }
+    } else {
+        let (iformat, itype) = match format {
+            GL_RGBA8 => (GL_RGBA, GL_UNSIGNED_BYTE),
+            GL_R32F => (GL_RED, GL_FLOAT),
+            _ => panic!("Unsupported texture format {}", format),
+        };
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glTexImage2D(GL_TEXTURE_2D, 0, iformat as i32, width as GLsizei, height as GLsizei,
+             0, iformat, itype, ptr::null());
+    }
+}
+
 pub(crate) fn bind_texture(target: GLenum, unit: GLuint, texture: GlTextureHandle) {
     if GlSupport::have(GlExt::DirectStateAccess) {
         glBindTextureUnit(unit, texture);

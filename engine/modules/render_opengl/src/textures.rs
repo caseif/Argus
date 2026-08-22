@@ -16,7 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use std::ptr;
 use std::rc::Rc;
 use argus_render::common::{Material, TextureData};
 use argus_resman::{Resource, ResourceError, ResourceManager};
@@ -65,14 +64,7 @@ pub(crate) fn get_or_load_texture(state: &mut RendererState, material_res: &Reso
 
     //glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 
-    if GlSupport::have(GlExt::DirectStateAccess) {
-        glTextureStorage2D(handle, 1, GL_RGBA8, width as GLsizei, height as GLsizei);
-    } else if GlSupport::have(GlExt::TextureStorage) {
-        glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, width as GLsizei, height as GLsizei);
-    } else {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA as i32, width as GLsizei, height as GLsizei,
-                0, GL_RGBA, GL_UNSIGNED_BYTE, ptr::null());
-    }
+    alloc_texture_2d(handle, GL_RGBA8, width, height);
 
     if GlSupport::have(GlExt::DirectStateAccess) {
         glTextureSubImage2D(handle, 0, 0, 0, width as GLsizei, height as GLsizei,
