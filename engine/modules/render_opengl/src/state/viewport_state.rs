@@ -24,7 +24,8 @@ pub(crate) struct ViewportBuffers {
 
     pub(crate) fb_primary: Option<GlBufferHandle>,
     pub(crate) fb_secondary: Option<GlBufferHandle>,
-    pub(crate) fb_aux: Option<GlBufferHandle>,
+    pub(crate) fb_opac_map: Option<GlBufferHandle>,
+    pub(crate) fb_shadowmap: Option<GlBufferHandle>,
     pub(crate) fb_lightmap: Option<GlBufferHandle>,
 
     pub(crate) color_buf_primary: Option<GlTextureHandle>,
@@ -33,10 +34,9 @@ pub(crate) struct ViewportBuffers {
     // ping-pongs took place
     pub(crate) color_buf_front: Option<GlTextureHandle>,
 
-    pub(crate) light_opac_map_buf: Option<GlTextureHandle>,
-    pub(crate) shadowmap_buffer: Option<GlBuffer>,
-    pub(crate) shadowmap_texture: Option<GlTextureHandle>,
-    pub(crate) lightmap_buf: Option<GlTextureHandle>,
+    pub(crate) light_opac_map_tex: Option<GlTextureHandle>,
+    pub(crate) shadowmap_tex: Option<GlTextureHandle>,
+    pub(crate) lightmap_tex: Option<GlTextureHandle>,
 }
 
 pub(crate) struct ViewportState {

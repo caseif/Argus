@@ -105,6 +105,8 @@ impl GlRenderer {
 
         if GlSupport::have(GlExt::Debug) {
             glDebugMessageCallback(gl_debug_callback, ptr::null());
+        } else if GlSupport::have(GlExt::DebugOutputARB) {
+            glDebugMessageCallbackARB(gl_debug_callback, ptr::null());
         }
 
         self.create_global_ubo();
@@ -319,16 +321,16 @@ impl GlRenderer {
     }
 
     fn update_global_ubo(&mut self) {
-        let millis = SystemTime::now()
+        let global_ubo = self.state
+            .global_ubo
+            .as_mut()
+            .expect("Global UBO must be initialized before it can be updated");
+        let time_millis = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .expect("Time went backwards!")
             .as_millis() as u64;
 
-        self.state
-            .global_ubo
-            .as_mut()
-            .expect("Global UBO must be initialized before it can be updated")
-            .write_val(millis, SHADER_UNIFORM_GLOBAL_TIME_OFF as usize);
+        global_ubo.write_val(time_millis, SHADER_UNIFORM_GLOBAL_TIME_OFF as usize);
     }
 }
 

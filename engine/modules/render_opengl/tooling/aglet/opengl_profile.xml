@@ -2,7 +2,7 @@
 <profile>
     <api>
         <name>glcore</name>
-        <minVersion>3.3</minVersion>
+        <minVersion>3.1</minVersion>
         <targetVersion>4.6</targetVersion>
     </api>
     <extensions>
@@ -12,12 +12,14 @@
         <extension required="false">GL_ARB_ES2_compatibility</extension>
         <!-- 4.2 -->
         <extension required="false">GL_ARB_texture_storage</extension>
+        <extension required="false">GL_ARB_shader_image_load_store</extension>
         <!-- 4.3 -->
         <extension required="false">GL_ARB_clear_buffer_object</extension>
         <extension required="false">GL_ARB_explicit_uniform_location</extension>
         <extension required="false">GL_ARB_vertex_attrib_binding</extension>
         <extension required="false">GL_ARB_compute_shader</extension>
         <extension required="false">GL_KHR_debug</extension>
+        <extension required="false">GL_ARB_debug_output</extension>
         <!-- 4.4 -->
         <extension required="false">GL_ARB_buffer_storage</extension>
         <!-- 4.5 -->

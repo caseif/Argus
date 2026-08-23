@@ -54,7 +54,7 @@ pub const SHADER_UNIFORM_GLOBAL_TIME: &str = "Time";
 pub const SHADER_UNIFORM_GLOBAL_TIME_OFF: u32 = 0;
 
 pub const SHADER_UBO_SCENE: &str = "Scene";
-pub const SHADER_UBO_SCENE_LEN: u32 = 48 + (SHADER_STRUCT_LIGHT2D_LEN * LIGHTS_MAX);
+pub const SHADER_UBO_SCENE_LEN: u32 = 20;
 pub const SHADER_UNIFORM_SCENE_AL_COLOR: &str = "AmbientLightColor";
 pub const SHADER_UNIFORM_SCENE_AL_COLOR_OFF: u32 = 0;
 pub const SHADER_UNIFORM_SCENE_AL_LEVEL: &str = "AmbientLightLevel";

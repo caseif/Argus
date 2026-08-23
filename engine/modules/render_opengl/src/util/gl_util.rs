@@ -172,10 +172,10 @@ pub(crate) fn alloc_texture_2d(
 ) {
     if GlSupport::have(GlExt::TextureStorage) {
         if GlSupport::have(GlExt::DirectStateAccess) {
-            glTextureStorage2D(texture, 1, GL_RGBA8, width as GLsizei, height as GLsizei);
+            glTextureStorage2D(texture, 1, format, width as GLsizei, height as GLsizei);
         } else {
             glBindTexture(GL_TEXTURE_2D, texture);
-            glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, width as GLsizei, height as GLsizei);
+            glTexStorage2D(GL_TEXTURE_2D, 1, format, width as GLsizei, height as GLsizei);
         }
     } else {
         let (iformat, itype) = match format {

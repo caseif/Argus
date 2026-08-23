@@ -193,6 +193,7 @@ impl GlBuffer {
         );
     }
 
+    #[allow(unused)]
     pub(crate) fn clear(&self, value: u32) {
         if GlSupport::have(GlExt::ClearBufferObject) {
             if GlSupport::have(GlExt::DirectStateAccess) {
