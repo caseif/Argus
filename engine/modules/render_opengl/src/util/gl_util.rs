@@ -178,14 +178,14 @@ pub(crate) fn alloc_texture_2d(
             glTexStorage2D(GL_TEXTURE_2D, 1, format, width as GLsizei, height as GLsizei);
         }
     } else {
-        let (iformat, itype) = match format {
+        let (pix_format, pix_type) = match format {
             GL_RGBA8 => (GL_RGBA, GL_UNSIGNED_BYTE),
             GL_R32F => (GL_RED, GL_FLOAT),
             _ => panic!("Unsupported texture format {}", format),
         };
         glBindTexture(GL_TEXTURE_2D, texture);
-        glTexImage2D(GL_TEXTURE_2D, 0, iformat as i32, width as GLsizei, height as GLsizei,
-             0, iformat, itype, ptr::null());
+        glTexImage2D(GL_TEXTURE_2D, 0, format as i32, width as GLsizei, height as GLsizei,
+                     0, pix_format, pix_type, ptr::null());
     }
 }
 
@@ -196,15 +196,6 @@ pub(crate) fn bind_texture(target: GLenum, unit: GLuint, texture: GlTextureHandl
         glActiveTexture(GL_TEXTURE0 + unit);
         glBindTexture(target, texture);
     }
-}
-
-pub(crate) fn restore_gl_blend_params() {
-    if GlSupport::have(GlExt::DrawBuffersBlend) || GlSupport::have(GlExt::DrawBuffersBlendARB) {
-        return;
-    }
-
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glBlendEquation(GL_FUNC_ADD);
 }
 
 pub(crate) fn get_gl_error() -> Option<GlError> {

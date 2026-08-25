@@ -51,7 +51,6 @@ pub(crate) struct ShaderReflectionInfo {
 pub(crate) struct LinkedProgram {
     pub(crate) handle: GlProgramHandle,
     pub(crate) reflection: ShaderReflectionInfo,
-    pub(crate) has_custom_frag: bool,
 }
 
 fn compile_shaders(shaders: &Vec<Resource>) -> (Vec<GlShaderHandle>, ShaderReflectionInfo) {
@@ -357,7 +356,6 @@ pub(crate) fn link_program(shader_uids: impl IntoIterator<Item = impl AsRef<str>
     LinkedProgram {
         handle: program_handle,
         reflection: refl_info,
-        has_custom_frag: have_frag,
     }
 }
 
@@ -391,23 +389,24 @@ pub(crate) fn deinit_program(program: GlProgramHandle) {
     glDeleteProgram(program);
 }
 
+#[allow(dead_code)]
 pub(crate) fn get_std_program(storage: &mut Option<LinkedProgram>) -> &LinkedProgram {
     storage.get_or_insert_with(|| link_program([SHADER_STD_VERT, SHADER_STD_FRAG]))
 }
 
 pub(crate) fn get_shadowmap_program(storage: &mut Option<LinkedProgram>) -> &LinkedProgram {
     storage.get_or_insert_with(|| {
-        if GlSupport::have(GlExt::ComputeShader) {
+        if GlSupport::have(GlExt::ComputeShader) && GlSupport::have(GlExt::ShaderImageLoadStore) {
             debug!(
                 LOGGER,
-                "ARB_compute_shader is available, \
+                "ARB_compute_shader and ARB_shader_image_load_store are available, \
                  using compute shader for light raycasting",
             );
             link_program([SHADER_SHADOWMAP_COMP])
         } else {
             debug!(
                 LOGGER,
-                "ARB_compute_shader is not available, \
+                "ARB_compute_shader and/or ARB_shader_image_load_store are not available, \
                  using fallback fragment shader for light raycasting",
             );
             link_program([SHADER_SHADOWMAP_VERT, SHADER_SHADOWMAP_FRAG])

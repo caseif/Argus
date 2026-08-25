@@ -53,10 +53,11 @@ impl GlRenderer {
     }
 
     fn init(&mut self, window: &mut Window) {
-        #[cfg(debug_assertions)]
-        let context_flags = GlContextFlags::ProfileCore;
-        #[cfg(not(debug_assertions))]
-        let context_flags = GlContextFlags::ProfileCore | GlContextFlags::DebugContext;
+        let context_flags = if cfg!(debug_assertions) {
+            GlContextFlags::ProfileCore | GlContextFlags::DebugContext
+        } else {
+            GlContextFlags::ProfileCore
+        };
 
         let gl_mgr = WindowManager::instance().get_gl_manager()
             .expect("Failed to get OpenGL manager");
@@ -145,13 +146,6 @@ impl GlRenderer {
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-        // set blend equation for light opacity map
-        if GlSupport::have(GlExt::DrawBuffersBlend) {
-            glBlendEquationi(1, GL_MAX);
-        } else if GlSupport::have(GlExt::DrawBuffersBlendARB) {
-            glBlendEquationiARB(1, GL_MAX);
-        }
 
         glDisable(GL_CULL_FACE);
 

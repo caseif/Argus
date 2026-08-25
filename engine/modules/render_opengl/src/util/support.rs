@@ -4,7 +4,7 @@ use strum_macros::EnumIter;
 pub struct GlSupport {
 }
 
-#[derive(Clone, Copy, Debug, EnumIter, PartialEq)]
+#[derive(Clone, Copy, Debug, EnumIter, PartialEq, PartialOrd)]
 pub enum GlExt {
     // GL 4.0
     DrawBuffersBlend,

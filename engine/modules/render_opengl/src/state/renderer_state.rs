@@ -37,6 +37,7 @@ pub(crate) struct RendererState {
     pub material_textures: HashMap<ResourceIdentifier, (String, Rc<GlTextureHandle>)>,
     pub compiled_shaders: HashMap<String, GlShaderHandle>,
     pub linked_programs: HashMap<ResourceIdentifier, LinkedProgram>,
+    #[allow(dead_code)]
     pub std_program: Option<LinkedProgram>,
     pub shadowmap_program: Option<LinkedProgram>,
     pub lighting_program: Option<LinkedProgram>,

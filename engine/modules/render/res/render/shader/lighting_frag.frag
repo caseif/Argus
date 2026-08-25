@@ -1,7 +1,5 @@
 #version 460 core
 
-#extension GL_ARB_compute_shader : enable
-
 #define PI 3.14159
 #define TWO_PI (PI * 2.0)
 
