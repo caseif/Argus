@@ -61,8 +61,6 @@ fn build_lua_lib() {
     let path = PathBuf::from(PATH_TO_LUA_SUBMODULE);
     lua_build
         .std("c11")
-        .shared_flag(false)
-        .static_flag(true)
         .include(PATH_TO_LUA_SUBMODULE);
     for entry in path.read_dir().unwrap() {
         let entry_path = entry.unwrap().path();
