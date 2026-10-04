@@ -27,9 +27,15 @@ macro_rules! create_vector2_ops {
             }
         }
 
+        impl From<&$vec_type> for [$el_type; 2] {
+            fn from(v: &$vec_type) -> Self {
+                [v.x, v.y]
+            }
+        }
+
         impl From<$vec_type> for [$el_type; 2] {
             fn from(v: $vec_type) -> Self {
-                [v.x, v.y]
+                From::from(&v)
             }
         }
 
@@ -228,9 +234,15 @@ macro_rules! create_vector2_signed_ops {
 
 macro_rules! create_vector3_ops {
     ($vec_type: ty, $el_type: ty) => {
+        impl From<&$vec_type> for [$el_type; 3] {
+            fn from(v: &$vec_type) -> Self {
+                [v.x, v.y, v.z]
+            }
+        }
+
         impl From<$vec_type> for [$el_type; 3] {
             fn from(v: $vec_type) -> Self {
-                [v.x, v.y, v.z]
+                From::from(&v)
             }
         }
 
@@ -359,9 +371,15 @@ macro_rules! create_vector3_signed_ops {
 
 macro_rules! create_vector4_ops {
     ($vec_type: ty, $el_type: ty) => {
+        impl From<&$vec_type> for [$el_type; 4] {
+            fn from(v: &$vec_type) -> Self {
+                [v.x, v.y, v.z, v.w]
+            }
+        }
+
         impl From<$vec_type> for [$el_type; 4] {
             fn from(v: $vec_type) -> Self {
-                [v.x, v.y, v.z, v.w]
+                From::from(&v)
             }
         }
 

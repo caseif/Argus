@@ -18,12 +18,15 @@
 
 use std::collections::{BTreeMap, HashMap};
 use argus_util::pool::Handle;
+use argus_util::versioned::Version;
 use crate::state::{ProcessedObject, RenderBucket, RenderBucketKey};
 use crate::util::buffer::GlBuffer;
 
 pub(crate) struct Scene2dState {
     pub(crate) scene_id: String,
     pub(crate) ubo: Option<GlBuffer>,
+    pub(crate) ambient_light_level_version: Version,
+    pub(crate) ambient_light_color_version: Version,
     pub(crate) render_buckets: BTreeMap<RenderBucketKey, RenderBucket>,
     pub(crate) processed_objs: HashMap<Handle, ProcessedObject>,
 }
@@ -33,6 +36,8 @@ impl Scene2dState {
         Self {
             scene_id: scene_id.into(),
             ubo: None,
+            ambient_light_level_version: Version::MAX,
+            ambient_light_color_version: Version::MAX,
             render_buckets: BTreeMap::new(),
             processed_objs: Default::default(),
         }

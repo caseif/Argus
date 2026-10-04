@@ -15,6 +15,10 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+use argus_render::common::Transform2d;
+use argus_util::dirtiable::Dirtiable;
+use argus_util::math::{Matrix4x4, AABB};
+use argus_util::versioned::Versioned;
 use crate::util::buffer::GlBuffer;
 use crate::util::gl_util::{GlBufferHandle, GlTextureHandle};
 
@@ -40,12 +44,20 @@ pub(crate) struct ViewportBuffers {
 }
 
 pub(crate) struct ViewportState {
+    pub(crate) scene_id: String,
+    pub(crate) view_matrix: Dirtiable<Matrix4x4>,
+    pub(crate) view_aabb: AABB,
+    pub(crate) camera_transform: Versioned<Transform2d>,
     pub(crate) buffers: ViewportBuffers,
 }
 
 impl ViewportState {
-    pub(crate) fn new() -> Self {
+    pub(crate) fn new(scene_id: impl Into<String>) -> Self {
         Self {
+            scene_id: scene_id.into(),
+            view_matrix: Dirtiable::new(Matrix4x4::identity()),
+            view_aabb: Default::default(),
+            camera_transform: Default::default(),
             buffers: Default::default(),
         }
     }

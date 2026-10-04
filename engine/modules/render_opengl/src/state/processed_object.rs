@@ -19,6 +19,7 @@
 use argus_resman::Resource;
 use argus_util::math::{Vector2f, Vector2u};
 use argus_util::pool::Handle;
+use argus_util::versioned::Versioned;
 use crate::util::buffer::GlBuffer;
 
 pub(crate) struct ProcessedObject {
@@ -29,7 +30,7 @@ pub(crate) struct ProcessedObject {
     pub(crate) z_index: u32,
     pub(crate) light_opacity: f32,
 
-    pub(crate) anim_frame: Vector2u,
+    pub(crate) anim_frame: Versioned<Vector2u>,
 
     pub(crate) staging_buffer: GlBuffer,
     pub(crate) staging_buffer_size: usize,

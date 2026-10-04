@@ -55,7 +55,7 @@ impl Into<rstar::AABB<[f32; 2]>> for &AABB {
     }
 }
 
-impl Mul<AABB> for Matrix4x4 {
+impl Mul<AABB> for &Matrix4x4 {
     type Output = AABB;
 
     fn mul(self, rhs: AABB) -> Self::Output {
@@ -71,5 +71,13 @@ impl Mul<AABB> for Matrix4x4 {
             Vector2f::new(min_x, min_y),
             Vector2f::new(max_x, max_y),
         )
+    }
+}
+
+impl Mul<AABB> for Matrix4x4 {
+    type Output = AABB;
+
+    fn mul(self, rhs: AABB) -> Self::Output {
+        &self * rhs
     }
 }

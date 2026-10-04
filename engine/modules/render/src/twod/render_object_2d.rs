@@ -1,9 +1,9 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU16, Ordering};
 use argus_resman::{Resource, WeakResource};
-use argus_util::dirtiable::{Dirtiable, ValueAndDirtyFlag};
 use argus_util::math::{Matrix4x4, Vector2f, Vector2u, AABB};
 use argus_util::pool::Handle;
+use argus_util::versioned::Versioned;
 use crate::common::Transform2d;
 use crate::twod::RenderPrimitive2d;
 
@@ -15,10 +15,10 @@ pub struct RenderObject2d {
     anchor_point: Vector2f,
     atlas_stride: Vector2f,
     z_index: u32,
-    light_opacity: Dirtiable<f32>,
-    transform: Dirtiable<Transform2d>,
+    light_opacity: Versioned<f32>,
+    transform: Versioned<Transform2d>,
     aabb: AABB,
-    active_frame: Dirtiable<Vector2u>,
+    active_anim_frame: Versioned<Vector2u>,
     pub(crate) transform_matrix: Matrix4x4,
     pub(crate) active: bool,
     pub(crate) version: Arc<AtomicU16>,
@@ -45,10 +45,10 @@ impl RenderObject2d {
             anchor_point,
             atlas_stride,
             z_index,
-            light_opacity: Dirtiable::new(light_opacity),
-            transform: Dirtiable::new(transform),
+            light_opacity: Versioned::new(light_opacity),
+            transform: Versioned::new(transform),
             aabb,
-            active_frame: Default::default(),
+            active_anim_frame: Default::default(),
             transform_matrix: Matrix4x4::identity(),
             active: false,
             version: Arc::new(AtomicU16::new(0)),
@@ -114,13 +114,8 @@ impl RenderObject2d {
     /// a certain threshold are treated as opaque and values under are
     /// treated as translucent.
     #[must_use]
-    pub fn peek_light_opacity(&self) -> f32 {
-        self.light_opacity.peek().value
-    }
-
-    #[must_use]
-    pub fn get_light_opacity(&mut self) -> ValueAndDirtyFlag<f32> {
-        self.light_opacity.read()
+    pub fn get_light_opacity(&self) -> &Versioned<f32> {
+        &self.light_opacity
     }
 
     /// Sets the opacity of the object with respect to lighting.
@@ -140,8 +135,8 @@ impl RenderObject2d {
     /// The returned value is an x- and y-offset into the associated texture
     /// atlas.
     #[must_use]
-    pub fn get_active_frame(&mut self) -> ValueAndDirtyFlag<Vector2u> {
-        self.active_frame.read()
+    pub fn get_active_anim_frame(&self) -> &Versioned<Vector2u> {
+        &self.active_anim_frame
     }
 
     /// Sets the active animation frame.
@@ -150,29 +145,17 @@ impl RenderObject2d {
     /// atlas. Neither index should exceed the number of tiles in each
     /// dimension in the atlas.
     pub fn set_active_frame(&mut self, frame: Vector2u) {
-        self.active_frame.set(frame);
+        self.active_anim_frame.set(frame);
     }
 
-    /// Peeks the local transform of this object without clearing its dirty
-    /// flag.
+    /// Gets the local [transform](Transform2d) of this object.
     ///
     /// The returned [Transform2d] is local and does not necessarily reflect
     /// the object's absolute transform with respect to the Scene containing
     /// it.
     #[must_use]
-    pub fn peek_transform(&self) -> Transform2d {
-        self.transform.peek().value
-    }
-
-    /// Gets the local [transform](Transform2d) of this object, clearing its
-    /// dirty flag in the process.
-    ///
-    /// The returned [Transform2d] is local and does not necessarily reflect
-    /// the object's absolute transform with respect to the Scene containing
-    /// it.
-    #[must_use]
-    pub fn get_transform(&mut self) -> ValueAndDirtyFlag<Transform2d> {
-        self.transform.read()
+    pub fn get_transform(&self) -> &Versioned<Transform2d> {
+        &self.transform
     }
 
     /// Sets the local Transform of this object.
@@ -180,7 +163,7 @@ impl RenderObject2d {
     /// The object's transform is local and does not necessarily reflect its
     /// absolute transform with respect to the scene containing it.
     pub fn set_transform(&mut self, transform: Transform2d) {
-        if transform == self.transform.peek().value {
+        if &transform == self.transform.as_ref() {
             return;
         }
         self.transform.set(transform);
@@ -189,11 +172,6 @@ impl RenderObject2d {
 
     pub fn is_active(&self) -> bool {
         self.active
-    }
-
-    #[must_use]
-    pub fn duplicate(&self, _parent: Handle) -> Handle {
-        todo!()
     }
 }
 

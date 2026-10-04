@@ -155,10 +155,6 @@ impl RenderContext2d {
 
         true
     }
-    
-    pub(crate) fn get_viewports(&self) -> &DashMap<u32, AttachedViewport2d> {
-        &self.viewports
-    }
 
     pub fn get_viewport(&self, id: u32) -> Option<Ref<'_, u32, AttachedViewport2d>> {
         self.viewports.get(&id)

@@ -50,7 +50,7 @@ pub(crate) fn process_object(
 pub(crate) fn create_processed_object_2d<'ctx>(
     device: &'ctx vk::Device<'ctx>,
     state: &mut RendererState<'ctx>,
-    object: &mut RenderObject2d,
+    object: &RenderObject2d,
     transform: &Matrix4x4,
 ) -> ProcessedObject<'ctx> {
     let vertex_count = object.get_primitives().iter()
@@ -129,13 +129,13 @@ pub(crate) fn create_processed_object_2d<'ctx>(
         obj_mat,
         object.get_atlas_stride(),
         object.get_z_index(),
-        object.get_light_opacity().value,
+        **object.get_light_opacity(),
         total_vertices,
     );
 
     processed_obj.staging_buffer = Some(staging_buffer);
 
-    processed_obj.anim_frame = object.get_active_frame().value;
+    processed_obj.anim_frame.copy_if_stale(object.get_active_anim_frame());
 
     processed_obj.visited = true;
     processed_obj.newly_created = true;
@@ -153,9 +153,7 @@ pub(crate) fn update_processed_object_2d(
     // if a parent group or the object itself has had its transform updated
     proc_obj.updated = is_transform_dirty;
 
-    let cur_frame = object.get_active_frame();
-    if cur_frame.dirty {
-        proc_obj.anim_frame = cur_frame.value;
+    if proc_obj.anim_frame.copy_if_stale(object.get_active_anim_frame()) {
         proc_obj.anim_frame_updated = true;
     }
 

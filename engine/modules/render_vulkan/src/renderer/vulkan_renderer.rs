@@ -302,7 +302,7 @@ impl<'dev, 'inst> VulkanRenderer<'dev, 'inst> {
         self.update_view_states(window, &resolution.value, false);
 
         //timer_start = std::chrono::high_resolution_clock::now();
-        compile_scenes(window, &mut self.state);
+        compile_scenes(window, &mut self.state, cur_frame);
         //timer_end = std::chrono::high_resolution_clock::now();
         //compile_time += (timer_end - timer_start);
 
@@ -425,27 +425,34 @@ impl<'dev, 'inst> VulkanRenderer<'dev, 'inst> {
         )).unwrap();
     }
 
-    fn update_view_states(&mut self, window: &mut Window, resolution: &Vector2u, force: bool) {
-        let canvas = window.get_canvas_mut().unwrap().as_any_mut().downcast_mut::<RenderCanvas>().unwrap();
+    fn update_view_states(
+        &mut self,
+        window: &mut Window,
+        resolution: &Vector2u,
+        force: bool,
+    ) {
+        let canvas = window.get_canvas_mut().unwrap().as_any_mut().downcast_mut::<RenderCanvas>()
+            .unwrap();
 
         for viewport_id in canvas.get_viewports_2d() {
-            let mut viewport = get_render_context_2d().get_viewport_mut(viewport_id)
+            let viewport = get_render_context_2d().get_viewport(viewport_id)
                 .expect("Viewport was missing from context!");
 
-            let camera_transform = {
-                let mut scene = get_render_context_2d().get_scene_mut(viewport.get_scene_id()).unwrap();
-                let camera = scene.get_camera_mut(viewport.get_camera_id()).unwrap();
-                camera.get_transform()
-            };
+            let scene = get_render_context_2d().get_scene(viewport.get_scene_id()).unwrap();
+            let camera = scene.get_camera(viewport.get_camera_id()).unwrap();
+            let camera_transform = camera.get_transform();
 
-            if force || camera_transform.dirty {
-                viewport.update_view_state(&resolution, ViewportYAxisConvention::TopDown);
+            let Some(viewport_state) =
+                self.state.viewport_states_2d.get_mut(&viewport.get_id()) else { continue; };
+            if viewport_state.camera_transform
+                .copy_if_stale(camera_transform) ||
+                force {
 
-                if let Some(viewport_state) = self.state.viewport_states_2d
-                    .get_mut(&viewport.get_id()) {
-                    for per_frame in &mut viewport_state.per_frame {
-                        per_frame.view_matrix_dirty = true;
-                    }
+                for per_frame in &mut viewport_state.per_frame {
+                    per_frame.view_matrix.set(
+                        viewport.compute_view_matrix(&resolution, ViewportYAxisConvention::TopDown)
+                    );
+                    per_frame.view_aabb = viewport.compute_view_aabb(&resolution);
                 }
             }
         }
@@ -462,8 +469,9 @@ fn create_viewport_2d_state<'ctx>(
     device: &'ctx vk::Device<'ctx>,
     command_pool: &vk::CommandPool<'ctx>,
     viewport_id: u32,
+    scene_id: impl Into<String>,
 ) -> ViewportState<'ctx> {
-    let mut viewport_state = ViewportState::new(viewport_id);
+    let mut viewport_state = ViewportState::new(viewport_id, scene_id);
 
     let sem_info = vk::SemaphoreCreateInfo::default();
 
@@ -515,20 +523,22 @@ fn add_remove_state_objects<'ctx>(
     let canvas = window.get_canvas().unwrap().as_any().downcast_ref::<RenderCanvas>().unwrap();
 
     for viewport_id in canvas.get_viewports_2d() {
-        let vp_state = state.viewport_states_2d.entry(viewport_id)
-            .or_insert_with(|| create_viewport_2d_state(
-                state.device,
-                state.graphics_command_pool.as_ref().unwrap(),
-                viewport_id,
-            ));
-
-        vp_state.visited = true;
-
         let scene_id = {
             get_render_context_2d().get_viewport(viewport_id)
                 .expect("Viewport was missing from context!")
                 .get_scene_id().to_string()
         };
+
+        let vp_state = state.viewport_states_2d.entry(viewport_id)
+            .or_insert_with(|| create_viewport_2d_state(
+                state.device,
+                state.graphics_command_pool.as_ref().unwrap(),
+                viewport_id,
+                &scene_id,
+            ));
+
+        vp_state.visited = true;
+
         let scene_state = state.scene_states_2d.entry(scene_id.to_owned())
             .or_insert_with(|| create_scene_state(state.device, scene_id));
         scene_state.visited = true;
@@ -565,23 +575,31 @@ fn add_remove_state_objects<'ctx>(
 fn compile_scenes(
     window: &Window,
     state: &mut RendererState,
+    cur_frame: usize,
 ) {
     let canvas = window.get_canvas().unwrap().as_any().downcast_ref::<RenderCanvas>().unwrap();
 
     for scene_id in get_associated_scenes_for_canvas(canvas) {
-        compile_scene_2d(state, &scene_id);
+        let view_matrices = state.viewport_states_2d.values()
+            .filter(|vp| vp.scene_id == scene_id)
+            .map(|vp| vp.per_frame[cur_frame].view_matrix.peek().value)
+            .collect::<Vec<_>>();
+        compile_scene_2d(state, &scene_id, &view_matrices);
     }
 }
 
 fn check_scene_ubo_dirty(state: &mut RendererState, scene_id: &str) {
-    let scene_state = state.scene_states_2d.get(scene_id).unwrap();
+    let scene_state = state.scene_states_2d.get_mut(scene_id).unwrap();
     if scene_state.scene_type == SceneType::TwoDim {
-        let mut scene = get_render_context_2d().get_scene_mut(&scene_state.scene_id).unwrap();
+        let scene = get_render_context_2d().get_scene(&scene_state.scene_id).unwrap();
 
         let al_level = scene.get_ambient_light_level();
         let al_color = scene.get_ambient_light_color();
 
-        let must_update = al_level.dirty || al_color.dirty;
+        let must_update = !al_level.is_version(scene_state.ambient_light_level_version) ||
+            !al_color.is_version(scene_state.ambient_light_color_version);
+        scene_state.ambient_light_level_version = al_level.version();
+        scene_state.ambient_light_color_version = al_color.version();
 
         if must_update {
             /*auto &staging_ubo = scene_state.scene_ubo_staging;

@@ -19,12 +19,15 @@
 use std::collections::{BTreeMap, HashMap};
 use argus_render::common::SceneType;
 use argus_util::pool::Handle;
+use argus_util::versioned::Version;
 use vk_wrapper::vk;
 use crate::state::{ProcessedObject, RenderBucket, RenderBucketKey};
 
 pub(crate) struct Scene2dState<'ctx> {
     pub(crate) scene_id: String,
     pub(crate) scene_type: SceneType,
+    pub(crate) ambient_light_level_version: Version,
+    pub(crate) ambient_light_color_version: Version,
     pub(crate) ubo: Option<vk::Buffer<'ctx>>,
     pub(crate) render_buckets: BTreeMap<RenderBucketKey, RenderBucket<'ctx>>,
     pub(crate) processed_objs: HashMap<Handle, ProcessedObject<'ctx>>,
@@ -36,6 +39,8 @@ impl<'ctx> Scene2dState<'ctx> {
         Self {
             scene_id: scene_id.into(),
             scene_type: SceneType::TwoDim,
+            ambient_light_level_version: Version::MAX,
+            ambient_light_color_version: Version::MAX,
             ubo: None,
             render_buckets: BTreeMap::new(),
             processed_objs: Default::default(),

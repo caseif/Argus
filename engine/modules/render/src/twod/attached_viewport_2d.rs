@@ -1,7 +1,6 @@
 use crate::common::{get_next_viewport_id, AttachedViewport, Transform2d, Viewport};
 use crate::twod::get_render_context_2d;
 use argus_core::ScreenSpaceScaleMode;
-use argus_util::dirtiable::{Dirtiable, ValueAndDirtyFlag};
 use argus_util::math::{AABB, Vector2f, Vector2u, Matrix4x4};
 
 #[derive(Clone, Copy, Debug)]
@@ -18,8 +17,6 @@ pub struct AttachedViewport2d {
     viewport: Viewport,
     z_index: u32,
     postfx_shaders: Vec<String>,
-    view_matrix: Dirtiable<Matrix4x4>,
-    view_frustum: AABB,
 }
 
 impl AttachedViewport for AttachedViewport2d {
@@ -63,8 +60,6 @@ impl AttachedViewport2d {
             viewport,
             z_index,
             postfx_shaders: vec![],
-            view_matrix: Dirtiable::new(Matrix4x4::identity()),
-            view_frustum: Default::default(),
         }
     }
 
@@ -76,60 +71,32 @@ impl AttachedViewport2d {
         self.camera_id.as_str()
     }
 
-    pub fn is_view_state_dirty(&self) -> bool {
-        self.view_matrix.peek().dirty
-    }
-
-    pub fn get_view_matrix(&mut self) -> ValueAndDirtyFlag<Matrix4x4> {
-        self.view_matrix.read()
-    }
-    
-    pub fn peek_view_matrix(&self) -> Matrix4x4 {
-        self.view_matrix.peek().value
-    }
-
-    pub fn get_view_frustum(&self) -> &AABB {
-        &self.view_frustum
-    }
-
-    pub fn update_view_state(
-        &mut self,
+    pub fn compute_view_matrix(
+        &self,
         resolution: &Vector2u,
         y_axis_convention: ViewportYAxisConvention,
-    ) {
-        self.update_view_matrix(resolution, y_axis_convention);
-        self.update_view_frustum(resolution);
-    }
-
-    fn update_view_matrix(
-        &mut self,
-        resolution: &Vector2u,
-        y_axis_convention: ViewportYAxisConvention,
-    ) {
+    ) -> Matrix4x4 {
         let camera_transform = {
             let scene = get_render_context_2d().get_scene(self.get_scene_id()).unwrap();
             scene.get_camera(self.get_camera_id()).unwrap()
-                .peek_transform()
+                .get_transform().as_cloned()
         };
-        self.view_matrix.update_in_place(|vm| {
-            recompute_2d_viewport_view_matrix(
-                &self.viewport,
-                &camera_transform.inverse(),
-                resolution,
-                y_axis_convention,
-                vm,
-            );
-        });
+        recompute_2d_viewport_view_matrix(
+            &self.viewport,
+            &camera_transform.inverse(),
+            resolution,
+            y_axis_convention,
+        )
     }
 
-    fn update_view_frustum(
-        &mut self,
+    pub fn compute_view_aabb(
+        &self,
         resolution: &Vector2u,
-    ) {
+    ) -> AABB {
         let camera_transform = {
             let scene = get_render_context_2d().get_scene(self.get_scene_id()).unwrap();
             scene.get_camera(self.get_camera_id()).unwrap()
-                .peek_transform()
+                .get_transform().as_cloned()
         };
 
         let viewport = &self.viewport;
@@ -204,8 +171,7 @@ impl AttachedViewport2d {
             max_y = max_y.max(y_final);
         }
 
-        self.view_frustum =
-            AABB::from_corners(Vector2f::new(min_x, min_y), Vector2f::new(max_x, max_y));
+        AABB::from_corners(Vector2f::new(min_x, min_y), Vector2f::new(max_x, max_y))
     }
 }
 
@@ -271,8 +237,7 @@ fn recompute_2d_viewport_view_matrix(
     transform: &Transform2d,
     resolution: &Vector2u,
     y_convention: ViewportYAxisConvention,
-    dest: &mut Matrix4x4,
-) {
+) -> Matrix4x4 {
     let center_x = (viewport.left + viewport.right) / 2.0;
     let center_y = (viewport.top + viewport.bottom) / 2.0;
 
@@ -324,5 +289,5 @@ fn recompute_2d_viewport_view_matrix(
             adj_transform.get_scale_matrix() *
             anchor_mat_1;
 
-    *dest = compute_proj_matrix(resolution.x, resolution.y, y_convention) * view_mat;
+    compute_proj_matrix(resolution.x, resolution.y, y_convention) * view_mat
 }

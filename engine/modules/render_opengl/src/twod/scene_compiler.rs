@@ -19,6 +19,7 @@
 use std::collections::BTreeMap;
 use argus_render::constants::*;
 use argus_render::util::process_objects_2d;
+use argus_util::versioned::Version;
 use crate::aglet::*;
 use crate::state::*;
 use crate::twod::{deinit_object_2d, process_object};
@@ -84,8 +85,14 @@ fn handle_stale_obj(
 }
 
 pub(crate) fn compile_scene_2d(renderer_state: &mut RendererState, scene_id: impl AsRef<str>) {
+    let view_matrices = renderer_state.viewport_states_2d.values()
+        .filter(|vp| &vp.scene_id == scene_id.as_ref())
+        .map(|vp| vp.view_matrix.peek().value)
+        .collect::<Vec<_>>();
+
     process_objects_2d(
         scene_id.as_ref(),
+        &view_matrices,
         process_object,
         renderer_state,
     );
@@ -95,6 +102,8 @@ pub(crate) fn compile_scene_2d(renderer_state: &mut RendererState, scene_id: imp
         .or_insert_with(|| {
             Scene2dState {
                 scene_id: scene_id.as_ref().to_string(),
+                ambient_light_level_version: Version::MAX,
+                ambient_light_color_version: Version::MAX,
                 ubo: None,
                 render_buckets: Default::default(),
                 processed_objs: Default::default(),

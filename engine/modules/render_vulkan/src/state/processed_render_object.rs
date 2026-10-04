@@ -1,5 +1,6 @@
 use argus_resman::Resource;
 use argus_util::math::{Vector2f, Vector2u};
+use argus_util::versioned::Versioned;
 use vk_wrapper::vk;
 
 pub(crate) struct ProcessedObject<'ctx> {
@@ -9,7 +10,7 @@ pub(crate) struct ProcessedObject<'ctx> {
     pub(crate) light_opacity: f32,
     pub(crate) vertex_count: u32,
 
-    pub(crate) anim_frame: Vector2u,
+    pub(crate) anim_frame: Versioned<Vector2u>,
 
     pub(crate) staging_buffer: Option<vk::Buffer<'ctx>>,
     pub(crate) newly_created: bool,

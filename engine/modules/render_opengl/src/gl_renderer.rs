@@ -238,7 +238,7 @@ impl GlRenderer {
     pub(crate) fn update_view_states(
         &mut self,
         window: &mut Window,
-        resolution: &Vector2u
+        resolution: &Vector2u,
     ) {
         let canvas = window.get_canvas_mut()
             .expect("Window does not have associated canvas")
@@ -247,9 +247,14 @@ impl GlRenderer {
             .expect("Canvas object from window was unexpected type!");
 
         for viewport_id in canvas.get_viewports_2d() {
-            get_render_context_2d().get_viewport_mut(viewport_id)
-                .expect("Viewport was missing from context!")
-                .update_view_state(resolution, ViewportYAxisConvention::BottomUp);
+            let vp = get_render_context_2d().get_viewport(viewport_id)
+                .expect("Viewport was missing from context!");
+            let vp_state =
+                self.state.get_or_create_viewport_2d_state(viewport_id, vp.get_scene_id());
+            vp_state.view_matrix.set(
+                vp.compute_view_matrix(resolution, ViewportYAxisConvention::BottomUp)
+            );
+            vp_state.view_aabb = vp.compute_view_aabb(resolution);
         }
     }
 
@@ -265,22 +270,27 @@ impl GlRenderer {
         let mut scene_ids = HashSet::new();
 
         for viewport_id in canvas.get_viewports_2d() {
-            // ensure viewport state is created
-            _ = self.state.get_or_create_viewport_2d_state(viewport_id);
-
-            let mut viewport = get_render_context_2d().get_viewport_mut(viewport_id)
+            let viewport = get_render_context_2d().get_viewport(viewport_id)
                 .expect("Viewport was missing from context!");
             scene_ids.insert(viewport.get_scene_id().to_string());
 
-            let camera_transform = {
-                let mut scene = get_render_context_2d()
-                    .get_scene_mut(viewport.get_scene_id())
-                    .unwrap();
-                scene.get_camera_mut(viewport.get_camera_id()).unwrap().get_transform()
-            };
+            // ensure viewport state is created
+            let vp_state =
+                self.state.get_or_create_viewport_2d_state(viewport_id, viewport.get_scene_id());
 
-            if camera_transform.dirty {
-                viewport.update_view_state(&resolution, ViewportYAxisConvention::BottomUp);
+            let scene = get_render_context_2d()
+                .get_scene(viewport.get_scene_id())
+                .unwrap();
+            let camera = scene.get_camera(viewport.get_camera_id()).unwrap();
+            let camera_transform = camera.get_transform();
+
+            if vp_state.camera_transform
+                .copy_if_stale(camera_transform) {
+
+                vp_state.view_matrix.set(
+                    viewport.compute_view_matrix(&resolution, ViewportYAxisConvention::BottomUp)
+                );
+                vp_state.view_aabb = viewport.compute_view_aabb(&resolution);
             }
         }
 

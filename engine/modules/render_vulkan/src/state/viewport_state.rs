@@ -16,13 +16,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 use std::collections::HashMap;
-use argus_render::common::SceneType;
+use argus_render::common::{SceneType, Transform2d};
 use argus_resman::ResourceIdentifier;
+use argus_util::dirtiable::Dirtiable;
+use argus_util::math::{Matrix4x4, AABB};
+use argus_util::versioned::Versioned;
 use vk_wrapper::*;
 
 #[derive(Default)]
 pub(crate) struct PerFrameData<'ctx> {
-    pub(crate) view_matrix_dirty: bool,
+    pub(crate) view_matrix: Dirtiable<Matrix4x4>,
+    pub(crate) view_aabb: AABB,
 
     pub(crate) command_buf: Option<vk::CommandBuffer<'ctx>>,
 
@@ -45,20 +49,25 @@ pub(crate) struct PerFrameData<'ctx> {
 pub(crate) struct ViewportState<'ctx> {
     #[allow(dead_code)]
     pub(crate) viewport_id: u32,
+    pub(crate) scene_id: String,
     #[allow(dead_code)]
-    pub(crate) ty: SceneType,
+    pub(crate) scene_type: SceneType,
     pub(crate) visited: bool,
+    pub(crate) camera_transform: Versioned<Transform2d>,
     pub(crate) per_frame: [PerFrameData<'ctx>; vk::MAX_FRAMES_IN_FLIGHT],
 }
 
 impl<'ctx> ViewportState<'ctx> {
     pub(crate) fn new(
-        viewport_id: u32
+        viewport_id: u32,
+        scene_id: impl Into<String>,
     ) -> Self {
         Self {
             viewport_id,
-            ty: SceneType::TwoDim,
+            scene_id: scene_id.into(),
+            scene_type: SceneType::TwoDim,
             visited: false,
+            camera_transform: Default::default(),
             per_frame: Default::default(),
         }
     }

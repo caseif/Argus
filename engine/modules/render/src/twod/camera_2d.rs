@@ -1,16 +1,16 @@
-use argus_util::dirtiable::{Dirtiable, ValueAndDirtyFlag};
+use argus_util::versioned::Versioned;
 use crate::common::Transform2d;
 
 pub struct Camera2d {
     id: String,
     scene_id: String,
-    transform: Dirtiable<Transform2d>,
+    transform: Versioned<Transform2d>,
 }
 
 impl Camera2d {
     #[must_use]
     pub fn new(id: String, scene_id: impl Into<String>, transform: Transform2d) -> Self {
-        Self { id, scene_id: scene_id.into(), transform: Dirtiable::new(transform) }
+        Self { id, scene_id: scene_id.into(), transform: Versioned::new(transform) }
     }
 
     #[must_use]
@@ -24,13 +24,8 @@ impl Camera2d {
     }
 
     #[must_use]
-    pub fn peek_transform(&self) -> Transform2d {
-        self.transform.peek().value
-    }
-
-    #[must_use]
-    pub fn get_transform(&mut self) -> ValueAndDirtyFlag<Transform2d> {
-        self.transform.read()
+    pub fn get_transform(&self) -> &Versioned<Transform2d> {
+        &self.transform
     }
 
     pub fn set_transform(&mut self, transform: Transform2d) {

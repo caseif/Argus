@@ -2,9 +2,9 @@ use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicU16, Ordering};
 use lazy_static::lazy_static;
 use argus_resman::Resource;
-use argus_util::dirtiable::{Dirtiable, ValueAndDirtyFlag};
 use argus_util::math::Vector2f;
 use argus_util::pool::{Handle, ValuePool};
+use argus_util::versioned::Versioned;
 use crate::common::Transform2d;
 use crate::twod::{RenderContext2d, RenderObject2d, RenderPrimitive2d};
 
@@ -19,7 +19,7 @@ lazy_static! {
 /// rendering children in addition to their own respective local transform.
 pub struct RenderGroup2d {
     pub(crate) handle: Option<Handle>,
-    transform: Dirtiable<Transform2d>,
+    transform: Versioned<Transform2d>,
     parent_group: Option<Handle>,
     pub(crate) child_groups: Vec<Handle>,
     pub(crate) child_objects: Vec<Handle>,
@@ -32,7 +32,7 @@ impl RenderGroup2d {
     pub(crate) fn new(transform: Transform2d, parent_group: Option<Handle>) -> Self {
         Self {
             handle: None,
-            transform: Dirtiable::new(transform),
+            transform: Versioned::new(transform),
             parent_group,
             child_groups: Vec::new(),
             child_objects: Vec::new(),
@@ -115,25 +115,14 @@ impl RenderGroup2d {
         }
     }
 
-    /// Peeks the local [transform](Transform2d) of this group without clearing
-    /// its dirty flag.
-    ///
-    /// The returned transform is local and, if this group is a child of
-    /// another, does not necessarily reflect the group's absolute transform
-    /// with respect to its containing [scene](Scene2d).
-    pub fn peek_transform(&self) -> ValueAndDirtyFlag<Transform2d> {
-        self.transform.peek()
-    }
-
-    /// Gets the local [transform](Transform2d) of this group, clearing its
-    /// dirty flag in the process.
+    /// Gets the local [transform](Transform2d) of this group.
     ///
     /// The returned [Transform2d] is local and, if this group is a child of
     /// another, does not necessarily reflect the group's absolute transform
     /// with respect to its containing [scene](Scene2d).
     #[must_use]
-    pub fn get_transform(&mut self) -> ValueAndDirtyFlag<Transform2d> {
-        self.transform.read()
+    pub fn get_transform(&self) -> &Versioned<Transform2d> {
+        &self.transform
     }
 
     /// Sets the local [transform](Transform2d) of this group.
@@ -142,15 +131,10 @@ impl RenderGroup2d {
     /// transform with respect to its containing scene, which is computed from
     /// the full hierarchy of groups.
     pub fn set_transform(&mut self, transform: Transform2d) {
-        if transform == self.transform.peek().value {
+        if &transform == self.transform.as_ref() {
             return;
         }
         self.transform.set(transform);
         self.version.fetch_add(1, Ordering::Relaxed);
-    }
-
-    #[must_use]
-    pub fn duplicate(&self, _context: &mut RenderContext2d) -> RenderGroup2d {
-        todo!()
     }
 }

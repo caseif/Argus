@@ -1,9 +1,9 @@
-use crate::state::{PerFrameData, RendererState, ViewportState};
+use crate::state::{PerFrameData, RendererState, Scene2dState, ViewportState};
 use argus_render::common::{AttachedViewport, SceneType, Viewport, ViewportCoordinateSpaceMode};
 use argus_render::constants::*;
 use argus_render::twod::get_render_context_2d;
 use argus_util::dirtiable::ValueAndDirtyFlag;
-use argus_util::math::{Matrix4x4, Vector2u};
+use argus_util::math::Vector2u;
 use vk_wrapper::*;
 
 struct TransformedViewport {
@@ -98,10 +98,12 @@ fn create_uniform_ds_write<'ctx>(
 }
 
 fn update_scene_ubo(
+    scene_state: &mut Scene2dState,
     scene_type: SceneType,
-    scene_id: &str,
+    scene_id: impl AsRef<str>,
     frame_state: &mut PerFrameData,
 ) {
+    //TODO: this isn't getting set properly
     if !frame_state.scene_ubo_dirty {
         return;
     }
@@ -109,17 +111,24 @@ fn update_scene_ubo(
     if scene_type == SceneType::TwoDim {
         let scene = get_render_context_2d().get_scene(scene_id).unwrap();
 
-        let al_level = scene.peek_ambient_light_level();
-        let al_color = scene.peek_ambient_light_color();
+        let al_level = scene.get_ambient_light_level();
+        let al_color = scene.get_ambient_light_color();
 
         let scene_ubo = frame_state.scene_ubo.as_mut().unwrap();
 
-        let al_color_arr: [f32; 3] = al_color.into();
-        scene_ubo.write(&al_color_arr, SHADER_UNIFORM_SCENE_AL_COLOR_OFF as vk::DeviceSize)
-            .unwrap();
+        if !al_color.is_version(scene_state.ambient_light_level_version) {
+            scene_state.ambient_light_color_version = al_color.version();
+            let al_color_arr: [f32; 3] = al_color.as_ref().into();
+            scene_ubo.write(&al_color_arr, SHADER_UNIFORM_SCENE_AL_COLOR_OFF as vk::DeviceSize)
+                .unwrap();
+        }
 
-        scene_ubo.write(&[al_level], SHADER_UNIFORM_SCENE_AL_LEVEL_OFF as vk::DeviceSize)
-            .unwrap();
+        if !al_level.is_version(scene_state.ambient_light_level_version) {
+            println!("light level changed");
+            scene_state.ambient_light_level_version = al_level.version();
+            scene_ubo.write(&[al_level.as_cloned()], SHADER_UNIFORM_SCENE_AL_LEVEL_OFF as vk::DeviceSize)
+                .unwrap();
+        }
     }
 
     frame_state.scene_ubo_dirty = false;
@@ -128,9 +137,9 @@ fn update_scene_ubo(
 fn update_viewport_ubo<'ctx>(
     device: &'ctx vk::Device<'ctx>,
     frame_state: &mut PerFrameData<'ctx>,
-    view_matrix: &Matrix4x4,
 ) {
-    let mut must_update = frame_state.view_matrix_dirty;
+    let view_matrix = frame_state.view_matrix.read_ref();
+    let mut must_update = view_matrix.dirty;
 
     let viewport_ubo = frame_state.viewport_ubo
         .get_or_insert_with(|| {
@@ -146,12 +155,12 @@ fn update_viewport_ubo<'ctx>(
 
     if must_update {
         viewport_ubo.write(
-            &view_matrix.cells,
+            &view_matrix.value.cells,
             SHADER_UNIFORM_VIEWPORT_VM_OFF as vk::DeviceSize,
         )
             .unwrap();
         viewport_ubo.write(
-            &view_matrix.inverse().unwrap().cells,
+            &view_matrix.value.inverse().unwrap().cells,
             SHADER_UNIFORM_VIEWPORT_VM_INV_OFF as vk::DeviceSize,
         )
             .unwrap();
@@ -259,7 +268,7 @@ pub(crate) fn draw_scene_to_framebuffer(
 ) {
     let device = state.device;
 
-    let mut viewport = get_render_context_2d().get_viewport_mut(viewport_id).unwrap();
+    let viewport = get_render_context_2d().get_viewport(viewport_id).unwrap();
 
     let viewport_state = state.viewport_states_2d.get_mut(&viewport.get_id()).unwrap();
     let scene_state = state.scene_states_2d.get_mut(viewport.get_scene_id()).unwrap();
@@ -310,14 +319,14 @@ pub(crate) fn draw_scene_to_framebuffer(
     let cur_frame_state = &mut viewport_state.per_frame[cur_frame];
 
     update_scene_ubo(
+        scene_state,
         scene_state.scene_type,
-        &scene_state.scene_id,
+        scene_state.scene_id.to_owned(),
         cur_frame_state,
     );
     update_viewport_ubo(
         device,
         cur_frame_state,
-        &viewport.get_view_matrix().value,
     );
 
     cur_frame_state.command_buf.as_ref().unwrap().begin_oneshot_commands();

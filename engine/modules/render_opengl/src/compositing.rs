@@ -24,7 +24,6 @@ use crate::util::defines::*;
 use crate::util::gl_util::*;
 use std::cmp::{max, min};
 use std::mem::swap;
-use std::ops::DerefMut;
 use argus_render::common::{AttachedViewport, Material, Viewport, ViewportCoordinateSpaceMode};
 use argus_render::constants::*;
 use argus_render::twod::{get_render_context_2d, AttachedViewport2d, Std140Light2D};
@@ -114,30 +113,29 @@ fn update_scene_ubo_2d(scene_state: &mut Scene2dState) {
         )
     });
 
-    let (al_level, al_color) = {
-        let mut scene = get_render_context_2d().get_scene_mut(&scene_state.scene_id).unwrap();
-        (
-            scene.get_ambient_light_level(),
-            scene.get_ambient_light_color(),
-        )
-    };
+    let scene = get_render_context_2d().get_scene(&scene_state.scene_id).unwrap();
+    let al_level = scene.get_ambient_light_level();
+    let al_color = scene.get_ambient_light_color();
 
-    if must_update || al_level.dirty {
-        ubo.write_val::<f32>(&al_level.value, SHADER_UNIFORM_SCENE_AL_LEVEL_OFF as usize);
+    if must_update || !al_level.is_version(scene_state.ambient_light_level_version) {
+        ubo.write_val::<f32>(**al_level, SHADER_UNIFORM_SCENE_AL_LEVEL_OFF as usize);
+        scene_state.ambient_light_level_version = al_level.version();
     }
 
-    if must_update || al_color.dirty {
-        let color_rgba = Vector4f::new(al_color.value.x, al_color.value.y, al_color.value.z, 1f32);
+    if must_update || !al_color.is_version(scene_state.ambient_light_color_version) {
+        let color_rgba = Vector4f::new(al_color.x, al_color.y, al_color.z, 1f32);
         ubo.write_val(color_rgba, SHADER_UNIFORM_SCENE_AL_COLOR_OFF as usize);
+        scene_state.ambient_light_color_version = al_color.version();
     }
 }
 
+//noinspection RsSimplifyBooleanExpression
 fn update_viewport_ubo(
-    viewport: &mut AttachedViewport2d,
     scene_state: &Scene2dState,
     viewport_state: &mut ViewportState,
 ) {
-    let mut must_update = viewport.is_view_state_dirty() || true; //TODO
+    let view_matrix = viewport_state.view_matrix.read();
+    let mut must_update = view_matrix.dirty || true; //TODO
 
     let ubo = viewport_state.buffers.ubo.get_or_insert_with(|| {
         must_update = true;
@@ -151,17 +149,18 @@ fn update_viewport_ubo(
 
     if must_update {
         ubo.write_vals(
-            &viewport.get_view_matrix().value.cells,
+            &viewport_state.view_matrix.read().value.cells,
             SHADER_UNIFORM_VIEWPORT_VM_OFF as usize,
         );
         ubo.write_vals(
-            &viewport.get_view_matrix().value.inverse().unwrap().cells,
+            &viewport_state.view_matrix.read().value.inverse().unwrap().cells,
             SHADER_UNIFORM_VIEWPORT_VM_INV_OFF as usize,
         );
 
         let mut scene = get_render_context_2d().get_scene_mut(&scene_state.scene_id).unwrap();
 
-        let light_handles = scene.get_lights_for_viewport(viewport, LIGHT_ENVELOPE_BUFFER);
+        let light_handles =
+            scene.get_lights_for_aabb(&viewport_state.view_aabb, LIGHT_ENVELOPE_BUFFER);
         let lights_count = light_handles.len();
 
         let mut shader_lights_arr: [Std140Light2D; LIGHTS_MAX as usize] = Default::default();
@@ -219,7 +218,7 @@ pub(crate) fn draw_scene_2d_to_framebuffer(
     viewport_id: u32,
     resolution: &ValueAndDirtyFlag<Vector2u>,
 ) {
-    let mut att_viewport = get_render_context_2d().get_viewport_mut(viewport_id)
+    let att_viewport = get_render_context_2d().get_viewport(viewport_id)
         .expect("Viewport was missing from context!");
 
     let viewport_px = transform_viewport_to_pixels(att_viewport.get_viewport(), &resolution.value);
@@ -238,7 +237,6 @@ pub(crate) fn draw_scene_2d_to_framebuffer(
 
     // set viewport uniforms
     update_viewport_ubo(
-        att_viewport.deref_mut(),
         renderer_state.scene_states_2d.get(&scene_id).expect("Scene state was missing!"),
         renderer_state.viewport_states_2d.get_mut(&viewport_id).unwrap(),
     );
@@ -297,7 +295,8 @@ pub(crate) fn draw_scene_2d_to_framebuffer(
 
     let scene = get_render_context_2d().get_scene(&scene_state.scene_id).unwrap();
     if scene.is_lighting_enabled() {
-        let light_handles = scene.get_lights_for_viewport(&att_viewport, LIGHT_ENVELOPE_BUFFER);
+        let light_handles =
+            scene.get_lights_for_aabb(&viewport_state.view_aabb, LIGHT_ENVELOPE_BUFFER);
         let lights_count = light_handles.len();
         // generate shadowmap
         let shadowmap_program = get_shadowmap_program(&mut renderer_state.shadowmap_program);

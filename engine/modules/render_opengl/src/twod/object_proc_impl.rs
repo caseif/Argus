@@ -24,6 +24,7 @@ use argus_render::constants::*;
 use argus_render::twod::{get_render_context_2d, RenderObject2d};
 use argus_util::math::{Matrix4x4, Vector2f, Vector4f};
 use argus_util::pool::Handle;
+use argus_util::versioned::Version;
 use crate::util::buffer::GlBuffer;
 use crate::util::support::{GlExt, GlSupport};
 
@@ -48,6 +49,8 @@ pub(crate) fn process_object(
         let scene_state = state.scene_states_2d.entry(scene_id.to_string()).or_insert_with(|| {
             Scene2dState {
                 scene_id: scene_id.to_string(),
+                ambient_light_level_version: Version::MAX,
+                ambient_light_color_version: Version::MAX,
                 ubo: None,
                 render_buckets: Default::default(),
                 processed_objs: Default::default(),
@@ -155,13 +158,13 @@ fn create_processed_object_2d(
         mat_res,
         object.get_atlas_stride(),
         object.get_z_index(),
-        object.peek_light_opacity(),
+        **object.get_light_opacity(),
         vertex_buffer,
         buffer_size,
         count_vertices(object),
     );
 
-    processed_obj.anim_frame = object.get_active_frame().value;
+    processed_obj.anim_frame.copy_if_stale(object.get_active_anim_frame());
 
     processed_obj.visited = true;
     processed_obj.newly_created = true;
@@ -170,7 +173,7 @@ fn create_processed_object_2d(
 }
 
 fn update_processed_object_2d(
-    object: &mut RenderObject2d,
+    object: &RenderObject2d,
     proc_obj: &mut ProcessedObject,
     transform: &Matrix4x4,
     is_transform_dirty: bool,
@@ -179,9 +182,7 @@ fn update_processed_object_2d(
     // if a parent group or the object itself has had its transform updated
     proc_obj.updated = is_transform_dirty;
 
-    let cur_frame = object.get_active_frame();
-    if cur_frame.dirty {
-        proc_obj.anim_frame = cur_frame.value;
+    if proc_obj.anim_frame.copy_if_stale(object.get_active_anim_frame()) {
         proc_obj.anim_frame_updated = true;
     }
 

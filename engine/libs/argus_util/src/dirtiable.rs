@@ -22,10 +22,10 @@ pub struct Dirtiable<T> {
 }
 
 impl<T> Dirtiable<T> {
-    pub fn new(value: T) -> Dirtiable<T> {
+    pub fn new(value: T) -> Self {
         Self {
             value,
-            dirty: false
+            dirty: false,
         }
     }
 
@@ -79,10 +79,7 @@ impl<T> Dirtiable<T> {
 
 impl<T: Default> Default for Dirtiable<T> {
     fn default() -> Self {
-        Self {
-            value: T::default(),
-            dirty: false,
-        }
+        Self::new(T::default())
     }
 }
 

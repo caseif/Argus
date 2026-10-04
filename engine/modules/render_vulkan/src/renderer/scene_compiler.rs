@@ -1,5 +1,6 @@
 use std::sync::atomic::Ordering;
 use argus_render::util::process_objects_2d;
+use argus_util::math::Matrix4x4;
 use vk_wrapper::vk::MAX_FRAMES_IN_FLIGHT;
 use crate::renderer::object_proc_impl::process_object;
 use crate::state::{ProcessedObject, RenderBucket, RenderBucketKey, RendererState};
@@ -16,9 +17,11 @@ fn get_bucket_key(processed_obj: &ProcessedObject) -> RenderBucketKey {
 pub(crate) fn compile_scene_2d(
     state: &mut RendererState<'_>,
     scene_id: &str,
+    view_matrices: &[Matrix4x4],
 ) {
     process_objects_2d(
         scene_id,
+        view_matrices,
         process_object,
         state,
     );

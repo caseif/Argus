@@ -7,6 +7,7 @@ use crate::twod::{get_render_context_2d, RenderContext2d};
 
 pub fn process_objects_2d<S>(
     scene_id: impl AsRef<str>,
+    view_matrices: &[Matrix4x4],
     update_fn: fn(&str, Handle, &Matrix4x4, bool, &mut S),
     state: &mut S,
 ) {
@@ -18,6 +19,7 @@ pub fn process_objects_2d<S>(
     };
     process_render_group_2d(
         scene_id.as_ref(),
+        view_matrices,
         root_group_handle, //TODO
         false,
         Matrix4x4::identity(),
@@ -36,15 +38,15 @@ fn compute_abs_group_transform(context: &RenderContext2d, group: Handle)
     let mut mat: Matrix4x4;
     let mut cur_handle_opt: Option<Handle>;
     {
-        let mut initial_group = context.get_group_mut(group).unwrap();
-        mat = initial_group.get_transform().value.as_matrix(Vector2f::new(0.0, 0.0));
+        let initial_group = context.get_group(group).unwrap();
+        mat = initial_group.get_transform().as_matrix(Vector2f::new(0.0, 0.0));
         cur_handle_opt = initial_group.get_parent();
     }
 
     while let Some(cur_handle) = cur_handle_opt {
-        let cur_group = context.get_group_mut(cur_handle).unwrap();
+        let cur_group = context.get_group(cur_handle).unwrap();
         cur_handle_opt = cur_group.get_parent();
-        mat *= cur_group.peek_transform().value.as_matrix(Vector2f::new(0.0, 0.0));
+        mat *= cur_group.get_transform().as_matrix(Vector2f::new(0.0, 0.0));
     }
 
     mat
@@ -52,6 +54,7 @@ fn compute_abs_group_transform(context: &RenderContext2d, group: Handle)
 
 fn process_render_group_2d<S>(
     scene_id: &str,
+    view_matrices: &[Matrix4x4],
     group_handle: Handle,
     recompute_transform: bool,
     running_transform: Matrix4x4,
@@ -61,19 +64,15 @@ fn process_render_group_2d<S>(
 ) {
     let context = get_render_context_2d();
 
-    let view_matrices = context.get_viewports().iter()
-        .filter(|vp| vp.get_scene_id() == scene_id)
-        .map(|vp| vp.peek_view_matrix())
-        .collect::<Vec<_>>();
     let ndc_frustum = AABB::from_corners(Vector2f::new(-1.0, -1.0), Vector2f::new(1.0, 1.0));
 
     let (group_version, child_groups, child_objects, group_transform) = {
-        let mut group = context.get_group_mut(group_handle).unwrap();
+        let group = context.get_group(group_handle).unwrap();
         (
             group.version.load(Ordering::Relaxed),
             group.child_groups.clone(),
             group.child_objects.clone(),
-            group.get_transform(),
+            group.get_transform().as_cloned(),
         )
     };
 
@@ -89,7 +88,7 @@ fn process_render_group_2d<S>(
     if recompute_transform {
         // we already know we have to recompute the transform of this whole
         // branch since a parent was dirty
-        cur_transform = group_transform.value.as_matrix(Vector2f::new(0.0, 0.0)) *
+        cur_transform = group_transform.as_matrix(Vector2f::new(0.0, 0.0)) *
             running_transform;
     } else if group_version !=
         *cur_version_map.get(&(SceneItemType::Group, group_handle)).unwrap_or(&0) {
@@ -100,12 +99,12 @@ fn process_render_group_2d<S>(
     for child_obj_handle in child_objects {
         let (obj_transform, obj_aabb, obj_anchor, obj_matrix, child_version) = {
             //TODO: stopgap until render graph buffering is properly implemented
-            let Some(mut child_object) = get_render_context_2d()
+            let Some(child_object) = get_render_context_2d()
                 .get_object_mut(child_obj_handle)
                 else { continue; };
 
             (
-                child_object.get_transform().value,
+                child_object.get_transform().as_cloned(),
                 child_object.get_aabb().clone(),
                 child_object.get_anchor_point(),
                 child_object.transform_matrix,
@@ -163,6 +162,7 @@ fn process_render_group_2d<S>(
     for child_group_handle in child_groups {
         process_render_group_2d(
             scene_id,
+            view_matrices,
             child_group_handle,
             recompute_child_transform,
             cur_transform,

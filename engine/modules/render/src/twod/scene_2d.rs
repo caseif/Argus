@@ -1,17 +1,17 @@
 use std::collections::HashMap;
 use argus_resman::Resource;
-use argus_util::dirtiable::{Dirtiable, ValueAndDirtyFlag};
 use argus_util::math::{Vector2f, Vector3f, AABB};
 use argus_util::pool::Handle;
 use argus_util::rtree::{QuadTree, QuadTreeNode};
+use argus_util::versioned::Versioned;
 use crate::common::*;
 use crate::twod::*;
 
 pub struct Scene2d {
     id: String,
     lighting_enabled: bool,
-    ambient_light_level: Dirtiable<f32>,
-    ambient_light_color: Dirtiable<Vector3f>,
+    ambient_light_level: Versioned<f32>,
+    ambient_light_color: Versioned<Vector3f>,
     pub(crate) root_group: Option<Handle>,
     pub(crate) objects: QuadTree<Handle>,
     lights: QuadTree<Handle>,
@@ -33,8 +33,8 @@ impl Scene2d {
         Self {
             id: id.into(),
             lighting_enabled: false,
-            ambient_light_level: Dirtiable::new(1.0),
-            ambient_light_color: Dirtiable::new(Vector3f::new(1.0, 1.0, 1.0)),
+            ambient_light_level: Versioned::new(1.0),
+            ambient_light_color: Versioned::new(Vector3f::new(1.0, 1.0, 1.0)),
             root_group: Some(root_group),
             objects: QuadTree::new(),
             lights: QuadTree::new(),
@@ -58,13 +58,8 @@ impl Scene2d {
     }
 
     #[must_use]
-    pub fn peek_ambient_light_level(&self) -> f32 {
-        self.ambient_light_level.peek().value
-    }
-
-    #[must_use]
-    pub fn get_ambient_light_level(&mut self) -> ValueAndDirtyFlag<f32> {
-        self.ambient_light_level.read()
+    pub fn get_ambient_light_level(&self) -> &Versioned<f32> {
+        &self.ambient_light_level
     }
 
     pub fn set_ambient_light_level(&mut self, level: f32) {
@@ -72,13 +67,8 @@ impl Scene2d {
     }
 
     #[must_use]
-    pub fn peek_ambient_light_color(&self) -> Vector3f {
-        self.ambient_light_color.peek().value
-    }
-
-    #[must_use]
-    pub fn get_ambient_light_color(&mut self) -> ValueAndDirtyFlag<Vector3f> {
-        self.ambient_light_color.read()
+    pub fn get_ambient_light_color(&self) -> &Versioned<Vector3f> {
+        &self.ambient_light_color
     }
 
     pub fn set_ambient_light_color(&mut self, color: Vector3f) {
@@ -305,17 +295,17 @@ impl Scene2d {
         self.cameras.remove(id.as_ref());
     }
 
-    pub fn get_objects_for_viewport(&self, viewport: &AttachedViewport2d) -> Vec<Handle> {
-        let aabb = viewport.get_view_frustum().clone().into();
-        self.objects.get_tree().locate_in_envelope(aabb)
+    pub fn get_objects_for_aabb(&self, aabb: &AABB) -> Vec<Handle> {
+        let eff_aabb = aabb.into();
+        self.objects.get_tree().locate_in_envelope(eff_aabb)
             .map(|sp| sp.handle)
             .collect()
     }
 
-    pub fn get_lights_for_viewport(&self, viewport: &AttachedViewport2d, buffer: f32)
+    pub fn get_lights_for_aabb(&self, aabb: &AABB, buffer: f32)
                                    -> Vec<Handle> {
-        let aabb = viewport.get_view_frustum().expand(buffer).into();
-        self.lights.get_tree().locate_in_envelope(aabb)
+        let eff_aabb = aabb.expand(buffer).into();
+        self.lights.get_tree().locate_in_envelope(eff_aabb)
             .map(|sp| sp.handle)
             .collect()
     }

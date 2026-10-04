@@ -25,3 +25,4 @@ pub mod padding;
 pub mod pool;
 pub mod rtree;
 pub mod semaphore;
+pub mod versioned;
